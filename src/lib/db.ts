@@ -86,6 +86,10 @@ async function init(): Promise<Driver> {
   return d;
 }
 
+/** True on Vercel/serverless with no Postgres configured: logins and data can't persist. */
+export const dbMissingOnServerless = () =>
+  (!!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME) && !(process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_PRISMA_URL);
+
 export function db(): Promise<Driver> {
   if (!globalThis.__nottiesDb) {
     globalThis.__nottiesDb = init().catch((e) => {

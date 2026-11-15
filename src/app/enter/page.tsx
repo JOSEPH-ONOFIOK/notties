@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { guestMode } from "@/lib/guest";
 import { getXUser } from "@/lib/session";
 import { TurnstileField } from "@/components/game/Turnstile";
+import { dbMissingOnServerless } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Enter the Lab" };
@@ -26,6 +27,11 @@ export default async function Enter({ searchParams }: { searchParams: Promise<{ 
         <h1 className="display mt-4 text-center text-4xl">Enter the Lab</h1>
         <p className="mt-2 text-center text-sm text-muted">X sign-in opens soon. For now, pick a name and start causing trouble. Use your X handle so your progress follows you.</p>
 
+        {dbMissingOnServerless() && (
+          <div className="mt-5 rounded-xl border-[3px] border-black bg-warn p-3 text-left text-sm text-black">
+            <b className="display">Setup not finished.</b> This deployment has no database connected, so sign-ins can&apos;t stick yet. Site owner: in Vercel, add a Postgres database (Storage → Neon) and redeploy.
+          </div>
+        )}
         <form action="/api/dev/login" method="get" className="mt-6 space-y-3">
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">@</span>
