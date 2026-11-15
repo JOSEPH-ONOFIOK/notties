@@ -61,7 +61,11 @@ async function makePglite(): Promise<Driver> {
   const { PGlite } = await import("@electric-sql/pglite");
   const path = await import("node:path");
   const fs = await import("node:fs");
-  const dir = path.join(process.cwd(), ".data", "pglite");
+  // Vercel's filesystem is read-only except /tmp. Without a real database there, data lives in
+  // /tmp: fine for a preview, but it resets on every cold start and isn't shared between servers.
+  const onServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+  const dir = onServerless ? "/tmp/notties-pglite" : path.join(process.cwd(), ".data", "pglite");
+  if (onServerless) console.warn("[notties] No DATABASE_URL set: using a temporary database in /tmp. Data will reset. Add a Postgres DATABASE_URL in Vercel.");
   fs.mkdirSync(dir, { recursive: true });
   const db = await PGlite.create({ dataDir: dir, parsers: { 1082: (v: string) => v } });
   return {
@@ -74,7 +78,8 @@ async function makePglite(): Promise<Driver> {
 }
 
 async function init(): Promise<Driver> {
-  const url = process.env.DATABASE_URL;
+  // DATABASE_URL, or the names Vercel's Neon / Postgres integrations set automatically.
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_PRISMA_URL;
   const d = url ? await makePg(url) : await makePglite();
   await d.exec(SCHEMA_SQL);
   await SEED(d);

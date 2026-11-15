@@ -8,11 +8,11 @@ export type XUser = { id: string; username: string; name?: string; avatar?: stri
 const COOKIE = "nt_session";
 const MAX_AGE_S = 30 * 24 * 60 * 60;
 
-const secret =
-  process.env.SESSION_SECRET ||
-  (process.env.X_CLIENT_SECRET
-    ? createHash("sha256").update(`notties-session:${process.env.X_CLIENT_SECRET}`).digest("hex")
-    : randomBytes(32).toString("hex"));
+// Every server instance must sign with the same key, or a cookie set on one won't verify on
+// another (players get bounced back to sign-in). Fall back to keys derived from other secrets that
+// every instance shares before resorting to a per-process random key (local dev only).
+const derivedFrom = process.env.SESSION_SECRET || process.env.X_CLIENT_SECRET || process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.ADMIN_KEY || "";
+const secret = process.env.SESSION_SECRET || (derivedFrom ? createHash("sha256").update(`notties-session:${derivedFrom}`).digest("hex") : randomBytes(32).toString("hex"));
 
 const sign = (data: string) => createHmac("sha256", secret).update(data).digest("base64url");
 
