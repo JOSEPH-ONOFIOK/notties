@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { GameError } from "./db";
-import { getUserByXId, type UserRow } from "./game/core";
+import { getUserByXId, upsertUser, type UserRow } from "./game/core";
 import { getXUser } from "./session";
 
 export { rateLimit } from "./ratelimit";
@@ -10,7 +10,11 @@ import { rateLimit } from "./ratelimit";
 export async function requireUser(): Promise<UserRow> {
   const x = await getXUser();
   if (!x) throw new GameError("Sign in with X first", 401);
-  const u = await getUserByXId(x.id);
+  let u = await getUserByXId(x.id);
+  if (!u && x.id.startsWith("guest-")) {
+    await upsertUser({ id: x.id, username: x.username, name: x.name, avatar: x.avatar });
+    u = await getUserByXId(x.id);
+  }
   if (!u) throw new GameError("Sign in with X first", 401);
   return u;
 }

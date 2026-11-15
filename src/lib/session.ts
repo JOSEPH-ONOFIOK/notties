@@ -11,7 +11,10 @@ const MAX_AGE_S = 30 * 24 * 60 * 60;
 // Every server instance must sign with the same key, or a cookie set on one won't verify on
 // another (players get bounced back to sign-in). Fall back to keys derived from other secrets that
 // every instance shares before resorting to a per-process random key (local dev only).
-const derivedFrom = process.env.SESSION_SECRET || process.env.X_CLIENT_SECRET || process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.ADMIN_KEY || "";
+// Last resort on Vercel: values Vercel sets identically on every function of a project. Only used
+// while nothing secret is configured, i.e. guest mode, where anyone can already enter by typing a name.
+const vercelStable = process.env.VERCEL ? [process.env.VERCEL_PROJECT_ID, process.env.VERCEL_GIT_REPO_ID, process.env.VERCEL_GIT_REPO_OWNER, process.env.VERCEL_PROJECT_PRODUCTION_URL].filter(Boolean).join("|") : "";
+const derivedFrom = process.env.SESSION_SECRET || process.env.X_CLIENT_SECRET || process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.ADMIN_KEY || vercelStable || "";
 const secret = process.env.SESSION_SECRET || (derivedFrom ? createHash("sha256").update(`notties-session:${derivedFrom}`).digest("hex") : randomBytes(32).toString("hex"));
 
 const sign = (data: string) => createHmac("sha256", secret).update(data).digest("base64url");

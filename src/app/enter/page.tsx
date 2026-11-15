@@ -29,7 +29,7 @@ export default async function Enter({ searchParams }: { searchParams: Promise<{ 
 
         {dbMissingOnServerless() && (
           <div className="mt-5 rounded-xl border-[3px] border-black bg-warn p-3 text-left text-sm text-black">
-            <b className="display">Setup not finished.</b> This deployment has no database connected, so sign-ins can&apos;t stick yet. Site owner: in Vercel, add a Postgres database (Storage → Neon) and redeploy.
+            <b className="display">Preview mode.</b> Jump in and look around. Progress may not save yet.
           </div>
         )}
         <form action="/api/dev/login" method="get" className="mt-6 space-y-3">
