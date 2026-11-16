@@ -1,7 +1,7 @@
 import "server-only";
 import { query, type Q } from "../db";
 
-export type FeedItem = { id: number; username: string; avatar: string | null; kind: "pull" | "forge" | "swap" | "streak" | "faction"; data: Record<string, unknown>; created_at: string };
+export type FeedItem = { id: number; username: string; avatar: string | null; kind: "pull" | "forge" | "swap" | "streak" | "faction" | "book"; data: Record<string, unknown>; created_at: string };
 
 export async function pushFeed(q: Q, userId: string, kind: FeedItem["kind"], data: Record<string, unknown>) {
   await q.query("insert into feed (user_id, kind, data) values ($1,$2,$3)", [userId, kind, JSON.stringify(data)]);

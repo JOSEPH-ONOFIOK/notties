@@ -32,7 +32,7 @@ type Body =
   | { action: "setting"; key: keyof Settings; value: unknown }
   | { action: "status"; userId: string; status: "active" | "suspended"; note?: string }
   | { action: "resolve"; riskId: string }
-  | { action: "task"; task: { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null } }
+  | { action: "task"; task: { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean } }
   | { action: "review"; id: string; approve: boolean }
   | { action: "adjust"; userId: string; points?: number; type?: string; qty?: number; reason: string }
   | { action: "event"; name: string; kind: string; effects: EventEffects; starts_at: string; ends_at: string }
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         break;
       case "task":
         if (!/^[a-z0-9_]{1,64}$/.test(b.task.id)) throw new Error("Task id: lowercase letters, digits, underscores");
-        await upsertTask(by, b.task);
+        result = await upsertTask(by, b.task);
         break;
       case "review":
         await reviewSubmission(by, String(b.id), !!b.approve);

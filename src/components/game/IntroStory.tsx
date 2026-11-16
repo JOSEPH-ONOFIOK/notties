@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TbArrowRight, TbPlayerPlayFilled } from "react-icons/tb";
-import { FRAGMENTS, type FragmentType } from "@/lib/game/config";
+import { FRAGMENTS, PARTS, type FragmentType } from "@/lib/game/config";
 import { fx } from "@/lib/fx";
 import { sfx } from "@/lib/sfx";
 import { FragmentIcon } from "../FragmentIcon";
@@ -149,7 +149,7 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
                       <CardBack />
                     </div>
                     <div className="w-[128px] rotate-6 anim-pop">
-                      <FragmentCard type="notebook" size="sm" />
+                      <FragmentCard type="gear" size="sm" />
                     </div>
                   </div>
                 </div>
@@ -168,7 +168,7 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
               art={
                 <div className="grid h-full place-items-center p-4">
                   <ul className="grid grid-cols-4 gap-3">
-                    {FRAGMENTS.map((f, i) => (
+                    {PARTS.map((f, i) => (
                       <li key={f.type} className="grid h-16 w-16 place-items-center rounded-xl border-[3px] border-black bg-raised shadow-[0_4px_0_#000] sm:h-20 sm:w-20" style={{ animation: `pop .5s cubic-bezier(.2,1.4,.4,1) ${i * 0.09}s both` }}>
                         <FragmentIcon type={f.type} size={44} />
                       </li>
@@ -180,7 +180,7 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
               title="Find all 8 parts."
               body={
                 <>
-                  Goggles, overalls, gloves, boots, a hair tuft, a goo vial, my notebook (please give it back) and the rarest of all, the <b>Portal Shard</b>. Doubles? <b>Trade</b> them with other players or pawn them for TROUBLE.
+                  A background, a shadow, shoes, an outfit, a mouth, eyes, something for the hands or head, and the rarest of all, the <b>Body</b>. (My book went missing too. If you ever find it, it&apos;s worth a lot.) Doubles? <b>Trade</b> them with other players or pawn them for TROUBLE.
                 </>
               }
             />
@@ -271,7 +271,7 @@ function Panel({ art, kicker, title, body }: { art: React.ReactNode; kicker: str
   );
 }
 
-const ORDER: FragmentType[] = ["boots", "overalls", "goggles", "gloves", "tuft", "notebook", "goo", "shard"];
+const ORDER: FragmentType[] = ["background", "shadow", "body", "shoes", "outfit", "mouth", "eyes", "gear"];
 
 /** The Nottie fills in one part at a time, then sparks. */
 function AssemblingNottie() {

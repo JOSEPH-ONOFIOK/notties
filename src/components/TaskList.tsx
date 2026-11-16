@@ -8,6 +8,7 @@ import { fx } from "@/lib/fx";
 import { sfx } from "@/lib/sfx";
 import { TbArrowRight, TbExternalLink, TbFlame, TbSend } from "react-icons/tb";
 import { Coin } from "./game/Coin";
+import { FragmentIcon } from "./FragmentIcon";
 
 export type TaskItem = {
   id: string;
@@ -21,6 +22,7 @@ export type TaskItem = {
   clicked: string | null;
   submission: string | null;
   proof_hint: string | null;
+  gives_book?: boolean;
 };
 
 export type StreakInfo = { streak: number; checkedInToday: boolean; ladder: number[] };
@@ -102,6 +104,11 @@ export function TaskList({ tasks, suspended, streak }: { tasks: TaskItem[]; susp
           </div>
         </div>
         <p className="mt-2 flex-1 text-sm text-black/70">{t.description}</p>
+        {t.gives_book && (
+          <div className="mt-2 flex items-center gap-2 rounded-lg border-2 border-black bg-black px-2 py-1 text-xs font-bold text-[#ffb347]">
+            <FragmentIcon type="book" size={20} /> Unlocks Vlad&apos;s Book once your Nottie is assembled
+          </div>
+        )}
         {t.id === "daily_checkin" && <StreakStrip s={streak} />}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

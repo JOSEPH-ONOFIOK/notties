@@ -9,6 +9,7 @@ import { addFragment, addPoints, getSettings, requireActive } from "./core";
  */
 export async function pawnFragment(userId: string, type: FragmentType, qty: number, idemKey: string) {
   if (!FRAGMENT_BY_TYPE[type]) throw new GameError("Unknown fragment");
+  if (FRAGMENT_BY_TYPE[type].special) throw new GameError(`Hood won't touch ${FRAGMENT_BY_TYPE[type].name}. It stays with whoever earned it.`);
   if (!Number.isInteger(qty) || qty < 1 || qty > 50) throw new GameError("Quantity must be 1–50");
   if (!/^[a-zA-Z0-9_-]{8,64}$/.test(idemKey)) throw new GameError("Bad request");
 

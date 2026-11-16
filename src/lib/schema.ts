@@ -194,6 +194,8 @@ alter table crate_claims add column if not exists source text not null default '
 alter table crate_claims add column if not exists event text;
 
 alter table tasks add column if not exists proof_hint text;
+-- A task that earns Vlad's Book (together with an assembled Nottie).
+alter table tasks add column if not exists gives_book boolean not null default false;
 
 create table if not exists rate_limits (
   key text primary key,

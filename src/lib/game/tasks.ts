@@ -2,6 +2,7 @@ import "server-only";
 import { GameError, query, withTx, type Q } from "../db";
 import type { Settings } from "./config";
 import { addPoints, getSettings, logRisk, requireActive, streakView, utcDay } from "./core";
+import { awardBookIfEarned } from "./book";
 import { pushFeed } from "./feed";
 
 export interface TaskRow {
@@ -17,6 +18,7 @@ export interface TaskRow {
   starts_at: string | null;
   ends_at: string | null;
   proof_hint: string | null;
+  gives_book: boolean;
 }
 
 const ONCE_DAY = "1970-01-01";
@@ -62,6 +64,7 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
   }
   pts = await addPoints(q, userId, pts, `task:${taskId}`, String(ins.rows[0].id), `task:${userId}:${taskId}:${day}`);
   if (taskId === "onboarding") await q.query("update users set onboarded = true where id = $1", [userId]);
+  if (t.gives_book) await awardBookIfEarned(q, userId, settings);
   return pts;
 }
 

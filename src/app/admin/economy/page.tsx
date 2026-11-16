@@ -1,11 +1,13 @@
 import { PageTitle } from "@/components/ui";
 import { FRAGMENTS, POINTS_NAME } from "@/lib/game/config";
 import { getSettings } from "@/lib/game/core";
+import { bookStats } from "@/lib/game/book";
 import { MapField, NumberField } from "@/components/admin/Controls";
 import { MintSetting, TextSetting } from "@/components/admin/More";
 
 export default async function Economy() {
   const s = await getSettings();
+  const book = await bookStats(s);
   const labels = Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.name]));
   return (
     <>
@@ -16,6 +18,7 @@ export default async function Economy() {
         <NumberField k="crate_price" label="Bonus crate price (TROUBLE)" value={s.crate_price} hint="What a shop crate costs. It's the main TROUBLE sink." min={0} />
         <NumberField k="crate_buys_per_day" label="Bonus crates per day" value={s.crate_buys_per_day} hint="Per player, resets at midnight UTC. 0 turns the shop off." min={0} />
         <TextSetting k="streak_bonus" label="Roll call streak rewards" value={(s.streak_bonus ?? []).join(", ")} hint="TROUBLE for day 1, 2, 3… of a streak. After the last number it keeps paying that." parse="numbers" />
+        <NumberField k="book_cap" label="Vlad's Book: max copies" value={s.book_cap} hint={`0 = no limit. ${book.given} given so far${book.left !== null ? `, ${book.left} left` : ""}. Earned by finishing a task marked "gives Vlad's Book" (Tasks page) and assembling.`} min={0} />
         <NumberField k="referral_qualify_claims" label="Referral qualifies after N crates" value={s.referral_qualify_claims} hint="The referee must open this many crates before the referrer is paid." min={1} />
       </div>
       <div className="mt-4">

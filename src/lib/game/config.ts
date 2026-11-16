@@ -20,7 +20,12 @@ export const BRAND = {
 
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 
-export type FragmentType = "goggles" | "overalls" | "gloves" | "boots" | "tuft" | "goo" | "notebook" | "shard";
+/**
+ * The eight parts match the eight trait layers of the real collection art (public/traits). Collect
+ * one of each to assemble. Vlad's Book is not a part: it never drops from crates, isn't needed to
+ * assemble, and only a few players will ever hold one.
+ */
+export type FragmentType = "background" | "shadow" | "body" | "shoes" | "outfit" | "mouth" | "eyes" | "gear" | "book";
 
 export interface FragmentDef {
   type: FragmentType;
@@ -29,32 +34,39 @@ export interface FragmentDef {
   weight: number; // default drop weight (admin-editable in settings.drop_weights)
   pawn: number; // default buyback in TROUBLE (admin-editable in settings.pawn_prices)
   blurb: string;
+  /** Not a crate part: no drops, not in the recipe. */
+  special?: boolean;
 }
 
 export const FRAGMENTS: FragmentDef[] = [
-  { type: "goggles", name: "Goggles", rarity: "common", weight: 20, pawn: 10, blurb: "Standard issue. Every Nottie came through the portal wearing a pair. Nobody knows who issued them." },
-  { type: "overalls", name: "Overalls", rarity: "common", weight: 20, pawn: 10, blurb: "One pocket. Always something in it that isn't yours." },
-  { type: "gloves", name: "Gloves", rarity: "uncommon", weight: 15, pawn: 10, blurb: "Black, fingerless-ish, leaves no prints. Hood's idea." },
-  { type: "boots", name: "Boots", rarity: "uncommon", weight: 15, pawn: 10, blurb: "Built for running from Vlad. Doubles as running toward snacks." },
-  { type: "tuft", name: "Hair Tuft", rarity: "uncommon", weight: 13, pawn: 15, blurb: "Mohawk, mop, or three brave strands. Decides your whole personality." },
-  { type: "goo", name: "Green Goo Vial", rarity: "rare", weight: 8, pawn: 30, blurb: "Raw Sherwood energy. Do not drink. Woody drank it." },
-  { type: "notebook", name: "Vlad's Notebook", rarity: "epic", weight: 6, pawn: 75, blurb: "Half the assembly instructions. The other half is a sandwich stain." },
-  { type: "shard", name: "Portal Shard", rarity: "legendary", weight: 3, pawn: 150, blurb: "A splinter of the portal itself. Still warm. Still humming. The last piece." },
+  { type: "background", name: "Background", rarity: "common", weight: 20, pawn: 10, blurb: "The wall behind you. Grey, yellow, or that green that hurts to look at." },
+  { type: "shadow", name: "Shadow", rarity: "common", weight: 20, pawn: 10, blurb: "Every Nottie came through the portal with one. Some came with the wrong one." },
+  { type: "shoes", name: "Shoes", rarity: "uncommon", weight: 15, pawn: 10, blurb: "Sneakers, slippers or Timbs. Built for running from Vlad. Doubles as running toward snacks." },
+  { type: "mouth", name: "Mouth", rarity: "uncommon", weight: 15, pawn: 15, blurb: "Smile, sulk, tongue out or vampire teeth. Decides your whole personality." },
+  { type: "outfit", name: "Outfit", rarity: "uncommon", weight: 13, pawn: 15, blurb: "Jackets, capes, prison stripes, pampers. One pocket. Always something in it that isn't yours." },
+  { type: "eyes", name: "Eyes", rarity: "rare", weight: 8, pawn: 30, blurb: "One eye, two eyes, three eyes, wooden eyes. Hood swears the goggles help." },
+  { type: "gear", name: "Hand & Head", rarity: "epic", weight: 6, pawn: 75, blurb: "Sword, rose, snack pack or a head that's on fire. Whatever they grabbed on the way out." },
+  { type: "body", name: "Body", rarity: "legendary", weight: 3, pawn: 150, blurb: "The Nottie itself. Nerd, fat, tall or mini, sometimes skeleton. Still warm from the portal. The last piece." },
+  { type: "book", name: "Vlad's Book", rarity: "legendary", weight: 0, pawn: 500, special: true, blurb: "The real assembly instructions. Vlad wants it back. Almost nobody will ever hold one." },
 ];
 
 export const FRAGMENT_BY_TYPE = Object.fromEntries(FRAGMENTS.map((f) => [f.type, f])) as Record<FragmentType, FragmentDef>;
 export const FRAGMENT_TYPES = FRAGMENTS.map((f) => f.type);
+/** The eight parts you collect from crates to assemble (everything but Vlad's Book). */
+export const PARTS = FRAGMENTS.filter((f) => !f.special);
+export const PART_TYPES = PARTS.map((f) => f.type);
 
-/** One of each fragment assembles a Nottie. */
+/** One of each part assembles a Nottie. Vlad's Book is not required. */
 export const DEFAULT_RECIPE: Record<FragmentType, number> = {
-  goggles: 1,
-  overalls: 1,
-  gloves: 1,
-  boots: 1,
-  tuft: 1,
-  goo: 1,
-  notebook: 1,
-  shard: 1,
+  background: 1,
+  shadow: 1,
+  shoes: 1,
+  mouth: 1,
+  outfit: 1,
+  eyes: 1,
+  gear: 1,
+  body: 1,
+  book: 0,
 };
 
 export const RARITY_ORDER: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary"];
@@ -87,10 +99,13 @@ export const DEFAULT_SETTINGS = {
   streak_bonus: [10, 15, 20, 25, 30, 40, 60], // daily roll call reward by streak day (repeats the last)
   // Recurring events run on the server's UTC clock, so every player sees the same thing at once.
   recurring_events: [
-    { key: "shard_storm", name: "Shard Storm", kind: "shard_storm", days: [6, 0], start_hour: 0, end_hour: 24, effects: { drop_mult: { shard: 2, notebook: 1.5 } }, enabled: true },
+    { key: "shard_storm", name: "Portal Storm", kind: "shard_storm", days: [6, 0], start_hour: 0, end_hour: 24, effects: { drop_mult: { body: 2, gear: 1.5 } }, enabled: true },
     { key: "double_trouble", name: "Double Trouble Hour", kind: "double_trouble", days: [1, 2, 3, 4, 5], start_hour: 20, end_hour: 21, effects: { points_mult: 2 }, enabled: true },
   ] as RecurringEvent[],
-  mint: { date: "", chain: "", price: "" },
+  // The mint is free. `price` stays in the shape so older saved rows still load; it always reads "Free".
+  mint: { date: "", chain: "", price: "Free" },
+  // Vlad's Book: max copies ever given out. 0 = no limit (anyone who earns it gets one).
+  book_cap: 0,
   drop_weights: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.weight])) as Record<FragmentType, number>,
   pawn_prices: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.pawn])) as Record<FragmentType, number>,
   recipe: DEFAULT_RECIPE,
@@ -111,7 +126,7 @@ export type EventEffects = { drop_mult?: Partial<Record<FragmentType, number>>; 
 export type RecurringEvent = { key: string; name: string; kind: string; days: number[]; start_hour: number; end_hour: number; effects: EventEffects; enabled: boolean };
 
 export const EVENT_STYLE: Record<string, { color: string; blurb: string }> = {
-  shard_storm: { color: "#ffb347", blurb: "Portal Shards drop twice as often. Notebooks too, a bit." },
+  shard_storm: { color: "#ffb347", blurb: "Bodies drop twice as often. Hand & Head too, a bit." },
   double_trouble: { color: "#cdff00", blurb: "Every TROUBLE reward is doubled." },
   rush_hour: { color: "#8ad7ff", blurb: "Crate timers run twice as fast." },
   custom: { color: "#d79cff", blurb: "Something weird is happening in the lab." },

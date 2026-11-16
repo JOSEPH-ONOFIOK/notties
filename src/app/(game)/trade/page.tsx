@@ -18,7 +18,7 @@ export default async function Trade({ searchParams }: { searchParams: Promise<{ 
   const tab = sp.tab === "gift" ? "gift" : "swap";
   return (
     <>
-      <PageTitle kicker="Trade" title="Black Market" sub="Got three goggles and no boots? Post a swap and someone with boots takes it, or just gift a card to a friend." />
+      <PageTitle kicker="Trade" title="Black Market" sub="Got three shadows and no shoes? Post a swap and someone with shoes takes it, or just gift a card to a friend." />
       <div className="mb-5 flex gap-2">
         {[
           ["swap", `Swap board${offers.open.length ? ` (${offers.open.length})` : ""}`],

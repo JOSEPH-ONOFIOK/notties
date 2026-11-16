@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { FragmentIcon } from "@/components/FragmentIcon";
 import { RarityPill, XGlyph } from "@/components/ui";
 import { TbArrowsExchange, TbBackpack, TbBox, TbFlask2 } from "react-icons/tb";
-import { BRAND, FRAGMENTS, ORIGINAL_FOUR, POINTS_NAME, TEASERS } from "@/lib/game/config";
+import { BRAND, FRAGMENTS, PARTS, ORIGINAL_FOUR, POINTS_NAME, TEASERS } from "@/lib/game/config";
 import { stats } from "@/lib/game/leaderboard";
 import { LiveBar } from "@/components/game/LiveBar";
 import { eventTimeline } from "@/lib/game/events";
@@ -15,9 +15,9 @@ import { guestMode } from "@/lib/guest";
 export const dynamic = "force-dynamic";
 
 const LOOP = [
-  { n: "01", t: "Hunt", icon: TbBox, d: "A Portal Crate washes up every 2 hours with one random part inside. Usually goggles. Sometimes a shard." },
-  { n: "02", t: "Collect", icon: TbBackpack, d: "There are eight parts and you need one of each. The Portal Shard drops 3% of the time." },
-  { n: "03", t: "Trade", icon: TbArrowsExchange, d: "Three pairs of boots and no gloves? Send your spares to someone who needs them, or pawn them for TROUBLE." },
+  { n: "01", t: "Hunt", icon: TbBox, d: "A Portal Crate washes up every 2 hours with one random part inside. Usually a background or a shadow. Sometimes a body." },
+  { n: "02", t: "Collect", icon: TbBackpack, d: "There are eight parts and you need one of each. The Body drops 3% of the time." },
+  { n: "03", t: "Trade", icon: TbArrowsExchange, d: "Three pairs of shoes and no mouth? Send your spares to someone who needs them, or pawn them for TROUBLE." },
   { n: "04", t: "Assemble", icon: TbFlask2, d: "Bring the full set to Vlad's lab and it builds your Nottie. That locks your guaranteed mint spot." },
 ];
 
@@ -132,7 +132,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             <h2 className="display mt-2 text-4xl sm:text-5xl">Eight fragments. One Nottie.</h2>
             <p className="mt-3 max-w-lg text-muted">Every crate drops exactly one. Rarity decides how long you&apos;ll be hunting, and duplicates can be traded or pawned.</p>
             <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
-              {FRAGMENTS.map((f) => (
+              {PARTS.map((f) => (
                 <li key={f.type} className="card flex items-center gap-3 p-3">
                   <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-raised">
                     <FragmentIcon type={f.type} size={40} />

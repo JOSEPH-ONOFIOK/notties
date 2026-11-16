@@ -12,9 +12,17 @@ export async function getSettings(q?: Q): Promise<Settings> {
   for (const r of rows) s[r.key] = r.value;
   // Keep nested defaults for keys an older row may be missing.
   s.points = { ...DEFAULT_SETTINGS.points, ...(s.points as object) };
-  s.drop_weights = { ...DEFAULT_SETTINGS.drop_weights, ...(s.drop_weights as object) };
-  s.pawn_prices = { ...DEFAULT_SETTINGS.pawn_prices, ...(s.pawn_prices as object) };
-  s.recipe = { ...DEFAULT_SETTINGS.recipe, ...(s.recipe as object) };
+  // Per-fragment maps keep only today's fragment types, so keys saved for retired parts
+  // (goggles, shard…) don't leak into drop odds or the admin forms.
+  const known = <T,>(defaults: Record<FragmentType, T>, saved: unknown) => Object.fromEntries(FRAGMENT_TYPES.map((t) => [t, (saved as Record<string, T> | null)?.[t] ?? defaults[t]])) as Record<FragmentType, T>;
+  s.drop_weights = known(DEFAULT_SETTINGS.drop_weights, s.drop_weights);
+  s.pawn_prices = known(DEFAULT_SETTINGS.pawn_prices, s.pawn_prices);
+  s.recipe = known(DEFAULT_SETTINGS.recipe, s.recipe);
+  // Vlad's Book is never part of the recipe, whatever an older saved recipe says.
+  s.recipe = { ...(s.recipe as object), book: 0 };
+  // The mint is free, always.
+  s.mint = { ...DEFAULT_SETTINGS.mint, ...(s.mint as object), price: "Free" };
+  s.book_cap = Math.max(0, Number(s.book_cap) || 0);
   return s as Settings;
 }
 
@@ -153,7 +161,8 @@ export async function getInventory(userId: string, q?: Q): Promise<Record<Fragme
 export function recipeProgress(inv: Record<FragmentType, number>, recipe: Record<FragmentType, number>) {
   let have = 0;
   let need = 0;
-  const slots = FRAGMENT_TYPES.map((t) => {
+  // Only types the recipe asks for get a slot, so Vlad's Book (recipe 0) never shows on the bench.
+  const slots = FRAGMENT_TYPES.filter((t) => (recipe[t] ?? 0) > 0).map((t) => {
     const n = recipe[t] ?? 0;
     const h = Math.min(inv[t] ?? 0, n);
     have += h;

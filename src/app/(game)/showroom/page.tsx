@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { FragmentIcon } from "@/components/FragmentIcon";
 import { PageTitle, RarityPill } from "@/components/ui";
-import { BRAND, FRAGMENTS, ORIGINAL_FOUR, TEASERS } from "@/lib/game/config";
+import { BRAND, FRAGMENTS, PARTS, ORIGINAL_FOUR, TEASERS } from "@/lib/game/config";
 import { currentPlayer } from "@/lib/player";
 
 export const metadata = { title: "Showroom" };
@@ -66,7 +66,7 @@ export default async function Showroom() {
       <section className="mb-8">
         <h2 className="display mb-3 text-2xl">Traits you&apos;re collecting</h2>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {FRAGMENTS.map((f) => (
+          {PARTS.map((f) => (
             <li key={f.type} className="card flex items-center gap-3 p-3">
               <FragmentIcon type={f.type} size={40} />
               <div className="min-w-0">

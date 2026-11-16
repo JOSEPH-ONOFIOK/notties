@@ -25,7 +25,8 @@ export function rollFragment(weights: Record<FragmentType, number>): FragmentTyp
 
 /** Effective drop weights right now: base weights × active event multipliers. */
 export function effectiveWeights(settings: Settings, drop: Record<FragmentType, number>) {
-  return Object.fromEntries(FRAGMENT_TYPES.map((t) => [t, (Number(settings.drop_weights[t]) || 0) * (drop[t] ?? 1)])) as Record<FragmentType, number>;
+  // Special items (Vlad's Book) never come out of a crate, whatever the admin weights say.
+  return Object.fromEntries(FRAGMENT_TYPES.map((t) => [t, FRAGMENT_BY_TYPE[t].special ? 0 : (Number(settings.drop_weights[t]) || 0) * (drop[t] ?? 1)])) as Record<FragmentType, number>;
 }
 
 /** Roll + record one crate for a locked user row. Shared by the timer crate and the shop crate. */

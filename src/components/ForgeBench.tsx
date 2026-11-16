@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { TbCheck } from "react-icons/tb";
 import { ShareCard } from "./CopyButton";
 import { api, idem } from "@/lib/client";
-import { FRAGMENT_BY_TYPE, POINTS_NAME, TEASERS, type FragmentType } from "@/lib/game/config";
+import { FRAGMENT_BY_TYPE, POINTS_NAME, type FragmentType } from "@/lib/game/config";
+
+const ALL_PARTS = { background: true, shadow: true, body: true, shoes: true, outfit: true, mouth: true, eyes: true, gear: true };
 import { fx } from "@/lib/fx";
 import { sfx } from "@/lib/sfx";
 import { FragmentCard } from "./game/FragmentCard";
@@ -145,15 +146,14 @@ function SlotColumn({ slots }: { slots: Slot[] }) {
 }
 
 export function ForgeComplete({ forgedAt, seed, username, wallet, fresh = false, playerId }: { forgedAt: string; seed: number; username: string; wallet: string | null; fresh?: boolean; playerId?: string }) {
-  const teaser = TEASERS[seed % TEASERS.length];
   return (
     <div className="card card-lime relative overflow-hidden p-6 sm:p-10 anim-rise">
       <div className="beams" style={{ ["--beam" as string]: "#ffffff", opacity: 0.35 }} />
       <div className="relative grid items-center gap-8 md:grid-cols-[320px_1fr]">
         <div className="relative mx-auto w-full max-w-[300px]">
           <div className="relative aspect-square overflow-hidden rounded-3xl border-[4px] border-black bg-raised shadow-[0_8px_0_#000]">
-            <Image src={teaser} alt="Your Nottie, still sealed in the lab" fill sizes="300px" className="object-cover" />
-            <div className="absolute inset-x-0 bottom-0 bg-black/75 p-2 text-center text-[10px] font-bold uppercase tracking-widest text-white/80">Preview · real traits reveal at mint</div>
+            <NottieFigure have={ALL_PARTS} seed={seed} size={300} className="!h-full !w-full !rounded-none !border-0 [&>img]:!h-full [&>img]:!w-full" />
+            <div className="absolute inset-x-0 bottom-0 bg-black/75 p-2 text-center text-[10px] font-bold uppercase tracking-widest text-white/80">Preview · final traits reveal at mint</div>
           </div>
           <div className={`stamp absolute -right-4 -top-5 text-2xl ${fresh ? "anim-slam" : ""}`} style={{ background: "#000" }}>
             Approved

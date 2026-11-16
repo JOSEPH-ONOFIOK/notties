@@ -5,7 +5,7 @@ import { FragmentCard } from "@/components/game/FragmentCard";
 import { Coin } from "@/components/game/Coin";
 import { NottieFigure } from "@/components/game/NottieFigure";
 import { ReplayIntro } from "@/components/game/IntroStory";
-import { BRAND, FRAGMENTS, ORIGINAL_FOUR, POINTS_NAME, RARITY_COLOR, RARITY_LABEL } from "@/lib/game/config";
+import { BRAND, FRAGMENTS, PARTS, ORIGINAL_FOUR, POINTS_NAME, RARITY_COLOR, RARITY_LABEL } from "@/lib/game/config";
 import { getSettings } from "@/lib/game/core";
 import { titleFor } from "@/lib/game/level";
 import { FACTIONS } from "@/lib/game/config";
@@ -98,7 +98,7 @@ export default async function Wiki() {
                 </div>
               </div>
               <div className="mx-auto">
-                <NottieFigure have={{ goggles: true, overalls: true, gloves: true, boots: true, tuft: true, goo: true, notebook: true, shard: true }} size={170} className="anim-float" />
+                <NottieFigure have={{ background: true, shadow: true, body: true, shoes: true, outfit: true, mouth: true, eyes: true, gear: true }} size={170} className="anim-float" />
               </div>
             </div>
           </section>
@@ -153,7 +153,7 @@ export default async function Wiki() {
             </ul>
             <h3 className="display mt-6 text-xl">Drop odds (live)</h3>
             <ul className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-8">
-              {FRAGMENTS.map((f) => (
+              {PARTS.map((f) => (
                 <li key={f.type} className="flex flex-col items-center gap-1.5">
                   <FragmentCard type={f.type} size="sm" />
                   <span className="display rounded-full border-2 border-black bg-black/60 px-2 text-xs text-accent">{Math.round(((Number(s.drop_weights[f.type]) || 0) / total) * 1000) / 10}%</span>
@@ -172,19 +172,19 @@ export default async function Wiki() {
               ))}
             </div>
             <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {FRAGMENTS.map((f) => (
+              {PARTS.map((f) => (
                 <li key={f.type}>
                   <FragmentCard type={f.type} blurb />
                 </li>
               ))}
             </ul>
-            <Tip>The Portal Shard is the hard one: {Math.round(((Number(s.drop_weights.shard) || 0) / total) * 1000) / 10}% per crate. Plenty of players trade for it instead of waiting.</Tip>
+            <Tip>The Body is the hard one: {Math.round(((Number(s.drop_weights.body) || 0) / total) * 1000) / 10}% per crate. Plenty of players trade for it instead of waiting.</Tip>
           </Chapter>
 
           <Chapter id="lab" n={5} title="Vlad's Lab (the Forge)">
             <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
               <div>
-                <p>Open <b>Forge</b> and you&apos;ll see your Nottie standing on my lab pad. Every part you own shows up on it in full colour; missing parts are dotted outlines. When all 8 are lit:</p>
+                <p>Open <b>Forge</b> and you&apos;ll see your Nottie standing on my lab pad. Every part you own shows up on it in full colour; missing parts are dark shadows. When all 8 are lit:</p>
                 <ol className="mt-3 list-decimal space-y-1 pl-5">
                   <li>
                     Hit <b>Assemble!</b> and confirm.
@@ -199,15 +199,15 @@ export default async function Wiki() {
                 </ol>
                 <Tip>You can only assemble once per account, and it can&apos;t be undone. After that, link a getaway wallet so I know where to deliver your Nottie.</Tip>
               </div>
-              <NottieFigure have={{ goggles: true, overalls: true, boots: true, shard: true }} size={150} />
+              <NottieFigure have={{ background: true, shadow: true, body: true, shoes: true }} size={150} />
             </div>
           </Chapter>
 
           <Chapter id="trade" n={6} title="Black Market (swaps & gifts)">
-            <p>Got three goggles and no boots? Somebody out there has the opposite problem. Open <b>Trade</b> and you&apos;ve got two options:</p>
+            <p>Got three shadows and no shoes? Somebody out there has the opposite problem. Open <b>Trade</b> and you&apos;ve got two options:</p>
             <ul className="mt-3 space-y-2">
               <li>
-                <b>Swap board.</b> Post an offer like &quot;my 1 Goggles for 1 Boots&quot;. Your card is held safely until someone with Boots takes the deal, then both sides swap at the same instant. Nobody can run off with your card. Cancel any time to get it back. You can even reserve an offer for one friend.
+                <b>Swap board.</b> Post an offer like &quot;my 1 Shadow for 1 Shoes&quot;. Your card is held safely until someone with Shoes takes the deal, then both sides swap at the same instant. Nobody can run off with your card. Cancel any time to get it back. You can even reserve an offer for one friend.
               </li>
               <li>
                 <b>Gift a card.</b> Send a card straight to someone by X username or player code. It&apos;s instant and there&apos;s no undo, so double-check the name.
@@ -230,7 +230,7 @@ export default async function Wiki() {
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-black/50">
-                  {FRAGMENTS.map((f) => (
+                  {PARTS.map((f) => (
                     <tr key={f.type}>
                       <td className="py-2 font-semibold">{f.name}</td>
                       <td className="py-2" style={{ color: RARITY_COLOR[f.rarity] }}>
@@ -398,7 +398,8 @@ export default async function Wiki() {
           <Chapter id="faq" n={17} title="FAQ">
             <div className="space-y-2">
               {[
-                ["When is the mint?", `Date, chain and price get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
+                ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
+                ["What is Vlad's Book?", "The rarest thing in the lab. It never comes out of a crate. You earn it by finishing a special mission AND assembling your Nottie. It can't be traded or pawned, so whoever holds one earned it."],
                 ["Do I need a wallet to play?", "No. Play first. You only need to link a wallet before the allowlist snapshot so your Nottie can be delivered."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],
                 ["I'm stuck on one part. Help?", "Trade for it on the Black Market, or keep hunting. Every crate is a fresh roll."],

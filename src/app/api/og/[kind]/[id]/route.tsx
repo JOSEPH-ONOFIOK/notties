@@ -5,6 +5,7 @@ import { FragmentIcon } from "@/components/FragmentIcon";
 import { NottieFigure } from "@/components/game/NottieFigure";
 import { FACTIONS, FRAGMENT_BY_TYPE, RARITY_COLOR, RARITY_LABEL } from "@/lib/game/config";
 import { levelInfo } from "@/lib/game/level";
+import { DEFAULT_LOOK, LAYER_ORDER, lookFromSeed } from "@/lib/game/look";
 import { sharePull, shareUser } from "@/lib/share";
 
 export const runtime = "nodejs";
@@ -15,6 +16,22 @@ async function assets() {
   font ??= await readFile(join(process.cwd(), "public/fonts/BRLNSDB.TTF"));
   logo ??= `data:image/png;base64,${(await readFile(join(process.cwd(), "public/brand/logo.png"))).toString("base64")}`;
   return { font, logo };
+}
+
+/** Satori can't read WebP, so OG images use the small PNG copies in public/traits/og. */
+const pngCache = new Map<string, string>();
+async function traitPngs(srcs: string[]) {
+  const map: Record<string, string> = {};
+  for (const src of srcs) {
+    let uri = pngCache.get(src);
+    if (!uri) {
+      const file = join(process.cwd(), "public", src.replace(/^\/traits\//, "traits/og/").replace(/\.webp$/, ".png"));
+      uri = `data:image/png;base64,${(await readFile(file)).toString("base64")}`;
+      pngCache.set(src, uri);
+    }
+    map[src] = uri;
+  }
+  return map;
 }
 
 const ink = "#000";
@@ -47,13 +64,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
     if (!p) return new Response("Not found", { status: 404 });
     const def = FRAGMENT_BY_TYPE[p.type];
     const c = RARITY_COLOR[p.rarity];
+    const srcMap = p.type in DEFAULT_LOOK ? await traitPngs([DEFAULT_LOOK[p.type as keyof typeof DEFAULT_LOOK].icon]) : undefined;
     return new ImageResponse(
       (
         <Frame logo={logo} tag={p.event ? p.event.toUpperCase() : "CRATE PULL"}>
           <div style={{ display: "flex", width: 330, height: 440, flexDirection: "column", background: c, border: `6px solid ${ink}`, borderRadius: 28, boxShadow: `0 12px 0 ${ink}`, transform: "rotate(-4deg)", padding: 16 }}>
             <span style={{ display: "flex", alignSelf: "flex-start", fontSize: 22, background: ink, color: c, borderRadius: 999, padding: "2px 14px" }}>{RARITY_LABEL[p.rarity].toUpperCase()}</span>
             <div style={{ display: "flex", flex: 1, margin: "12px 0", alignItems: "center", justifyContent: "center", background: "#141810", border: `5px solid ${ink}`, borderRadius: 20 }}>
-              <FragmentIcon type={p.type} size={190} />
+              <FragmentIcon type={p.type} size={190} srcMap={srcMap} />
             </div>
             <span style={{ display: "flex", justifyContent: "center", fontSize: 30, background: ink, color: "#fff", borderRadius: 14, padding: "8px 0" }}>{def.name.toUpperCase()}</span>
           </div>
@@ -73,13 +91,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
   if (!u) return new Response("Not found", { status: 404 });
 
   if (kind === "nottie") {
-    const all = { goggles: true, overalls: true, gloves: true, boots: true, tuft: true, goo: true, notebook: true, shard: true };
+    const all = { background: true, shadow: true, body: true, shoes: true, outfit: true, mouth: true, eyes: true, gear: true };
+    const seed = u.forged_at && u.seed ? Number(u.seed) : undefined;
+    const look = seed ? lookFromSeed(seed) : DEFAULT_LOOK;
+    const srcMap = await traitPngs(LAYER_ORDER.map((l) => look[l].src));
     return new ImageResponse(
       (
         <Frame logo={logo} tag={u.forged_at ? "ONE OF US" : "ASSEMBLING"} bg="#151b0c">
           <div style={{ display: "flex", width: 380, height: 480, alignItems: "center", justifyContent: "center", position: "relative" }}>
             <div style={{ position: "absolute", width: 380, height: 380, borderRadius: 999, background: "radial-gradient(circle, rgba(205,255,0,0.45), transparent 70%)" }} />
-            <NottieFigure have={all} size={330} />
+            <NottieFigure have={all} size={330} seed={seed} srcMap={srcMap} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", marginLeft: 50, flex: 1 }}>
             <span style={{ fontSize: 34, color: "#b3baa3" }}>@{u.username}</span>

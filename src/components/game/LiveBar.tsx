@@ -140,6 +140,9 @@ function FeedLine({ item, fresh }: { item: Item; fresh: boolean }) {
   } else if (item.kind === "streak") {
     icon = <TbFlame size={16} className="text-warn" />;
     text = <>hit a <b className="text-warn">{String(d.days)}-day streak</b></>;
+  } else if (item.kind === "book") {
+    icon = <FragmentIcon type="book" size={18} />;
+    text = <b style={{ color: RARITY_COLOR.legendary }}>earned Vlad&apos;s Book</b>;
   } else if (item.kind === "faction") {
     const f = FACTIONS.find((x) => x.id === d.faction);
     icon = <TbUsers size={16} style={{ color: f?.color }} />;

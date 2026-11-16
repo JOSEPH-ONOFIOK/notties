@@ -15,7 +15,7 @@ type Offer = { id: string; maker: string; maker_avatar: string | null; give_type
 
 export function SwapBoard({ inventory, open, mine, enabled, suspended }: { inventory: Record<FragmentType, number>; open: Offer[]; mine: Offer[]; enabled: boolean; suspended: boolean }) {
   const router = useRouter();
-  const owned = FRAGMENTS.filter((f) => inventory[f.type] > 0);
+  const owned = FRAGMENTS.filter((f) => !f.special && inventory[f.type] > 0);
   const [give, setGive] = useState<FragmentType | "">(owned[0]?.type ?? "");
   const [giveQty, setGiveQty] = useState(1);
   const [want, setWant] = useState<FragmentType | "">("");
@@ -131,7 +131,7 @@ export function SwapBoard({ inventory, open, mine, enabled, suspended }: { inven
             <div className="mt-1 flex gap-2">
               <select value={want} onChange={(e) => setWant(e.target.value as FragmentType)}>
                 <option value="">Pick a card…</option>
-                {FRAGMENTS.filter((f) => f.type !== give).map((f) => (
+                {FRAGMENTS.filter((f) => !f.special && f.type !== give).map((f) => (
                   <option key={f.type} value={f.type}>
                     {f.name}
                     {inventory[f.type] === 0 ? " (missing)" : ""}

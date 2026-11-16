@@ -1,7 +1,7 @@
 import { CrateClaim } from "@/components/CrateClaim";
 import { FragmentCard } from "@/components/game/FragmentCard";
 import { PageTitle } from "@/components/ui";
-import { FRAGMENTS } from "@/lib/game/config";
+import { FRAGMENTS, PARTS } from "@/lib/game/config";
 import { getSettings } from "@/lib/game/core";
 import { effectiveWeights, recentClaims, shopStatus } from "@/lib/game/hunt";
 import { activeEffects } from "@/lib/game/events";
@@ -30,7 +30,7 @@ export default async function Hunt() {
           <span className="text-xs text-muted">Live. What you see is what the server rolls.</span>
         </div>
         <ul className="grid grid-cols-4 gap-3 sm:grid-cols-8">
-          {FRAGMENTS.map((f) => {
+          {PARTS.map((f) => {
             const pct = Math.round(((Number(weights[f.type]) || 0) / total) * 1000) / 10;
             const boosted = (fx.drop[f.type] ?? 1) > 1;
             return (

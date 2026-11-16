@@ -160,7 +160,7 @@ export function ResolveButton({ riskId }: { riskId: string }) {
   );
 }
 
-type TaskDraft = { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null };
+type TaskDraft = { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean };
 const toLocal = (v?: string | null) => (v ? new Date(new Date(v).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 
 export function TaskEditor({ initial }: { initial?: TaskDraft }) {
@@ -230,6 +230,13 @@ export function TaskEditor({ initial }: { initial?: TaskDraft }) {
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={t.active} onChange={(e) => set("active", e.target.checked)} className="h-4 w-4" /> active
         </label>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={!!t.gives_book} onChange={(e) => set("gives_book", e.target.checked)} className="mt-0.5 h-4 w-4" />
+          <span>
+            gives Vlad&apos;s Book
+            <span className="block text-xs text-muted">Players get the book once they finish this task AND assemble their Nottie, in either order. Players who already qualify get it as soon as you save.</span>
+          </span>
+        </label>
       </div>
       <div className="mt-3 flex items-center gap-3">
         <button
@@ -237,8 +244,8 @@ export function TaskEditor({ initial }: { initial?: TaskDraft }) {
           onClick={async () => {
             setState("saving");
             try {
-              await api("/api/admin", { action: "task", task: t });
-              setState("saved");
+              const r = await api<{ result: { given: number } | null }>("/api/admin", { action: "task", task: t });
+              setState(r.result?.given ? `saved · ${r.result.given} book${r.result.given === 1 ? "" : "s"} given` : "saved");
               router.refresh();
             } catch (e) {
               setState(e instanceof Error ? e.message : "failed");

@@ -1,7 +1,8 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import { GameError, withTx } from "../db";
-import { FRAGMENT_TYPES, type FragmentType } from "./config";
+import { awardBookIfEarned } from "./book";
+import { FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType } from "./config";
 import { addFragment, addPoints, getInventory, getSettings, logRisk, recipeProgress, requireActive } from "./core";
 import { pushFeed } from "./feed";
 
@@ -29,7 +30,7 @@ export async function forgeNottie(userId: string, idemKey: string) {
     const inv = await getInventory(userId, q);
     const progress = recipeProgress(inv, settings.recipe);
     if (!progress.complete) {
-      const missing = progress.slots.filter((s) => !s.done).map((s) => s.type);
+      const missing = progress.slots.filter((s) => !s.done).map((s) => FRAGMENT_BY_TYPE[s.type].name);
       throw new GameError(`Still missing: ${missing.join(", ")}`);
     }
 
@@ -43,7 +44,9 @@ export async function forgeNottie(userId: string, idemKey: string) {
     await q.query("insert into mint_eligibility (user_id, category, phase, allocation, status) values ($1,'forge',1,1,'approved') on conflict (user_id, category) do nothing", [userId]);
     await addPoints(q, userId, Number(settings.points.forge) || 0, "forge", forge.id, `forge:${forge.id}`);
     await pushFeed(q, userId, "forge", { seed });
+    // Already did the Vlad's Book task? Assembling is the other half, so the book arrives now.
+    const book = await awardBookIfEarned(q, userId, settings);
 
-    return { replayed: false, forgedAt: forge.created_at, seed, username: u.x_username };
+    return { replayed: false, forgedAt: forge.created_at, seed, username: u.x_username, book };
   });
 }

@@ -15,7 +15,7 @@ type Recipient = { id: string; username: string; displayName: string; avatar: st
 
 export function TradeForm({ inventory, enabled, suspended, initialTo }: { inventory: Record<FragmentType, number>; enabled: boolean; suspended: boolean; initialTo?: string }) {
   const router = useRouter();
-  const owned = FRAGMENTS.filter((f) => inventory[f.type] > 0);
+  const owned = FRAGMENTS.filter((f) => !f.special && inventory[f.type] > 0);
   const [type, setType] = useState<FragmentType | null>(owned[0]?.type ?? null);
   const [qty, setQty] = useState(1);
   const [to, setTo] = useState(initialTo ?? "");

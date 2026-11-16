@@ -17,8 +17,8 @@ export async function sharePull(id: string) {
 export async function shareUser(id: string) {
   if (!/^\d+$/.test(id)) return null;
   const u = (
-    await query<{ id: string; username: string; ref_code: string; avatar_url: string | null; lifetime_points: string; claims: number; faction: string | null; forged_at: string | null }>(
-      "select u.id, u.x_username as username, u.ref_code, u.avatar_url, u.lifetime_points::text, u.claims, u.faction, f.created_at as forged_at from users u left join forge_completions f on f.user_id = u.id where u.id = $1 and u.status = 'active'",
+    await query<{ id: string; username: string; ref_code: string; avatar_url: string | null; lifetime_points: string; claims: number; faction: string | null; forged_at: string | null; seed: number | null }>(
+      "select u.id, u.x_username as username, u.ref_code, u.avatar_url, u.lifetime_points::text, u.claims, u.faction, f.created_at as forged_at, f.nottie_seed as seed from users u left join forge_completions f on f.user_id = u.id where u.id = $1 and u.status = 'active'",
       [id],
     )
   ).rows[0];

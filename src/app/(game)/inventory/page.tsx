@@ -2,7 +2,7 @@ import { FragmentIcon } from "@/components/FragmentIcon";
 import { PawnShop } from "@/components/PawnShop";
 import { FragmentCard } from "@/components/game/FragmentCard";
 import { PageTitle, Points, ProgressBar, fmtDateTime } from "@/components/ui";
-import { FRAGMENTS, FRAGMENT_BY_TYPE, type FragmentType } from "@/lib/game/config";
+import { FRAGMENTS, FRAGMENT_BY_TYPE, PARTS, type FragmentType } from "@/lib/game/config";
 import { getSettings } from "@/lib/game/core";
 import { query } from "@/lib/db";
 import { currentPlayer } from "@/lib/player";
@@ -17,7 +17,9 @@ export default async function Inventory() {
     getSettings(),
     query<{ type: FragmentType; delta: number; reason: string; created_at: string }>("select type, delta, reason, created_at from fragment_ledger where user_id = $1 order by id desc limit 30", [p.id]),
   ]);
-  const found = FRAGMENTS.filter((f) => p.inventory[f.type] > 0).length;
+  const found = PARTS.filter((f) => p.inventory[f.type] > 0).length;
+  // Vlad's Book only shows once you actually hold one.
+  const cards = FRAGMENTS.filter((f) => !f.special || p.inventory[f.type] > 0);
 
   return (
     <>
@@ -25,7 +27,7 @@ export default async function Inventory() {
       <ProgressBar pct={Math.round((found / 8) * 100)} tall className="mb-8" />
 
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {FRAGMENTS.map((f) => {
+        {cards.map((f) => {
           const n = p.inventory[f.type];
           return (
             <li key={f.type} className="transition hover:-translate-y-1 hover:rotate-1">

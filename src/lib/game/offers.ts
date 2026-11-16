@@ -19,6 +19,7 @@ const qtyOk = (n: number) => Number.isInteger(n) && n >= 1 && n <= 20;
 export async function createOffer(makerId: string, o: { give: string; giveQty: number; want: string; wantQty: number; to?: string | null }, idemKey: string) {
   if (!ok(o.give) || !ok(o.want)) throw new GameError("Unknown card");
   if (o.give === o.want) throw new GameError("Pick two different cards");
+  if (FRAGMENT_BY_TYPE[o.give as FragmentType].special || FRAGMENT_BY_TYPE[o.want as FragmentType].special) throw new GameError("Vlad's Book can't be swapped. It stays with whoever earned it.");
   if (!qtyOk(o.giveQty) || !qtyOk(o.wantQty)) throw new GameError("Quantities must be 1–20");
   if (!/^[a-zA-Z0-9_-]{8,64}$/.test(idemKey)) throw new GameError("Bad request");
   const give: FragmentType = o.give;

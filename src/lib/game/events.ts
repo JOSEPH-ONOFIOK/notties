@@ -6,7 +6,7 @@ import { getSettings } from "./core";
 /**
  * Live events. Two sources, both evaluated on the server's clock (UTC) so every player is in the
  * same event at the same moment and drops change the instant it starts or ends:
- *  - recurring: weekly windows from settings.recurring_events (e.g. Shard Storm every weekend)
+ *  - recurring: weekly windows from settings.recurring_events (e.g. Portal Storm every weekend)
  *  - one-off:   rows in the events table that admins schedule
  */
 

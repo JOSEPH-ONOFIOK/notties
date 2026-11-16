@@ -16,7 +16,7 @@ export function PawnShop({ inventory, prices, enabled, suspended }: { inventory:
   const [busy, setBusy] = useState<FragmentType | null>(null);
   const [msg, setMsg] = useState<{ type: FragmentType; ok: boolean; text: string } | null>(null);
   const btns = useRef<Partial<Record<FragmentType, HTMLButtonElement | null>>>({});
-  const sellable = FRAGMENTS.map((f) => ({ ...f, have: inventory[f.type], spare: Math.max(0, inventory[f.type] - 1) }));
+  const sellable = FRAGMENTS.filter((f) => !f.special).map((f) => ({ ...f, have: inventory[f.type], spare: Math.max(0, inventory[f.type] - 1) }));
   const anySpare = sellable.some((s) => s.spare > 0);
 
   async function sell(type: FragmentType, n: number) {

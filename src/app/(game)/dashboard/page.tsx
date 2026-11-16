@@ -67,7 +67,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
             <Countdown until={mintAt} readyText="NOW" className="display text-3xl" plain />
           </div>
           <div className="text-right text-sm font-semibold text-black/70">
-            {[settings.mint.chain, settings.mint.price].filter(Boolean).join(" · ")}
+            {[settings.mint.chain, "Free mint"].filter(Boolean).join(" · ")}
             <div className="text-xs">{p.gtd ? "You're on the guaranteed list." : "Assemble your Nottie to lock a guaranteed spot."}</div>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
 
         <Link href="/forge" className="card group relative flex items-center gap-4 overflow-hidden p-5 transition hover:-translate-y-1">
           <div className="relative shrink-0">
-            <NottieFigure have={have} size={120} charged={!!p.forgedAt} />
+            <NottieFigure have={have} size={120} seed={p.nottieSeed ?? undefined} charged={!!p.forgedAt} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="display text-xs tracking-widest text-muted">Your Nottie</div>

@@ -56,7 +56,7 @@ export async function badgesFor(userId: string): Promise<Badge[]> {
     { id: "first", name: "Crate Cracker", how: "Crack your first crate", earned: n("crates") >= 1, icon: "box" },
     { id: "goblin", name: "Crate Goblin", how: "Crack 50 crates", earned: n("crates") >= 50, icon: "boxes" },
     { id: "epic", name: "Teacher's Pet", how: "Pull an Epic", earned: n("epic") >= 1, icon: "book" },
-    { id: "legend", name: "Shard Hunter", how: "Pull a Legendary", earned: n("legendary") >= 1, icon: "diamond" },
+    { id: "legend", name: "Body Hunter", how: "Pull a Legendary", earned: n("legendary") >= 1, icon: "diamond" },
     { id: "one", name: "One of Us", how: "Assemble your Nottie", earned: n("forged") >= 1, icon: "flask" },
     { id: "regular", name: "Regular", how: "7-day roll call streak", earned: n("best_streak") >= 7, icon: "flame" },
     { id: "lives", name: "Lives Here", how: "30-day roll call streak", earned: n("best_streak") >= 30, icon: "home" },

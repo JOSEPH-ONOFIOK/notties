@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TbCheck, TbTrash, TbX } from "react-icons/tb";
 import { api } from "@/lib/client";
-import { FRAGMENTS, type RecurringEvent } from "@/lib/game/config";
+import { FRAGMENTS, PARTS, type RecurringEvent } from "@/lib/game/config";
 
 function useAct() {
   const router = useRouter();
@@ -31,10 +31,10 @@ function useAct() {
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const PRESETS: Record<string, { label: string; kind: string; effects: Record<string, unknown> }> = {
-  shard_storm: { label: "Shard Storm (Shards ×2, Notebooks ×1.5)", kind: "shard_storm", effects: { drop_mult: { shard: 2, notebook: 1.5 } } },
+  shard_storm: { label: "Portal Storm (Bodies ×2, Hand & Head ×1.5)", kind: "shard_storm", effects: { drop_mult: { body: 2, gear: 1.5 } } },
   double_trouble: { label: "Double Trouble (all TROUBLE rewards ×2)", kind: "double_trouble", effects: { points_mult: 2 } },
   rush_hour: { label: "Rush Hour (crate timers ×0.5)", kind: "rush_hour", effects: { cooldown_mult: 0.5 } },
-  goo_rain: { label: "Goo Rain (Goo Vials ×3)", kind: "custom", effects: { drop_mult: { goo: 3 } } },
+  eye_rain: { label: "Eye Rain (Eyes ×3)", kind: "custom", effects: { drop_mult: { eyes: 3 } } },
 };
 
 /** Recurring weekly events (UTC). Saved as the whole settings.recurring_events array. */
@@ -87,7 +87,7 @@ export function RecurringEditor({ initial }: { initial: RecurringEvent[] }) {
 export function EventForm() {
   const { act, busy, Msg } = useAct();
   const [preset, setPreset] = useState("shard_storm");
-  const [name, setName] = useState("Shard Storm");
+  const [name, setName] = useState("Portal Storm");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   return (
@@ -168,7 +168,7 @@ export function AdjustForm({ userId }: { userId: string }) {
         <input type="number" value={points} onChange={(e) => setPoints(e.target.value)} placeholder="± TROUBLE" />
         <select value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">Card…</option>
-          {FRAGMENTS.map((f) => (
+          {PARTS.map((f) => (
             <option key={f.type} value={f.type}>
               {f.name}
             </option>
@@ -370,14 +370,13 @@ export function MintSetting({ value }: { value: { date: string; chain: string; p
   return (
     <div className="rounded-xl border-[3px] border-black bg-raised/40 p-4">
       <label className="block text-sm font-bold">Mint details</label>
-      <div className="text-xs text-muted">Once a date is set, players see a countdown in the city. Leave blank until announced.</div>
-      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+      <div className="text-xs text-muted">Once a date is set, players see a countdown in the city. Leave blank until announced. The mint is free, so there&apos;s no price to set.</div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
         <input type="datetime-local" value={m.date ? new Date(m.date).toISOString().slice(0, 16) : ""} onChange={(e) => setM({ ...m, date: e.target.value ? new Date(e.target.value).toISOString() : "" })} />
         <input value={m.chain} onChange={(e) => setM({ ...m, chain: e.target.value })} placeholder="Chain" />
-        <input value={m.price} onChange={(e) => setM({ ...m, price: e.target.value })} placeholder="Price" />
       </div>
       <div className="mt-2 flex items-center gap-3">
-        <button className="btn btn-ghost text-sm" disabled={busy} onClick={() => act({ action: "setting", key: "mint", value: m })}>
+        <button className="btn btn-ghost text-sm" disabled={busy} onClick={() => act({ action: "setting", key: "mint", value: { ...m, price: "Free" } })}>
           Save
         </button>
         <Msg />
