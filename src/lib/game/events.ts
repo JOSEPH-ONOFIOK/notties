@@ -1,4 +1,5 @@
 import "server-only";
+import { bust, cached } from "../cache";
 import { query, type Q } from "../db";
 import { FRAGMENT_TYPES, type EventEffects, type FragmentType, type RecurringEvent } from "./config";
 import { getSettings } from "./core";
@@ -43,10 +44,10 @@ function recurringWindows(rules: RecurringEvent[], now: number): LiveEvent[] {
 
 export async function eventTimeline(q?: Q, nowMs = Date.now()) {
   const settings = await getSettings(q);
-  const run = q ? q.query.bind(q) : query;
-  const { rows } = await run<{ id: string; name: string; kind: string; effects: EventEffects; starts_at: string; ends_at: string }>(
-    "select id, name, kind, effects, starts_at, ends_at from events where ends_at > now() - interval '1 day' and starts_at < now() + interval '30 days' order by starts_at",
-  );
+  type Row = { id: string; name: string; kind: string; effects: EventEffects; starts_at: string; ends_at: string };
+  const sql = "select id, name, kind, effects, starts_at, ends_at from events where ends_at > now() - interval '1 day' and starts_at < now() + interval '30 days' order by starts_at";
+  // Outside a transaction the rows are cached; active/next are still worked out from the exact time below.
+  const rows = q ? (await q.query<Row>(sql)).rows : await cached("events", 30_000, async () => (await query<Row>(sql)).rows);
   const oneOff: LiveEvent[] = rows.map((r) => ({ key: `e${r.id}`, name: r.name, kind: r.kind, effects: r.effects, starts_at: new Date(r.starts_at).toISOString(), ends_at: new Date(r.ends_at).toISOString(), recurring: false }));
   const all = [...recurringWindows(settings.recurring_events ?? [], nowMs), ...oneOff];
   const active = all.filter((e) => Date.parse(e.starts_at) <= nowMs && nowMs < Date.parse(e.ends_at));
@@ -78,10 +79,12 @@ export async function createEvent(admin: string, e: { name: string; kind: string
   const en = Date.parse(e.ends_at);
   if (!(s < en)) throw new Error("End must be after start");
   await query("insert into events (name, kind, effects, starts_at, ends_at, created_by) values ($1,$2,$3,$4,$5,$6)", [e.name.trim(), e.kind || "custom", JSON.stringify(e.effects ?? {}), new Date(s).toISOString(), new Date(en).toISOString(), admin]);
+  bust("events");
 }
 
 export async function deleteEvent(id: string) {
   await query("delete from events where id = $1", [id]);
+  bust("events");
 }
 
 export async function listEvents() {

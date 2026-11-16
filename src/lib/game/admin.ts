@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { timingSafeEqual } from "node:crypto";
+import { bust } from "../cache";
 import { query, withTx } from "../db";
 import { getXUser } from "../session";
 import { getInventory, type UserRow } from "./core";
@@ -143,6 +144,7 @@ export async function freezeSnapshot(by: string, label: string, closeForge: bool
     if (closeForge) await q.query("insert into settings (key, value) values ('forge_enabled','false'::jsonb) on conflict (key) do update set value = 'false'::jsonb, updated_at = now()");
     return snap.id;
   });
+  bust("settings");
   await audit(by, "freeze_snapshot", id, { roots, counts, closeForge });
   return { id, roots, counts };
 }
@@ -278,6 +280,7 @@ export async function upsertTask(admin: string, t: { id: string; title: string; 
      on conflict (id) do update set title = excluded.title, description = excluded.description, points = excluded.points, kind = excluded.kind, verify = excluded.verify, link = excluded.link, sort = excluded.sort, active = excluded.active, starts_at = excluded.starts_at, ends_at = excluded.ends_at, proof_hint = excluded.proof_hint, gives_book = excluded.gives_book`,
     [t.id, t.title, t.description, t.points, t.kind, t.verify, t.link, t.sort, t.active, when(t.starts_at), when(t.ends_at), t.proof_hint ?? null, !!t.gives_book],
   );
+  bust("book:");
   await audit(admin, "upsert_task", t.id, t);
   // Players who already did this task and assembled get their book right away.
   if (t.gives_book) {

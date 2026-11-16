@@ -1,12 +1,19 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
+import { bust, cached } from "../cache";
 import { GameError, one, query, withTx, type Q } from "../db";
 import { DEFAULT_SETTINGS, FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType, type PlayerStatus, type Settings } from "./config";
 import type { XUser } from "../session";
 
 /* ───────────────────────── settings ───────────────────────── */
 
+/** Settings. Inside a transaction (`q`) they're read fresh; elsewhere a 15s cached copy is used. */
 export async function getSettings(q?: Q): Promise<Settings> {
+  if (q) return loadSettings(q);
+  return structuredClone(await cached("settings", 15_000, () => loadSettings()));
+}
+
+async function loadSettings(q?: Q): Promise<Settings> {
   const { rows } = await (q ? q.query<{ key: string; value: unknown }>("select key, value from settings") : query<{ key: string; value: unknown }>("select key, value from settings"));
   const s: Record<string, unknown> = { ...DEFAULT_SETTINGS };
   for (const r of rows) s[r.key] = r.value;
@@ -28,6 +35,7 @@ export async function getSettings(q?: Q): Promise<Settings> {
 
 export async function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
   await query(`insert into settings (key, value, updated_at) values ($1, $2::jsonb, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [key, JSON.stringify(value)]);
+  bust("settings");
 }
 
 /* ───────────────────────── users ───────────────────────── */

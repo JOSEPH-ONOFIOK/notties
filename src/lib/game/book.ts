@@ -1,4 +1,5 @@
 import "server-only";
+import { bust, cached } from "../cache";
 import { query, withTx, type Q } from "../db";
 import type { Settings } from "./config";
 import { addFragment, getSettings } from "./core";
@@ -38,7 +39,10 @@ export async function awardBookIfEarned(q: Q, userId: string, settings: Settings
   }
 
   const added = await addFragment(q, userId, "book", 1, REASON, undefined, idemFor(userId));
-  if (added) await pushFeed(q, userId, "book", {});
+  if (added) {
+    await pushFeed(q, userId, "book", {});
+    bust("book:");
+  }
   return added;
 }
 
@@ -64,7 +68,7 @@ export async function backfillBooks() {
 
 /** How many books exist and how many are left under the cap (null = no cap). */
 export async function bookStats(settings: Settings) {
-  const given = Number((await query<{ n: string }>("select count(*)::text as n from fragment_ledger where reason = $1 and delta > 0", [REASON])).rows[0].n);
+  const given = await cached("book:given", 60_000, async () => Number((await query<{ n: string }>("select count(*)::text as n from fragment_ledger where reason = $1 and delta > 0", [REASON])).rows[0].n));
   const cap = Math.max(0, Number(settings.book_cap) || 0);
   return { given, cap, left: cap ? Math.max(0, cap - given) : null };
 }
@@ -73,7 +77,7 @@ export async function bookStats(settings: Settings) {
 export type BookPromoData = { mission: { id: string; title: string } | null; given: number; cap: number; left: number | null; me: { forged: boolean; missionDone: boolean; has: boolean } | null };
 
 export async function bookPromo(settings: Settings, userId?: string): Promise<BookPromoData> {
-  const mission: { id: string; title: string } | null = (await query<{ id: string; title: string }>("select id, title from tasks where gives_book and active and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at >= now()) order by sort, id limit 1")).rows[0] ?? null;
+  const mission = await cached("book:mission", 60_000, async (): Promise<{ id: string; title: string } | null> => (await query<{ id: string; title: string }>("select id, title from tasks where gives_book and active and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at >= now()) order by sort, id limit 1")).rows[0] ?? null);
   const stats = await bookStats(settings);
   let me: { forged: boolean; missionDone: boolean; has: boolean } | null = null;
   if (userId) {

@@ -15,7 +15,7 @@ type Item = { id: number; username: string; kind: string; data: Record<string, u
 
 /**
  * Live strip under the nav: the current event (or a countdown to the next one) plus a ticker of
- * big pulls, assemblies and swaps from everyone. Polls the server every 10s; when an event starts
+ * big pulls, assemblies and swaps from everyone. Polls the server every 20–60s (paused while the tab is idle); when an event starts
  * or ends on the server clock, the page refreshes so odds and rewards update for everyone at once.
  */
 export function LiveBar({ initial, feed, compact = false }: { initial: Timeline; feed: Item[]; compact?: boolean }) {
@@ -34,8 +34,20 @@ export function LiveBar({ initial, feed, compact = false }: { initial: Timeline;
 
   useEffect(() => {
     const tick = setInterval(() => setNow(serverNow()), 1000);
-    const poll = setInterval(async () => {
-      if (document.hidden) return;
+    // Check every 20s while something is happening, slowing to 60s when the feed is quiet. Stop
+    // entirely when the tab is hidden or nobody has touched the page for 3 minutes, so idle tabs
+    // don't keep the database awake. Any activity resumes it straight away.
+    let wait = 20_000;
+    let lastActive = Date.now();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let stopped = false;
+    const idle = () => document.hidden || Date.now() - lastActive > 180_000;
+    const schedule = () => {
+      if (!stopped && !timer && !idle()) timer = setTimeout(poll, wait);
+    };
+    const poll = async () => {
+      timer = null;
+      if (idle()) return;
       try {
         const r = await fetch(`/api/feed?after=${last.current}`, { cache: "no-store" }).then((x) => x.json());
         if (r.events?.serverNow) {
@@ -43,18 +55,35 @@ export function LiveBar({ initial, feed, compact = false }: { initial: Timeline;
           setTl(r.events);
         }
         if (r.items?.length) {
+          wait = 20_000;
           last.current = r.items[0].id;
           setItems((cur) => [...r.items, ...cur].slice(0, 20));
           const big = r.items.find((i: Item) => i.kind === "pull" && (i.data.rarity === "legendary" || i.data.rarity === "epic"));
           setFresh(r.items[0].id);
           if (big) sfx.pop();
           setTimeout(() => setFresh(null), 4000);
-        }
-      } catch {}
-    }, 10_000);
+        } else wait = Math.min(60_000, wait * 1.5);
+      } catch {
+        wait = 60_000;
+      }
+      schedule();
+    };
+    const wake = () => {
+      const wasIdle = idle();
+      lastActive = Date.now();
+      if (wasIdle && !document.hidden && !timer) {
+        wait = 20_000;
+        poll();
+      } else schedule();
+    };
+    const evs = ["pointerdown", "keydown", "scroll", "visibilitychange", "focus"] as const;
+    evs.forEach((e) => window.addEventListener(e, wake, { passive: true }));
+    schedule();
     return () => {
+      stopped = true;
       clearInterval(tick);
-      clearInterval(poll);
+      if (timer) clearTimeout(timer);
+      evs.forEach((e) => window.removeEventListener(e, wake));
     };
   }, []);
 

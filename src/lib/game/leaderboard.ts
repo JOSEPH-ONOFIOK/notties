@@ -1,4 +1,5 @@
 import "server-only";
+import { cached } from "../cache";
 import { query } from "../db";
 
 export type Board = "points" | "forges" | "claims" | "referrals" | "tasks";
@@ -12,8 +13,12 @@ export interface BoardRow {
   forged: boolean;
 }
 
-/** Only active (not under review) accounts rank. Suspended players drop off until cleared. */
-export async function leaderboard(board: Board, limit = 50): Promise<BoardRow[]> {
+/** Only active (not under review) accounts rank. Suspended players drop off until cleared. Same for everyone, so cached for 30s. */
+export function leaderboard(board: Board, limit = 50): Promise<BoardRow[]> {
+  return cached(`board:${board}:${limit}`, 30_000, () => loadBoard(board, limit));
+}
+
+async function loadBoard(board: Board, limit: number): Promise<BoardRow[]> {
   const base = `from users u left join forge_completions f on f.user_id = u.id where u.status = 'active'`;
   const sql: Record<Board, string> = {
     points: `select u.id, u.x_username as username, u.avatar_url as avatar, u.lifetime_points::int as value, (f.id is not null) as forged ${base} order by u.lifetime_points desc, u.id asc limit $1`,
@@ -26,7 +31,11 @@ export async function leaderboard(board: Board, limit = 50): Promise<BoardRow[]>
   return rows.map((r, i) => ({ ...r, rank: i + 1, value: Number(r.value) }));
 }
 
-export async function stats() {
+export function stats() {
+  return cached("stats", 60_000, loadStats);
+}
+
+async function loadStats() {
   const [players, forged, claims, trades] = await Promise.all([
     query<{ n: string }>("select count(*)::text as n from users"),
     query<{ n: string }>("select count(*)::text as n from forge_completions"),
