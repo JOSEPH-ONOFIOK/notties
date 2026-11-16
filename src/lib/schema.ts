@@ -317,7 +317,7 @@ const TASKS = [
     points: 15,
     kind: "once",
     verify: "link",
-    link: "https://thenotties.xyz/origin",
+    link: "/wiki",
     sort: 3,
   },
   {

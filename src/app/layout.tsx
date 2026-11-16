@@ -6,7 +6,8 @@ import { LiveBackground } from "@/components/LiveBackground";
 
 const dm = DM_Sans({ subsets: ["latin"], variable: "--font-dm", display: "swap" });
 
-const site = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL) : undefined;
+// Link previews need absolute URLs. Falls back to the live domain if NEXT_PUBLIC_SITE_URL isn't set.
+const site = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://thenotties.xyz");
 
 export const metadata: Metadata = {
   metadataBase: site,
