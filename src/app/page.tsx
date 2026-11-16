@@ -10,6 +10,9 @@ import { LiveBar } from "@/components/game/LiveBar";
 import { eventTimeline } from "@/lib/game/events";
 import { readFeed } from "@/lib/game/feed";
 import { getXUser } from "@/lib/session";
+import { getSettings } from "@/lib/game/core";
+import { bookPromo } from "@/lib/game/book";
+import { BookCard, FreeMintCard } from "@/components/game/Promos";
 import { guestMode } from "@/lib/guest";
 
 export const dynamic = "force-dynamic";
@@ -18,14 +21,19 @@ const LOOP = [
   { n: "01", t: "Hunt", icon: TbBox, d: "A Portal Crate washes up every 2 hours with one random part inside. Usually a background or a shadow. Sometimes a body." },
   { n: "02", t: "Collect", icon: TbBackpack, d: "There are eight parts and you need one of each. The Body drops 3% of the time." },
   { n: "03", t: "Trade", icon: TbArrowsExchange, d: "Three pairs of shoes and no mouth? Send your spares to someone who needs them, or pawn them for TROUBLE." },
-  { n: "04", t: "Assemble", icon: TbFlask2, d: "Bring the full set to Vlad's lab and it builds your Nottie. That locks your guaranteed mint spot." },
+  { n: "04", t: "Assemble", icon: TbFlask2, d: "Bring the full set to Vlad's lab and it builds your Nottie. That locks your guaranteed free mint spot." },
 ];
 
 export default async function Landing({ searchParams }: { searchParams: Promise<{ x?: string; ref?: string }> }) {
   const sp = await searchParams;
   const x = await getXUser();
   if (x && !sp.x) redirect("/dashboard");
-  const [s, timeline, feed] = await Promise.all([stats().catch(() => ({ players: 0, forged: 0, claims: 0, trades: 0 })), eventTimeline(), readFeed(0, 20)]);
+  const [s, timeline, feed, book] = await Promise.all([
+    stats().catch(() => ({ players: 0, forged: 0, claims: 0, trades: 0 })),
+    eventTimeline(),
+    readFeed(0, 20),
+    getSettings().then((st) => bookPromo(st)).catch(() => ({ mission: null, given: 0, cap: 0, left: null, me: null })),
+  ]);
   const guest = guestMode();
   const login = guest ? `/enter${sp.ref ? `?ref=${encodeURIComponent(sp.ref)}` : ""}` : `/api/x/login${sp.ref ? `?ref=${encodeURIComponent(sp.ref)}` : ""}`;
   const cta = guest ? "Enter the Lab" : "Sign in with X";
@@ -63,12 +71,15 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-start px-4 pb-24 pt-10 sm:pt-20">
           {notice && <div className="mb-6 rounded-full border border-warn/40 bg-[#2e2600] px-4 py-2 text-sm text-warn">{notice}</div>}
           {sp.ref && !notice && <div className="mb-6 rounded-full border border-accent/40 bg-accent-soft px-4 py-2 text-sm text-accent">A troublemaker sent you. Sign in and the referral sticks.</div>}
-          <div className="text-xs font-bold uppercase tracking-[0.3em] text-accent">Pre-mint progression · {BRAND.city}</div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="display -rotate-2 rounded-md border-[3px] border-black bg-accent px-2.5 py-0.5 text-sm tracking-widest text-black shadow-[0_3px_0_#000]">Free mint</span>
+            <span className="text-xs font-bold uppercase tracking-[0.3em] text-accent">Pre-mint progression · {BRAND.city}</span>
+          </div>
           <h1 className="display mt-4 max-w-3xl text-5xl leading-[0.92] sm:text-7xl lg:text-8xl">
             Vlad&apos;s lab <span className="goo-text">is leaking.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base text-text/90 sm:text-lg">
-            Portal Crates are washing up all over the city. Crack them, collect the fragments, trade with other troublemakers, and assemble your own Nottie. Finish the set and your guaranteed mint spot is locked.
+            Portal Crates are washing up all over the city. Crack them, collect the fragments, trade with other troublemakers, and assemble your own Nottie. Finish the set and your guaranteed spot in the <b className="text-accent">free mint</b> is locked.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href={login} className="btn btn-accent anim-glow text-base">
@@ -93,7 +104,9 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           <div className="anim-marquee flex shrink-0 gap-10 pr-10 display text-sm tracking-widest">
             {Array.from({ length: 2 }).map((_, i) => (
               <span key={i} className="flex gap-10">
+                <span>Free mint</span>
                 <span>Hunt · Collect · Trade · Assemble</span>
+                <span>Vlad&apos;s Book: almost nobody gets one</span>
                 <span>5,760 coming through the portal</span>
                 <span>Come cause trouble with us</span>
                 <span>Earn {POINTS_NAME}</span>
@@ -158,6 +171,16 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             </div>
             <div className="stamp absolute -left-3 top-6 text-2xl">Escaped</div>
           </div>
+        </div>
+      </section>
+
+      {/* ── the prizes ── */}
+      <section id="prizes" className="mx-auto max-w-6xl px-4 pb-20">
+        <div className="text-xs font-bold uppercase tracking-[0.3em] text-accent">What you&apos;re playing for</div>
+        <h2 className="display mt-2 text-4xl sm:text-5xl">A free mint. And a book nobody gets.</h2>
+        <div className="mt-8 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+          <FreeMintCard cta={{ href: login, label: "Lock my free spot" }} />
+          <BookCard data={book} cta={{ href: login, label: "Start hunting" }} />
         </div>
       </section>
 

@@ -68,3 +68,24 @@ export async function bookStats(settings: Settings) {
   const cap = Math.max(0, Number(settings.book_cap) || 0);
   return { given, cap, left: cap ? Math.max(0, cap - given) : null };
 }
+
+/** Everything the promo cards need. `userId` adds that player's progress toward the book. */
+export type BookPromoData = { mission: { id: string; title: string } | null; given: number; cap: number; left: number | null; me: { forged: boolean; missionDone: boolean; has: boolean } | null };
+
+export async function bookPromo(settings: Settings, userId?: string): Promise<BookPromoData> {
+  const mission: { id: string; title: string } | null = (await query<{ id: string; title: string }>("select id, title from tasks where gives_book and active and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at >= now()) order by sort, id limit 1")).rows[0] ?? null;
+  const stats = await bookStats(settings);
+  let me: { forged: boolean; missionDone: boolean; has: boolean } | null = null;
+  if (userId) {
+    const r = (
+      await query<{ forged: boolean; mission_done: boolean; has: boolean }>(
+        `select exists (select 1 from forge_completions where user_id = $1) as forged,
+                exists (select 1 from task_completions c join tasks t on t.id = c.task_id where c.user_id = $1 and t.gives_book) as mission_done,
+                exists (select 1 from fragment_ledger where idem_key = $2) as has`,
+        [userId, idemFor(userId)],
+      )
+    ).rows[0];
+    me = { forged: r.forged, missionDone: r.mission_done, has: r.has };
+  }
+  return { mission, ...stats, me };
+}

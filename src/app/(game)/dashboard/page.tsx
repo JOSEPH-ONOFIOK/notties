@@ -14,6 +14,8 @@ import { getSettings } from "@/lib/game/core";
 import { Badges } from "@/components/game/Badges";
 import { FactionPicker } from "@/components/game/FactionPicker";
 import { currentPlayer } from "@/lib/player";
+import { bookPromo } from "@/lib/game/book";
+import { BookCard } from "@/components/game/Promos";
 
 export const metadata = { title: "Robinhood City" };
 
@@ -22,6 +24,7 @@ type Objective = { title: string; body: string; href: string; cta: string; icons
 export default async function City({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
   const [tasks, badges, settings] = await Promise.all([listTasks(p.id), badgesFor(p.id), getSettings()]);
+  const book = await bookPromo(settings, p.id);
   const mintAt = settings.mint?.date && !Number.isNaN(Date.parse(settings.mint.date)) && new Date(settings.mint.date) > new Date() ? settings.mint.date : null;
   const openMissions = tasks.filter((t) => !t.completed).length;
   const lv = levelInfo(p.lifetimePoints);
@@ -125,6 +128,12 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
           </div>
         </Link>
       </div>
+
+      <BookCard
+        data={book}
+        className="mt-6"
+        cta={book.me?.has ? undefined : !book.me?.forged ? { href: "/forge", label: "To the lab" } : book.mission ? { href: "/tasks", label: "Open missions" } : undefined}
+      />
 
       {/* ── the city ── */}
       <div className="mt-8 mb-3 flex items-end justify-between">
