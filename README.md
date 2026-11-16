@@ -1,6 +1,6 @@
 # The Notties — The Lab
 
-Pre-mint progression game for [The Notties](https://thenotties.xyz). Instead of a whitelist form, players sign in with X, crack a Portal Crate every 2 hours, collect eight fragment types, trade spares, and assemble a Nottie in the Forge. Assembling books one guaranteed (Phase 1) mint spot per account.
+Pre-mint progression game for [The Notties](https://thenotties.xyz), live at [nottiesraid.fun](https://nottiesraid.fun). Instead of a whitelist form, players sign in with X, crack a Portal Crate every 2 hours, collect eight fragment types, trade spares, and assemble a Nottie in the Forge. Assembling books one guaranteed (Phase 1) mint spot per account.
 
 **Loop:** Hunt → Collect → Trade → Assemble → One of Us → Mint
 

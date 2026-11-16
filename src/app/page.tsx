@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FragmentIcon } from "@/components/FragmentIcon";
 import { RarityPill, XGlyph } from "@/components/ui";
-import { TbArrowsExchange, TbBackpack, TbBox, TbFlask2 } from "react-icons/tb";
+import { TbArrowsExchange, TbBackpack, TbBox, TbExternalLink, TbFlask2 } from "react-icons/tb";
 import { BRAND, FRAGMENTS, PARTS, ORIGINAL_FOUR, POINTS_NAME, TEASERS } from "@/lib/game/config";
 import { stats } from "@/lib/game/leaderboard";
 import { LiveBar } from "@/components/game/LiveBar";
@@ -59,6 +59,9 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             <span className="display text-xl tracking-wide">The Lab</span>
           </Link>
           <nav className="flex items-center gap-2 text-sm">
+            <a href={BRAND.site} target="_blank" rel="noreferrer" className="btn btn-ghost hidden md:inline-flex">
+              thenotties.xyz <TbExternalLink size={15} />
+            </a>
             <Link href="/wiki" className="btn btn-ghost hidden sm:inline-flex">
               Field Guide
             </Link>
@@ -227,8 +230,8 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted">
         © {new Date().getFullYear()} The Notties. All rights reserved. Made in Robinhood City. ·{" "}
-        <a className="hover:text-accent" href={BRAND.site} target="_blank" rel="noreferrer">
-          thenotties.xyz
+        <a className="font-bold text-accent hover:underline" href={BRAND.site} target="_blank" rel="noreferrer">
+          Visit the main site: thenotties.xyz
         </a>
       </footer>
     </main>

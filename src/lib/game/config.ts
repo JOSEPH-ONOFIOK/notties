@@ -11,7 +11,10 @@
 export const POINTS_NAME = "TROUBLE";
 export const BRAND = {
   name: "The Notties",
+  /** The main Notties site. The game links back to it. */
   site: "https://thenotties.xyz",
+  /** Where this game lives. */
+  app: "https://nottiesraid.fun",
   x: "https://x.com/thenottiesworld",
   xHandle: "@thenottiesworld",
   supply: 5760,

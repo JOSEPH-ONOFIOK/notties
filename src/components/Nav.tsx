@@ -13,8 +13,8 @@ import { Coin } from "./game/Coin";
 import { CountUp } from "./game/CountUp";
 import { SoundToggle } from "./game/SoundToggle";
 import { useMounted } from "./useMounted";
-import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout } from "react-icons/tb";
-import { FACTIONS } from "@/lib/game/config";
+import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink } from "react-icons/tb";
+import { BRAND, FACTIONS } from "@/lib/game/config";
 import type { IconType } from "react-icons";
 import { replayIntro } from "./game/IntroStory";
 
@@ -123,6 +123,9 @@ export function Nav({ player }: { player: PlayerView }) {
                         {m.label}
                       </Link>
                     ))}
+                    <a href={BRAND.site} target="_blank" rel="noreferrer" role="menuitem" onClick={() => setOpen(false)} className="display flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm tracking-wide hover:bg-raised">
+                      thenotties.xyz <TbExternalLink size={14} />
+                    </a>
                     <button
                       role="menuitem"
                       onClick={() => {
