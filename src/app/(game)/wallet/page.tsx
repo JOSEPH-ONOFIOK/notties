@@ -10,7 +10,7 @@ export default async function Wallet() {
   const wallets = await listWallets(p.id);
   return (
     <>
-      <PageTitle kicker="Wallet" title="Getaway wallet" sub="Your Nottie mints to the primary wallet on this page. Link it before the allowlist snapshot. Signing proves ownership. No transaction, no gas." />
+      <PageTitle kicker="Wallet" title="Getaway wallet" sub="Your Nottie mints to the wallet you add here. Add it before the allowlist snapshot. Just paste your address: no signing, no gas." />
       <WalletLink wallets={wallets} suspended={p.accountStatus !== "active"} />
     </>
   );

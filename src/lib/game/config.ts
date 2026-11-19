@@ -109,6 +109,12 @@ export const DEFAULT_SETTINGS = {
   mint: { date: "", chain: "", price: "Free" },
   // Vlad's Book: max copies ever given out. 0 = no limit (anyone who earns it gets one).
   book_cap: 0,
+  // Missions run in rounds: fresh ones drop at these local hours, each round lasting until the next.
+  // utc_offset 1 = West Africa Time. Old rounds disappear on their own.
+  task_rounds: { hours: [9, 21], utc_offset: 1, label: "WAT" },
+  // Free crates sent to the mailbox: on sign-up, and to the recruiter when a recruit plays.
+  welcome_crates: 1,
+  referral_crates: 1,
   drop_weights: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.weight])) as Record<FragmentType, number>,
   pawn_prices: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.pawn])) as Record<FragmentType, number>,
   recipe: DEFAULT_RECIPE,

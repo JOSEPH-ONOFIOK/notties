@@ -17,7 +17,7 @@ export function FragmentCard({ type, count, locked = false, size = "md", blurb =
       <div className={`relative flex h-full flex-col overflow-hidden rounded-2xl border-[3px] border-black ${holo ? "holo" : ""}`} style={{ background: locked ? "#1d2116" : c, boxShadow: "0 5px 0 #000" }}>
         {/* rarity ribbon */}
         <div className="flex items-center justify-between px-2 pt-1.5">
-          <span className="display rounded-full border-2 border-black bg-black/80 px-1.5 py-px leading-none" style={{ color: locked ? "#7b836a" : c }}>
+          <span className={`display truncate rounded-full border-2 border-black bg-black/80 py-px leading-none ${size === "sm" ? "px-1 text-[8px] min-[420px]:text-[10px]" : "px-1.5"}`} style={{ color: locked ? "#7b836a" : c }}>
             {locked ? "???" : RARITY_LABEL[def.rarity]}
           </span>
           {count !== undefined && count > 0 && <span className="display rounded-full border-2 border-black bg-white px-1.5 py-px leading-none text-black">×{count}</span>}
@@ -31,8 +31,8 @@ export function FragmentCard({ type, count, locked = false, size = "md", blurb =
           {locked && <span className="display absolute text-3xl text-white/25">?</span>}
         </div>
         {/* name plate */}
-        <div className="mx-2 my-1.5 rounded-lg border-2 border-black bg-black/85 px-1.5 py-1 text-center">
-          <div className={`display truncate leading-tight ${locked ? "text-white/40" : "text-white"}`}>{locked ? "Unknown" : def.name}</div>
+        <div className={`my-1.5 rounded-lg border-2 border-black bg-black/85 py-1 text-center ${size === "sm" ? "mx-1.5 px-1" : "mx-2 px-1.5"}`}>
+          <div className={`display truncate leading-tight ${size === "sm" ? "text-[9px] min-[420px]:text-[10px]" : ""} ${locked ? "text-white/40" : "text-white"}`}>{locked ? "Unknown" : def.name}</div>
           {blurb && !locked && <div className="mt-0.5 line-clamp-2 text-[0.85em] leading-snug text-white/65">{def.blurb}</div>}
         </div>
       </div>

@@ -30,7 +30,7 @@ export function effectiveWeights(settings: Settings, drop: Record<FragmentType, 
 }
 
 /** Roll + record one crate for a locked user row. Shared by the timer crate and the shop crate. */
-async function openCrate(q: Q, u: UserRow, settings: Settings, source: "timer" | "shop", idemKey: string) {
+async function openCrate(q: Q, u: UserRow, settings: Settings, source: "timer" | "shop" | "free", idemKey: string) {
   const fx = await activeEffects(q);
   let weights = effectiveWeights(settings, fx.drop);
   const threshold = Math.max(2, Number(settings.pity_threshold) || 10);
@@ -42,7 +42,7 @@ async function openCrate(q: Q, u: UserRow, settings: Settings, source: "timer" |
   const tier = RARITY_TIER[def.rarity];
   const event = fx.names.join(" + ") || null;
 
-  await addFragment(q, u.id, type, 1, source === "shop" ? "shop_crate" : "crate", undefined, `${source}:${idemKey}`);
+  await addFragment(q, u.id, type, 1, source === "shop" ? "shop_crate" : source === "free" ? "free_crate" : "crate", undefined, `${source}:${idemKey}`);
   const claim = (await q.query<{ id: string }>("insert into crate_claims (user_id, type, rarity, points, idem_key, source, event) values ($1,$2,$3,0,$4,$5,$6) returning id", [u.id, type, def.rarity, `${source}:${idemKey}`, source, event])).rows[0];
   const newPity = tier >= 2 ? 0 : u.pity + 1;
   await q.query("update users set pity = $2, claims = claims + 1, last_seen_at = now() where id = $1", [u.id, newPity]);
@@ -115,6 +115,23 @@ export async function buyCrate(userId: string, idemKey: string) {
     await addPoints(q, userId, -price, "shop_crate", undefined, `shopbuy:${idemKey}`);
     const r = await openCrate(q, u, settings, "shop", idemKey);
     return { ...r, spent: price, replayed: false };
+  });
+}
+
+/** Open one of the free crates the player claimed from their mailbox. No timer, no cost. */
+export async function openFreeCrate(userId: string, idemKey: string) {
+  if (!/^[a-zA-Z0-9_-]{8,64}$/.test(idemKey)) throw new GameError("Bad request");
+  return withTx(async (q) => {
+    const settings = await getSettings(q);
+    if (!settings.claims_enabled) throw new GameError("Crates are locked right now. Check back soon.", 503);
+    const replay = (await q.query<{ id: string; type: FragmentType; rarity: string }>("select id, type, rarity from crate_claims where idem_key = $1 and user_id = $2", [`free:${idemKey}`, userId])).rows[0];
+    if (replay) return { ...replay, points: 0, replayed: true };
+
+    const u = await requireActive(q, userId);
+    if (Number(u.crates) < 1) throw new GameError("No free crates left. Finish missions to earn more.");
+    await q.query("update users set crates = crates - 1 where id = $1", [userId]);
+    const r = await openCrate(q, u, settings, "free", idemKey);
+    return { ...r, cratesLeft: Number(u.crates) - 1, replayed: false };
   });
 }
 

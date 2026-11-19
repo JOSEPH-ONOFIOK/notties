@@ -4,6 +4,7 @@ import { FRAGMENT_BY_TYPE, type FragmentType } from "./config";
 import { addFragment, getSettings, logRisk, requireActive } from "./core";
 import { pushFeed } from "./feed";
 import { completeTask } from "./tasks";
+import { sendMail } from "./mail";
 import { lookupRecipient } from "./trade";
 
 /**
@@ -76,6 +77,8 @@ export async function fillOffer(takerId: string, offerId: string) {
     await addFragment(q, takerId, o.give_type, o.give_qty, "swap_in", o.id, `offer:${o.id}:taker_in`);
     await q.query("update trade_offers set status = 'filled', taker_id = $2, closed_at = now() where id = $1", [o.id, takerId]);
     await pushFeed(q, takerId, "swap", { give: o.give_type, want: o.want_type, offer: o.id });
+    const taker = (await q.query<{ x_username: string }>("select x_username from users where id = $1", [takerId])).rows[0];
+    await sendMail(q, o.maker_id, { kind: "swap", title: `@${taker?.x_username ?? "someone"} took your swap`, body: `You got ${o.want_qty} × ${FRAGMENT_BY_TYPE[o.want_type].name} for your ${FRAGMENT_BY_TYPE[o.give_type].name}. It's in your stash.`, part: o.want_type, idem: `swap:${o.id}` });
     for (const u of [takerId, o.maker_id]) await completeTask(q, u, "first_trade", settings).catch(() => {});
     return { ok: true };
   });

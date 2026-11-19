@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TbBolt, TbClover, TbShoppingBag } from "react-icons/tb";
+import { TbBolt, TbClover, TbShoppingBag, TbGift } from "react-icons/tb";
 import { FaXTwitter } from "react-icons/fa6";
 import { api, fmtDuration, idem, serverNow, timeLeft } from "@/lib/client";
 import { FRAGMENT_BY_TYPE, RARITY_COLOR, RARITY_LABEL, type FragmentType, type Rarity } from "@/lib/game/config";
@@ -33,6 +33,7 @@ export function CrateClaim(p: {
   shop: { price: number; left: number; enabled: boolean };
   points: number;
   eventName: string | null;
+  freeCrates: number;
 }) {
   const router = useRouter();
   const mounted = useMounted();
@@ -40,13 +41,19 @@ export function CrateClaim(p: {
   const [next, setNext] = useState<string | null>(p.nextClaimAt);
   const [now, setNow] = useState(() => serverNow());
   const [phase, setPhase] = useState<Phase>("idle");
-  const [mode, setMode] = useState<"timer" | "shop">("timer");
+  const [mode, setMode] = useState<"timer" | "shop" | "free">("timer");
   const [taps, setTaps] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pity, setPity] = useState(p.pity);
   const [shopLeft, setShopLeft] = useState(p.shop.left);
+  const [freeLeft, setFreeLeft] = useState(p.freeCrates);
+  const [freeFrom, setFreeFrom] = useState(p.freeCrates);
+  if (freeFrom !== p.freeCrates) {
+    setFreeFrom(p.freeCrates);
+    setFreeLeft(p.freeCrates);
+  }
   const crateRef = useRef<HTMLButtonElement>(null);
   const shakeRef = useRef<HTMLDivElement>(null);
   const pending = useRef<Promise<Result> | null>(null);
@@ -59,7 +66,7 @@ export function CrateClaim(p: {
 
   const left = mounted ? timeLeft(next, now) : next ? Math.max(1, timeLeft(next, now)) : 0;
   const timerReady = mounted && left === 0 && p.enabled && !p.suspended;
-  const ready = mode === "shop" ? !p.suspended : timerReady;
+  const ready = mode === "shop" ? !p.suspended : mode === "free" ? !p.suspended && p.enabled && freeLeft > 0 : timerReady;
   const cooldownMs = p.cooldownMinutes * 60_000;
   const charge = ready ? 1 : Math.max(0, Math.min(1, 1 - left / cooldownMs));
   const canBuy = p.shop.enabled && p.enabled && !p.suspended && shopLeft > 0;
@@ -93,7 +100,7 @@ export function CrateClaim(p: {
     if (n === 1) {
       key.current ??= idem();
       const k = key.current;
-      const path = mode === "shop" ? "/api/hunt/buy" : "/api/hunt/claim";
+      const path = mode === "shop" ? "/api/hunt/buy" : mode === "free" ? "/api/hunt/open" : "/api/hunt/claim";
       pending.current = ts.getToken().then((cf) => api<{ result: Result }>(path, { idem: k, cf }).then((r) => r.result));
       pending.current.catch(() => {});
     }
@@ -106,6 +113,7 @@ export function CrateClaim(p: {
       if (r.nextClaimAt) setNext(r.nextClaimAt);
       setPity(r.pity);
       if (mode === "shop") setShopLeft((x) => Math.max(0, x - 1));
+      if (mode === "free") setFreeLeft((x) => Math.max(0, x - 1));
       setPhase("opening");
       sfx.whoosh();
       await wait(550);
@@ -125,9 +133,9 @@ export function CrateClaim(p: {
       sfx.error();
       setPhase("idle");
       setTaps(0);
-      if (/not ready|bought all|need \d+/i.test(msg)) {
+      if (/not ready|bought all|need \d+|no free crates/i.test(msg)) {
         key.current = null;
-        if (mode === "shop") setMode("timer");
+        if (mode !== "timer") setMode("timer");
         const me = await api<{ player: { nextClaimAt: string | null } }>("/api/me").catch(() => null);
         if (me) setNext(me.player.nextClaimAt);
       }
@@ -163,7 +171,7 @@ export function CrateClaim(p: {
               <span key={i} className={`h-3 w-2.5 rounded-sm border-2 border-black ${i < pity ? "bg-accent" : "bg-black/60"} ${i === p.pityThreshold - 1 ? "!w-4 !bg-warn" : ""}`} />
             ))}
           </div>
-          <span className="text-xs text-muted">{pity >= p.pityThreshold - 1 ? "Next crate is Rare+!" : `Rare+ guaranteed in ${p.pityThreshold - pity}`}</span>
+          <span className="whitespace-nowrap text-xs text-muted">{pity >= p.pityThreshold - 1 ? "Next is Rare+!" : `Rare+ in ${p.pityThreshold - pity}`}</span>
         </div>
         {p.eventName && (
           <span className="display flex items-center gap-1 rounded-full border-2 border-black bg-warn px-2.5 py-0.5 text-[11px] text-black">
@@ -176,11 +184,11 @@ export function CrateClaim(p: {
         {phase !== "reveal" ? (
           <>
             <div className="relative grid place-items-center">
-              {(phase === "opening" || ready) && <div className="beams" style={{ ["--beam" as string]: phase === "opening" ? beam : mode === "shop" ? "#ffd166" : "#cdff00", opacity: phase === "opening" ? 0.8 : 0.18 }} />}
-              <ChargeRing pct={charge} ready={ready} gold={mode === "shop"} />
+              {(phase === "opening" || ready) && <div className="beams" style={{ ["--beam" as string]: phase === "opening" ? beam : mode !== "timer" ? "#ffd166" : "#cdff00", opacity: phase === "opening" ? 0.8 : 0.18 }} />}
+              <ChargeRing pct={charge} ready={ready} gold={mode !== "timer"} />
               <div ref={shakeRef} className="relative">
-                <button ref={crateRef} onClick={tap} disabled={phase === "opening"} className={`relative block cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-accent ${ready && phase === "idle" ? "anim-bob" : ""}`} style={{ filter: ready ? `drop-shadow(0 0 30px ${mode === "shop" ? "rgba(255,209,102,.5)" : "rgba(205,255,0,.4)"})` : "grayscale(.6) brightness(.75)" }} aria-label={ready ? `Crack the crate, tap ${TAPS - taps} more times` : "Crate locked"}>
-                  <Crate cracks={taps} opening={phase === "opening"} locked={!ready && phase === "idle"} gold={mode === "shop"} />
+                <button ref={crateRef} onClick={tap} disabled={phase === "opening"} className={`relative block cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-accent ${ready && phase === "idle" ? "anim-bob" : ""}`} style={{ filter: ready ? `drop-shadow(0 0 30px ${mode !== "timer" ? "rgba(255,209,102,.5)" : "rgba(205,255,0,.4)"})` : "grayscale(.6) brightness(.75)" }} aria-label={ready ? `Crack the crate, tap ${TAPS - taps} more times` : "Crate locked"}>
+                  <Crate cracks={taps} opening={phase === "opening"} locked={!ready && phase === "idle"} gold={mode !== "timer"} />
                 </button>
               </div>
             </div>
@@ -191,13 +199,15 @@ export function CrateClaim(p: {
               ) : ready || phase !== "idle" ? (
                 <>
                   {mode === "shop" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Bonus crate · {p.shop.price} TROUBLE</div>}
+                  {mode === "free" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Free crate · {freeLeft} left</div>}
                   <div className="display ink-text text-4xl text-white sm:text-5xl">{phase === "opening" ? "!!!" : taps === 0 ? "Tap to crack!" : taps === 1 ? "Again!" : "One more!"}</div>
                   <div className="mt-3 flex justify-center gap-2" aria-hidden>
                     {Array.from({ length: TAPS }).map((_, i) => (
                       <span key={i} className={`h-4 w-10 rounded-full border-[3px] border-black transition ${i < taps ? "bg-accent shadow-[0_0_12px_#cdff00]" : "bg-black/50"}`} />
                     ))}
                   </div>
-                  {mode === "shop" && phase === "idle" && (
+                  {mode === "timer" && phase === "idle" && freeLeft > 0 && <div className="mt-3 text-sm font-bold text-warn">+ {freeLeft} free crate{freeLeft === 1 ? "" : "s"} waiting after this one</div>}
+                  {mode !== "timer" && phase === "idle" && (
                     <button onClick={() => (sfx.click(), setMode("timer"))} className="mt-3 text-xs text-muted underline">
                       Never mind
                     </button>
@@ -210,6 +220,18 @@ export function CrateClaim(p: {
                     {mounted ? fmtDuration(left) : "…"}
                   </div>
                   <div className="mt-1 text-sm text-muted">Recharging… {Math.round(charge * 100)}%</div>
+                  {freeLeft > 0 && p.enabled && !p.suspended && (
+                    <button
+                      onClick={() => {
+                        sfx.click();
+                        setError(null);
+                        setMode("free");
+                      }}
+                      className="btn btn-accent mt-4 anim-glow"
+                    >
+                      <TbGift size={18} /> Open a free crate ({freeLeft})
+                    </button>
+                  )}
                   {p.shop.enabled && (
                     <button
                       onClick={() => {

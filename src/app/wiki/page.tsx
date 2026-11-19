@@ -24,12 +24,12 @@ const CHAPTERS = [
   ["lab", "Vlad's Lab"],
   ["trade", "Black Market & swaps"],
   ["pawn", "Pawn Shop"],
-  ["missions", "Missions"],
+  ["missions", "Missions & mailbox"],
   ["trouble", "TROUBLE & levels"],
   ["streaks", "Streaks & the lucky meter"],
   ["shop", "Bonus crates"],
   ["events", "Live events"],
-  ["gangs", "Gangs & badges"],
+  ["gangs", "Gangs"],
   ["recruit", "Recruiting"],
   ["wanted", "Most Wanted"],
   ["rules", "House rules"],
@@ -249,8 +249,13 @@ export default async function Wiki() {
             <Tip>Before you pawn, check whether a friend needs that card. A trade might get you the part you&apos;re missing.</Tip>
           </Chapter>
 
-          <Chapter id="missions" n={8} title="Missions">
-            <p>Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME}.</p>
+          <Chapter id="missions" n={8} title="Missions & mailbox">
+            <p>
+              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME} <b>and free crates</b>. Fresh missions drop twice a day, at the start of each round, and disappear when the round ends. A timer on the board shows how long is left.
+            </p>
+            <p className="mt-3">
+              Rewards go to your <b>mailbox</b>, the envelope at the top of the screen. A red number means something is waiting. Open it, tap <b>Claim</b>, then open your free crates on the <b>Hunt</b> page. Cards friends send you and finished swaps show up there too.
+            </p>
             <ul className="mt-3 list-disc space-y-1 pl-5">
               <li>
                 <b>Missions</b> pay once.
@@ -346,7 +351,7 @@ export default async function Wiki() {
             <p className="mt-3 text-muted">The team also drops surprise events. Follow {BRAND.xHandle} so you don&apos;t miss them.</p>
           </Chapter>
 
-          <Chapter id="gangs" n={13} title="Gangs & badges">
+          <Chapter id="gangs" n={13} title="Gangs">
             <p>After your first crate you pick a gang. It&apos;s a one-time choice. Your TROUBLE adds to your gang&apos;s total on the Most Wanted board.</p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {FACTIONS.map((f) => (
@@ -362,7 +367,7 @@ export default async function Wiki() {
               ))}
             </ul>
             <p className="mt-4">
-              <b>Badges</b> unlock as you play: first Legendary, 7-day streak, 5 swaps, 5 recruits and more. They show in the city. Pull something good? Hit <b>Brag</b> to post the card on X with your recruit link built in.
+              Pull something good? Hit <b>Brag</b> to post the card on X with your recruit link built in.
             </p>
           </Chapter>
 
@@ -399,7 +404,8 @@ export default async function Wiki() {
             <div className="space-y-2">
               {[
                 ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
-                ["What is Vlad's Book?", "The rarest thing in the lab. It never comes out of a crate. You earn it by finishing a special mission AND assembling your Nottie. It can't be traded or pawned, so whoever holds one earned it."],
+                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your TROUBLE and free crates. Free crates wait on the Hunt page and have no timer."],
+                ["When do new missions drop?", `Twice a day, at ${s.task_rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" and ")} ${s.task_rounds.label}. Each round's missions disappear when the next round starts, so don't leave them for later.`],
                 ["Do I need a wallet to play?", "No. Play first. You only need to link a wallet before the allowlist snapshot so your Nottie can be delivered."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],
                 ["I'm stuck on one part. Help?", "Trade for it on the Black Market, or keep hunting. Every crate is a fresh roll."],

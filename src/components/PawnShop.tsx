@@ -39,7 +39,7 @@ export function PawnShop({ inventory, prices, enabled, suspended }: { inventory:
   }
 
   return (
-    <div className="card p-6">
+    <div className="card p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="display flex items-center gap-2 text-2xl">
@@ -60,7 +60,7 @@ export function PawnShop({ inventory, prices, enabled, suspended }: { inventory:
               return (
                 <li key={s.type} className="flex flex-wrap items-center gap-3 py-3">
                   <FragmentIcon type={s.type} size={40} />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 basis-[calc(100%-56px)] sm:basis-auto">
                     <div className="flex items-center gap-2">
                       <span className="font-bold">{s.name}</span>
                       <RarityPill rarity={s.rarity} />
@@ -69,8 +69,8 @@ export function PawnShop({ inventory, prices, enabled, suspended }: { inventory:
                       own {s.have} · {s.spare} sellable · <span className="text-accent">{prices[s.type]}</span> TROUBLE each
                     </div>
                   </div>
-                  <input type="number" min={1} max={s.spare} value={n} onChange={(e) => setQty((q) => ({ ...q, [s.type]: Number(e.target.value) || 1 }))} className="w-20 tabular-nums" aria-label={`Quantity of ${s.name} to sell`} />
-                  <button ref={(el) => void (btns.current[s.type] = el)} onClick={() => sell(s.type, n)} disabled={!enabled || suspended || busy === s.type} className="btn btn-ghost text-sm">
+                  <input type="number" min={1} max={s.spare} value={n} onChange={(e) => setQty((q) => ({ ...q, [s.type]: Number(e.target.value) || 1 }))} className="!w-20 shrink-0 tabular-nums" aria-label={`Quantity of ${s.name} to sell`} />
+                  <button ref={(el) => void (btns.current[s.type] = el)} onClick={() => sell(s.type, n)} disabled={!enabled || suspended || busy === s.type} className="btn btn-ghost flex-1 text-sm sm:flex-none">
                     {busy === s.type ? "Selling…" : `Sell for ${prices[s.type] * n}`}
                   </button>
                   {msg?.type === s.type && <span className={`w-full text-sm sm:w-auto ${msg.ok ? "text-accent" : "text-error"}`}>{msg.text}</span>}

@@ -13,7 +13,7 @@ import { Coin } from "./game/Coin";
 import { CountUp } from "./game/CountUp";
 import { SoundToggle } from "./game/SoundToggle";
 import { useMounted } from "./useMounted";
-import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink } from "react-icons/tb";
+import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX } from "react-icons/tb";
 import { BRAND, FACTIONS } from "@/lib/game/config";
 import type { IconType } from "react-icons";
 import { replayIntro } from "./game/IntroStory";
@@ -27,6 +27,7 @@ const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/showroom", label: "Gallery", icon: TbPhoto },
 ];
 const MORE = [
+  { href: "/mail", label: "Mailbox" },
   { href: "/inventory", label: "Stash & Pawn Shop" },
   { href: "/leaderboard", label: "Most Wanted" },
   { href: "/referrals", label: "Recruit" },
@@ -43,6 +44,7 @@ export function Nav({ player }: { player: PlayerView }) {
   return (
     <>
       <LevelUpWatcher level={lv.level} title={lv.title} />
+      <MailPing count={player.mail} hidden={path === "/mail"} />
       <header className="relative z-40 border-b-[3px] border-black bg-[#151910]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
           {/* player plate */}
@@ -87,6 +89,18 @@ export function Nav({ player }: { player: PlayerView }) {
             <Link href="/inventory" className="flex items-center gap-1.5 rounded-full border-[3px] border-black bg-black/50 py-1 pl-1 pr-3 shadow-[0_3px_0_#000]" title="TROUBLE">
               <Coin size={26} />
               <CountUp value={player.points} className="display text-sm" />
+            </Link>
+            <Link
+              href="/mail"
+              onClick={() => sfx.click()}
+              aria-label={player.mail ? `Mailbox, ${player.mail} new` : "Mailbox"}
+              title="Mailbox"
+              className={`relative grid h-10 w-10 place-items-center rounded-full border-[3px] border-black shadow-[0_3px_0_#000] transition active:translate-y-[3px] active:shadow-none ${path === "/mail" ? "bg-accent text-black" : player.mail ? "bg-warn text-black" : "bg-raised"}`}
+            >
+              <TbMail size={20} strokeWidth={2.4} className={player.mail && path !== "/mail" ? "anim-wiggle" : ""} />
+              {player.mail > 0 && (
+                <span className="display absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full border-2 border-black bg-[#ff5d4d] px-1 text-[11px] leading-none text-white">{player.mail > 99 ? "99+" : player.mail}</span>
+              )}
             </Link>
             <SoundToggle className="hidden sm:grid" />
             <div className="relative">
@@ -221,6 +235,60 @@ function ReadyDot({ nextClaimAt }: { nextClaimAt: string | null }) {
   const now = useNow();
   if (!mounted || timeLeft(nextClaimAt, now) > 0) return null;
   return <span className="ping-ring absolute -right-0.5 -top-0.5 h-5 w-5 rounded-full border-[3px] border-black bg-[#ff5d4d]" />;
+}
+
+/**
+ * A pop-up when new mail arrives: compares the unread count with the last one this browser
+ * acknowledged, so it shows once per new letter rather than on every page.
+ */
+function MailPing({ count, hidden }: { count: number; hidden: boolean }) {
+  const [show, setShow] = useState(0);
+  useEffect(() => {
+    let seen = 0;
+    try {
+      seen = Number(localStorage.getItem("nt_mail_seen") || 0);
+      // Count went down (claimed/read): remember the lower number so the next letter pops again.
+      if (count < seen || hidden) localStorage.setItem("nt_mail_seen", String(count));
+    } catch {}
+    const pop = !hidden && count > seen;
+    const t = setTimeout(
+      () => {
+        setShow(pop ? count : 0);
+        if (pop) sfx.pop();
+      },
+      pop ? 900 : 0,
+    );
+    return () => clearTimeout(t);
+  }, [count, hidden]);
+  const dismiss = () => {
+    try {
+      localStorage.setItem("nt_mail_seen", String(count));
+    } catch {}
+    setShow(0);
+  };
+  if (!show) return null;
+  return (
+    <div className="fixed inset-x-3 top-3 z-[70] mx-auto max-w-sm anim-pop" role="status">
+      <div className="card card-lime flex items-center gap-3 p-3 text-black">
+        <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-black bg-black text-accent">
+          <TbMail size={22} />
+          <span className="display absolute -right-2 -top-2 grid h-6 min-w-6 place-items-center rounded-full border-2 border-black bg-[#ff5d4d] px-1 text-xs text-white">{show}</span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="display leading-tight">You&apos;ve got mail!</div>
+          <div className="text-xs font-semibold text-black/70">
+            {show} letter{show === 1 ? "" : "s"} waiting. Rewards inside.
+          </div>
+        </div>
+        <Link href="/mail" onClick={dismiss} className="btn !min-h-[40px] border-black bg-black !px-3 text-sm text-accent">
+          Open
+        </Link>
+        <button onClick={dismiss} aria-label="Dismiss" className="grid h-8 w-8 shrink-0 place-items-center rounded-full hover:bg-black/10">
+          <TbX size={18} />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /** Remembers the last level this browser saw; when it goes up, throws a party. */

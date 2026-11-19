@@ -269,16 +269,24 @@ export async function exportEligibility() {
   ).rows;
 }
 
+/** Switch off every timed mission whose round is over, so the admin list only shows what matters. */
+export async function archiveExpiredTasks(admin: string) {
+  const { rows } = await query<{ id: string }>("update tasks set active = false where active and ends_at is not null and ends_at < now() returning id");
+  bust("book:");
+  await audit(admin, "archive_expired_tasks", undefined, { count: rows.length });
+  return { archived: rows.length };
+}
+
 export async function listAllTasks() {
   return (await query("select * from tasks order by sort, id")).rows;
 }
 
-export async function upsertTask(admin: string, t: { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean }) {
+export async function upsertTask(admin: string, t: { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean; crates?: number }) {
   const when = (v?: string | null) => (v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null);
   await query(
-    `insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at, proof_hint, gives_book) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-     on conflict (id) do update set title = excluded.title, description = excluded.description, points = excluded.points, kind = excluded.kind, verify = excluded.verify, link = excluded.link, sort = excluded.sort, active = excluded.active, starts_at = excluded.starts_at, ends_at = excluded.ends_at, proof_hint = excluded.proof_hint, gives_book = excluded.gives_book`,
-    [t.id, t.title, t.description, t.points, t.kind, t.verify, t.link, t.sort, t.active, when(t.starts_at), when(t.ends_at), t.proof_hint ?? null, !!t.gives_book],
+    `insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at, proof_hint, gives_book, crates) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+     on conflict (id) do update set title = excluded.title, description = excluded.description, points = excluded.points, kind = excluded.kind, verify = excluded.verify, link = excluded.link, sort = excluded.sort, active = excluded.active, starts_at = excluded.starts_at, ends_at = excluded.ends_at, proof_hint = excluded.proof_hint, gives_book = excluded.gives_book, crates = excluded.crates`,
+    [t.id, t.title, t.description, t.points, t.kind, t.verify, t.link, t.sort, t.active, when(t.starts_at), when(t.ends_at), t.proof_hint ?? null, !!t.gives_book, Math.max(0, Math.min(10, Math.round(Number(t.crates ?? 1)) || 0))],
   );
   bust("book:");
   await audit(admin, "upsert_task", t.id, t);

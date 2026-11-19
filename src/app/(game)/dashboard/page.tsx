@@ -9,13 +9,9 @@ import { ProgressBar } from "@/components/ui";
 import { BRAND, FRAGMENT_BY_TYPE, type FragmentType } from "@/lib/game/config";
 import { levelInfo } from "@/lib/game/level";
 import { listTasks } from "@/lib/game/tasks";
-import { badgesFor } from "@/lib/game/social";
 import { getSettings } from "@/lib/game/core";
-import { Badges } from "@/components/game/Badges";
 import { FactionPicker } from "@/components/game/FactionPicker";
 import { currentPlayer } from "@/lib/player";
-import { bookPromo } from "@/lib/game/book";
-import { BookCard } from "@/components/game/Promos";
 
 export const metadata = { title: "Robinhood City" };
 
@@ -23,8 +19,7 @@ type Objective = { title: string; body: string; href: string; cta: string; icons
 
 export default async function City({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
-  const [tasks, badges, settings] = await Promise.all([listTasks(p.id), badgesFor(p.id), getSettings()]);
-  const book = await bookPromo(settings, p.id);
+  const [tasks, settings] = await Promise.all([listTasks(p.id), getSettings()]);
   const mintAt = settings.mint?.date && !Number.isNaN(Date.parse(settings.mint.date)) && new Date(settings.mint.date) > new Date() ? settings.mint.date : null;
   const openMissions = tasks.filter((t) => !t.completed).length;
   const lv = levelInfo(p.lifetimePoints);
@@ -33,7 +28,11 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
   const have = Object.fromEntries(p.progress.slots.map((s) => [s.type, p.forgedAt ? true : s.done])) as Record<FragmentType, boolean>;
 
   const objective: Objective =
-    p.claims === 0
+    p.mail > 0
+      ? { title: "You've got mail", body: `${p.mail} letter${p.mail === 1 ? "" : "s"} waiting. Mission rewards and free crates are inside.`, href: "/mail", cta: "Open mailbox" }
+      : p.crates > 0
+        ? { title: `Open ${p.crates} free crate${p.crates === 1 ? "" : "s"}`, body: "No timer on these. Crack them open and see what parts fall out.", href: "/hunt", cta: "Go hunt" }
+        : p.claims === 0
       ? { title: "Crack your first crate", body: "A Portal Crate just washed up. Tap it open and see what falls out.", href: "/hunt", cta: "Go hunt" }
       : !p.onboarded
         ? { title: "Report for trouble", body: "Claim your onboarding bounty on the Mission Board. Easy TROUBLE.", href: "/tasks", cta: "Open missions" }
@@ -129,12 +128,6 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         </Link>
       </div>
 
-      <BookCard
-        data={book}
-        className="mt-6"
-        cta={book.me?.has ? undefined : !book.me?.forged ? { href: "/forge", label: "To the lab" } : book.mission ? { href: "/tasks", label: "Open missions" } : undefined}
-      />
-
       {/* ── the city ── */}
       <div className="mt-8 mb-3 flex items-end justify-between">
         <h2 className="display ink-text text-3xl text-white sm:text-4xl">Robinhood City</h2>
@@ -144,16 +137,12 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
       <div className="grid auto-rows-[150px] grid-cols-2 gap-3 sm:auto-rows-[170px] sm:gap-4 lg:grid-cols-4">
         <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={<Countdown until={p.nextClaimAt} readyText="READY!" className="display text-sm" plain />} hot={!p.nextClaimAt || new Date(p.nextClaimAt) <= new Date()} big />
         <Spot href="/forge" img="/notties/221.webp" name="Vlad's Lab" tag="Forge" pos="center 30%" badge={p.forgedAt ? "Done" : `${p.progress.pct}%`} hot={p.progress.complete && !p.forgedAt} />
-        <Spot href="/tasks" img="/characters/Hood.webp" name="Mission Board" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} open` : "All done"} hot={openMissions > 0} />
+        <Spot href="/tasks" img="/characters/Hood.webp" name="Mission Board" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
         <Spot href="/trade" img="/notties/86.webp" name="Black Market" pos="center 30%" tag="Trade" badge="Swap spares" />
         <Spot href="/inventory" img="/notties/6.webp" name="Pawn Shop" tag="Stash" pos="center 30%" badge={`${spares} spare${spares === 1 ? "" : "s"}`} />
         <Spot href="/leaderboard" img="/characters/Dild.webp" name="Most Wanted" tag="Ranks" pos="center 30%" badge="Wanted" />
         <Spot href="/referrals" img="/characters/Woody.webp" name="Recruit Office" pos="center 30%" tag="Invite" badge={`${p.referralsVerified} recruits`} />
         <Spot href="/showroom" img="/notties/248.webp" name="The Gallery" tag="Showroom" className="col-span-2 lg:col-span-2" pos="center 35%" badge={`${BRAND.supply.toLocaleString()} Notties`} />
-      </div>
-
-      <div className="mt-8">
-        <Badges badges={badges} />
       </div>
     </>
   );

@@ -287,6 +287,31 @@ create table if not exists task_submissions (
   reviewed_at timestamptz,
   unique (user_id, task_id)
 );
+
+-- ── v3: mailbox, crates from missions, timed rounds ──
+-- Free crates waiting to be opened (from mission rewards, recruits, the welcome gift).
+alter table users add column if not exists crates int not null default 0;
+-- false = the address was pasted in, not proven with a signature.
+alter table wallets add column if not exists signed boolean not null default true;
+-- How many crates a mission pays on top of its TROUBLE.
+alter table tasks add column if not exists crates int not null default 1;
+
+create table if not exists mail (
+  id bigserial primary key,
+  user_id bigint not null references users(id),
+  kind text not null,
+  title text not null,
+  body text,
+  points int not null default 0,
+  crates int not null default 0,
+  reason text,
+  part text,
+  read_at timestamptz,
+  claimed_at timestamptz,
+  idem_key text unique,
+  created_at timestamptz not null default now()
+);
+create index if not exists mail_user_idx on mail (user_id, id desc);
 `;
 
 const TASKS = [
@@ -323,7 +348,7 @@ const TASKS = [
   {
     id: "link_wallet",
     title: "Link a getaway wallet",
-    description: "Verify an Ethereum wallet. It's where your Nottie gets delivered.",
+    description: "Add your wallet address. It's where your Nottie gets delivered.",
     points: DEFAULT_SETTINGS.points.link_wallet,
     kind: "once",
     verify: "wallet",

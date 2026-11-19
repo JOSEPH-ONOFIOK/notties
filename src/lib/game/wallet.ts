@@ -22,9 +22,38 @@ export async function issueNonce(userId: string) {
   return nonce;
 }
 
+/** Accepts checksummed, lowercase or mixed-case input; returns the checksummed address. */
+export function cleanAddress(raw: string) {
+  const a = raw.trim();
+  if (!isAddress(a, { strict: false })) throw new GameError("That doesn't look like a wallet address. It should start with 0x and be 42 characters long.");
+  return getAddress(a.toLowerCase());
+}
+
+/**
+ * Save a pasted address without a signature. This is the path that works on any phone, with no
+ * wallet app. If someone later proves ownership of the same address with a signature, the signed
+ * link wins (see linkWallet), so pasting someone else's address can't lock them out.
+ */
+export async function submitWallet(userId: string, address: string) {
+  const addr = cleanAddress(address);
+  return withTx(async (q) => {
+    const settings = await getSettings(q);
+    await requireActive(q, userId);
+    const owner = (await q.query<{ user_id: string }>("select user_id from wallets where address = $1", [addr])).rows[0];
+    if (owner && owner.user_id !== userId) {
+      await logRisk(q, userId, "wallet_reuse", { address: addr, other_user: owner.user_id, signed: false }, 2);
+      throw new GameError("That wallet is already linked to another player");
+    }
+    await q.query("update wallets set is_primary = false where user_id = $1", [userId]);
+    await q.query("insert into wallets (user_id, address, is_primary, signed) values ($1,$2,true,false) on conflict (address) do update set is_primary = true", [userId, addr]);
+    await completeTask(q, userId, "link_wallet", settings).catch(() => {});
+    return { address: addr };
+  });
+}
+
 export async function linkWallet(userId: string, address: string, signature: `0x${string}`) {
-  if (!isAddress(address)) throw new GameError("Invalid address");
-  const addr = getAddress(address);
+  if (!isAddress(address, { strict: false })) throw new GameError("Invalid address");
+  const addr = getAddress(address.toLowerCase());
 
   return withTx(async (q) => {
     const settings = await getSettings(q);
@@ -35,15 +64,17 @@ export async function linkWallet(userId: string, address: string, signature: `0x
     const ok = await verifyMessage({ address: addr, message: walletMessage({ username: u.x_username, address: addr, nonce: n.nonce }), signature }).catch(() => false);
     if (!ok) throw new GameError("Signature didn't verify");
 
-    const owner = (await q.query<{ user_id: string }>("select user_id from wallets where address = $1", [addr])).rows[0];
+    const owner = (await q.query<{ user_id: string; signed: boolean }>("select user_id, signed from wallets where address = $1", [addr])).rows[0];
     if (owner && owner.user_id !== userId) {
-      await logRisk(q, userId, "wallet_reuse", { address: addr, other_user: owner.user_id }, 2);
-      throw new GameError("That wallet is already linked to another player");
+      await logRisk(q, userId, "wallet_reuse", { address: addr, other_user: owner.user_id, took_over: !owner.signed }, 2);
+      // A signature beats a pasted address: the real owner takes it back.
+      if (owner.signed) throw new GameError("That wallet is already linked to another player");
+      await q.query("delete from wallets where address = $1", [addr]);
     }
 
     await q.query("update wallets set is_primary = false where user_id = $1", [userId]);
     await q.query(
-      "insert into wallets (user_id, address, is_primary) values ($1,$2,true) on conflict (address) do update set is_primary = true, verified_at = now()",
+      "insert into wallets (user_id, address, is_primary, signed) values ($1,$2,true,true) on conflict (address) do update set is_primary = true, signed = true, verified_at = now()",
       [userId, addr],
     );
     await q.query("delete from wallet_nonces where user_id = $1", [userId]);
@@ -53,12 +84,11 @@ export async function linkWallet(userId: string, address: string, signature: `0x
 }
 
 export async function listWallets(userId: string) {
-  return (await query<{ address: string; is_primary: boolean; verified_at: string }>("select address, is_primary, verified_at from wallets where user_id = $1 order by is_primary desc, verified_at desc", [userId])).rows;
+  return (await query<{ address: string; is_primary: boolean; verified_at: string; signed: boolean }>("select address, is_primary, verified_at, signed from wallets where user_id = $1 order by is_primary desc, verified_at desc", [userId])).rows;
 }
 
 export async function setPrimary(userId: string, address: string) {
-  if (!isAddress(address)) throw new GameError("Invalid address");
-  const addr = getAddress(address);
+  const addr = cleanAddress(address);
   const w = await one("select 1 from wallets where user_id = $1 and address = $2", [userId, addr]);
   if (!w) throw new GameError("Not your wallet");
   await withTx(async (q) => {

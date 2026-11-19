@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
 import { bust, cached } from "../cache";
+import { cleanRounds, type RoundCfg } from "./rounds";
 import { GameError, one, query, withTx, type Q } from "../db";
 import { DEFAULT_SETTINGS, FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType, type PlayerStatus, type Settings } from "./config";
 import type { XUser } from "../session";
@@ -30,6 +31,9 @@ async function loadSettings(q?: Q): Promise<Settings> {
   // The mint is free, always.
   s.mint = { ...DEFAULT_SETTINGS.mint, ...(s.mint as object), price: "Free" };
   s.book_cap = Math.max(0, Number(s.book_cap) || 0);
+  s.task_rounds = cleanRounds(s.task_rounds as Partial<RoundCfg>);
+  s.welcome_crates = Math.max(0, Number(s.welcome_crates) || 0);
+  s.referral_crates = Math.max(0, Number(s.referral_crates) || 0);
   return s as Settings;
 }
 
@@ -60,6 +64,7 @@ export interface UserRow {
   best_streak: number;
   last_checkin: string | null;
   pity: number;
+  crates: number;
   faction: string | null;
 }
 
@@ -90,6 +95,12 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
       )
     ).rows[0];
 
+    const settings = await getSettings(q);
+    if (settings.welcome_crates > 0) {
+      const { sendMail } = await import("./mail");
+      await sendMail(q, user.id, { kind: "welcome", title: "Welcome to Robinhood City", body: "Vlad's lab is leaking parts. Here's a free crate to get you started. Collect all 8 parts and build your Nottie.", crates: settings.welcome_crates, idem: `welcome:${user.id}` });
+    }
+
     if (refCode) {
       const referrer = (await q.query<UserRow>("select id, status from users where ref_code = $1", [refCode.toUpperCase()])).rows[0];
       if (referrer && referrer.id !== user.id && referrer.status === "active") {
@@ -119,7 +130,7 @@ export async function requireActive(q: Q, userId: string) {
 /* ───────────────────────── points + inventory helpers (inside a tx) ───────────────────────── */
 
 /** Rewards that live events (e.g. Double Trouble) multiply. Exchanges, spending and admin fixes never are. */
-const BOOSTABLE = (reason: string) => reason === "crate" || reason === "referral" || reason === "forge" || reason.startsWith("task:");
+export const BOOSTABLE = (reason: string) => reason === "crate" || reason === "referral" || reason === "forge" || reason.startsWith("task:");
 
 /** Credit or debit TROUBLE, idempotently. Returns the amount actually applied (after event boosts). */
 export async function addPoints(q: Q, userId: string, delta: number, reason: string, refId?: string, idemKey?: string): Promise<number> {
@@ -215,12 +226,16 @@ export interface PlayerView {
   checkedInToday: boolean;
   pity: number;
   faction: string | null;
+  /** Free crates waiting to be opened. */
+  crates: number;
+  /** Letters in the mailbox that are unread or have a reward to claim. */
+  mail: number;
 }
 
 export async function getPlayer(xId: string): Promise<PlayerView | null> {
   const u = await getUserByXId(xId);
   if (!u) return null;
-  const [settings, inv, wallet, tasks, refs, forge, elig] = await Promise.all([
+  const [settings, inv, wallet, tasks, refs, forge, elig, mail] = await Promise.all([
     getSettings(),
     getInventory(u.id),
     one<{ address: string }>("select address from wallets where user_id = $1 and is_primary order by verified_at desc limit 1", [u.id]),
@@ -228,6 +243,7 @@ export async function getPlayer(xId: string): Promise<PlayerView | null> {
     one<{ n: string }>("select count(*)::text as n from referrals where referrer_id = $1 and status = 'verified'", [u.id]),
     one<{ created_at: string; nottie_seed: number }>("select created_at, nottie_seed from forge_completions where user_id = $1", [u.id]),
     one<{ status: string }>("select status from mint_eligibility where user_id = $1 and category = 'forge'", [u.id]),
+    one<{ n: string }>("select count(*)::text as n from mail where user_id = $1 and (read_at is null or claimed_at is null)", [u.id]),
   ]);
   const progress = recipeProgress(inv, settings.recipe);
   const fragments = Object.values(inv).reduce((a, b) => a + b, 0);
@@ -261,6 +277,8 @@ export async function getPlayer(xId: string): Promise<PlayerView | null> {
     bestStreak: u.best_streak,
     pity: u.pity,
     faction: u.faction,
+    crates: Number(u.crates) || 0,
+    mail: Number(mail?.n ?? 0),
   };
 }
 

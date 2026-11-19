@@ -1,7 +1,7 @@
 import "server-only";
 import { query, type Q } from "../db";
 import type { Settings } from "./config";
-import { addPoints } from "./core";
+import { boostedPoints, sendMail } from "./mail";
 
 /**
  * A referral pays out only after the new player has actually played: opened `referral_qualify_claims`
@@ -19,7 +19,17 @@ export async function checkReferralProgress(q: Q, refereeId: string, claimsNow: 
     return;
   }
   await q.query("update referrals set status = 'verified', verified_at = now() where id = $1", [ref.id]);
-  await addPoints(q, ref.referrer_id, Number(settings.points.referral) || 0, "referral", refereeId, `referral:${ref.id}`);
+  // The recruiter's bonus (TROUBLE + free crates) arrives in their mailbox.
+  const who = (await q.query<{ x_username: string }>("select x_username from users where id = $1", [refereeId])).rows[0]?.x_username ?? "a recruit";
+  await sendMail(q, ref.referrer_id, {
+    kind: "referral",
+    title: `@${who} joined your crew`,
+    body: "They cracked their first crates, so your recruit bonus is in.",
+    points: await boostedPoints(q, Number(settings.points.referral) || 0, "referral"),
+    crates: settings.referral_crates,
+    reason: "referral",
+    idem: `referral:${ref.id}`,
+  });
 }
 
 export async function referralSummary(userId: string) {
@@ -31,7 +41,7 @@ export async function referralSummary(userId: string) {
       [userId],
     )
   ).rows;
-  const points = await query<{ s: string }>("select coalesce(sum(delta),0)::text as s from point_transactions where user_id = $1 and reason = 'referral'", [userId]);
+  const points = await query<{ s: string }>("select coalesce(sum(delta),0)::text as s from point_transactions where user_id = $1 and reason in ('referral', 'mail:referral')", [userId]);
   return {
     total: Object.values(by).reduce((a, b) => a + b, 0),
     verified: by.verified ?? 0,

@@ -11,8 +11,7 @@ import { eventTimeline } from "@/lib/game/events";
 import { readFeed } from "@/lib/game/feed";
 import { getXUser } from "@/lib/session";
 import { getSettings } from "@/lib/game/core";
-import { bookPromo } from "@/lib/game/book";
-import { BookCard, FreeMintCard } from "@/components/game/Promos";
+import { FreeMintCard } from "@/components/game/Promos";
 import { guestMode } from "@/lib/guest";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +27,10 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
   const sp = await searchParams;
   const x = await getXUser();
   if (x && !sp.x) redirect("/dashboard");
-  const [s, timeline, feed, book] = await Promise.all([
+  const [s, timeline, feed] = await Promise.all([
     stats().catch(() => ({ players: 0, forged: 0, claims: 0, trades: 0 })),
     eventTimeline(),
     readFeed(0, 20),
-    getSettings().then((st) => bookPromo(st)).catch(() => ({ mission: null, given: 0, cap: 0, left: null, me: null })),
   ]);
   const guest = guestMode();
   const login = guest ? `/enter${sp.ref ? `?ref=${encodeURIComponent(sp.ref)}` : ""}` : `/api/x/login${sp.ref ? `?ref=${encodeURIComponent(sp.ref)}` : ""}`;
@@ -109,7 +107,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
               <span key={i} className="flex gap-10">
                 <span>Free mint</span>
                 <span>Hunt · Collect · Trade · Assemble</span>
-                <span>Vlad&apos;s Book: almost nobody gets one</span>
+                <span>Fresh missions every 12 hours</span>
                 <span>5,760 coming through the portal</span>
                 <span>Come cause trouble with us</span>
                 <span>Earn {POINTS_NAME}</span>
@@ -180,10 +178,22 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
       {/* ── the prizes ── */}
       <section id="prizes" className="mx-auto max-w-6xl px-4 pb-20">
         <div className="text-xs font-bold uppercase tracking-[0.3em] text-accent">What you&apos;re playing for</div>
-        <h2 className="display mt-2 text-4xl sm:text-5xl">A free mint. And a book nobody gets.</h2>
-        <div className="mt-8 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+        <h2 className="display mt-2 text-4xl sm:text-5xl">A free mint. Guaranteed.</h2>
+        <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_1fr]">
           <FreeMintCard cta={{ href: login, label: "Lock my free spot" }} />
-          <BookCard data={book} cta={{ href: login, label: "Start hunting" }} />
+          <div className="card relative overflow-hidden p-6 sm:p-8">
+            <div className="display inline-block -rotate-2 rounded-md border-[3px] border-black bg-warn px-2 py-0.5 text-xs tracking-[0.2em] text-black">Twice a day</div>
+            <h3 className="display mt-4 text-4xl leading-[0.9] sm:text-5xl">Missions pay crates.</h3>
+            <p className="mt-3 max-w-md text-sm text-muted">Fresh missions drop at 9am and 9pm. Every one you finish sends TROUBLE and free crates to your mailbox. More crates, more parts, a faster Nottie.</p>
+            <ul className="mt-5 grid gap-2 text-sm font-bold">
+              {["Do the round's missions", "Claim your rewards from the mailbox", "Open your free crates on the Hunt page"].map((t, i) => (
+                <li key={t} className="flex items-center gap-2">
+                  <span className="display grid h-6 w-6 shrink-0 place-items-center rounded-full border-[3px] border-black bg-warn text-xs text-black">{i + 1}</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 

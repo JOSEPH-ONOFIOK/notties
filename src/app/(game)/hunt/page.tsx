@@ -22,10 +22,10 @@ export default async function Hunt() {
     <>
       <PageTitle kicker="Hunt" title="Raid the lab" sub={`A Portal Crate washes up every ${hours === 1 ? "hour" : Number.isInteger(hours) ? `${hours} hours` : `${cooldown} minutes`}. Tap it open. One fragment inside, +${settings.points.crate} TROUBLE. Vlad's clock runs the timer, so no cheating.`} />
 
-      <CrateClaim nextClaimAt={p.nextClaimAt} enabled={settings.claims_enabled} suspended={p.accountStatus !== "active"} cooldownMinutes={cooldown} pity={p.pity} pityThreshold={Math.max(2, Number(settings.pity_threshold) || 10)} shop={shop} points={p.points} eventName={fx.names.join(" + ") || null} />
+      <CrateClaim nextClaimAt={p.nextClaimAt} enabled={settings.claims_enabled} suspended={p.accountStatus !== "active"} cooldownMinutes={cooldown} pity={p.pity} pityThreshold={Math.max(2, Number(settings.pity_threshold) || 10)} shop={shop} points={p.points} eventName={fx.names.join(" + ") || null} freeCrates={p.crates} />
 
       <section className="mt-8">
-        <div className="mb-3 flex items-end justify-between">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <h2 className="display ink-text text-3xl text-white">Drop odds</h2>
           <span className="text-xs text-muted">Live. What you see is what the server rolls.</span>
         </div>

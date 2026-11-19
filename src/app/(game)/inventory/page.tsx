@@ -9,7 +9,7 @@ import { currentPlayer } from "@/lib/player";
 
 export const metadata = { title: "Stash" };
 
-const REASON: Record<string, string> = { crate: "Crate", trade_in: "Received", trade_out: "Sent", forge: "Assembled", pawn: "Pawned", admin: "Gift" };
+const REASON: Record<string, string> = { crate: "Crate", shop_crate: "Bonus crate", free_crate: "Free crate", trade_in: "Received", trade_out: "Sent", swap_in: "Swap", swap_out: "Swap", escrow: "Swap offer", escrow_return: "Offer cancelled", forge: "Assembled", pawn: "Pawned", admin: "Gift" };
 
 export default async function Inventory() {
   const p = await currentPlayer();

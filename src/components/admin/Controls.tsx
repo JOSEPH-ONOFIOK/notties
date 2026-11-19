@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { upcomingRounds, type RoundCfg } from "@/lib/game/rounds";
 import { api } from "@/lib/client";
 import type { Settings } from "@/lib/game/config";
 
@@ -160,22 +161,43 @@ export function ResolveButton({ riskId }: { riskId: string }) {
   );
 }
 
-type TaskDraft = { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean };
+type TaskDraft = { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean; crates?: number };
 const toLocal = (v?: string | null) => (v ? new Date(new Date(v).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 
-export function TaskEditor({ initial }: { initial?: TaskDraft }) {
+export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: RoundCfg }) {
   const router = useRouter();
-  const [t, setT] = useState<TaskDraft>(initial ?? { id: "", title: "", description: "", points: 10, kind: "once", verify: "auto", link: "", sort: 10, active: true });
+  const options = upcomingRounds(rounds, 6);
+  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 10, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 1, starts_at: options[0].start, ends_at: options[0].end });
+  const [t, setT] = useState<TaskDraft>(initial ?? blank());
+  const roundIdx = options.findIndex((r) => r.start === (t.starts_at ? new Date(t.starts_at).toISOString() : null) && r.end === (t.ends_at ? new Date(t.ends_at).toISOString() : null));
+  const pickRound = (v: string) => {
+    if (v === "none") setT((x) => ({ ...x, starts_at: null, ends_at: null }));
+    else if (v !== "custom") setT((x) => ({ ...x, starts_at: options[Number(v)].start, ends_at: options[Number(v)].end }));
+  };
   const [state, setState] = useState<string | null>(null);
   const set = (k: keyof TaskDraft, v: unknown) => setT((x) => ({ ...x, [k]: v }));
   return (
     <div className="card p-5">
-      <div className="display text-xl">{initial ? `Edit · ${initial.id}` : "New task"}</div>
+      <div className="display text-xl">{initial ? `Edit · ${initial.id}` : "New mission"}</div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="text-xs">
-          <span className="text-muted">id (slug)</span>
-          <input value={t.id} disabled={!!initial} onChange={(e) => set("id", e.target.value)} placeholder="join_discord" />
+        <label className="text-xs sm:col-span-2">
+          <span className="text-muted">round (fresh missions drop at {rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" & ")} {rounds.label}; they disappear when the round ends)</span>
+          <select value={!t.starts_at && !t.ends_at ? "none" : roundIdx >= 0 ? String(roundIdx) : "custom"} onChange={(e) => pickRound(e.target.value)}>
+            {options.map((r, i) => (
+              <option key={r.start} value={i}>
+                {i === 0 ? "This round" : "Round"} · {r.label} {rounds.label}
+              </option>
+            ))}
+            <option value="none">Always on (no round)</option>
+            {roundIdx < 0 && (t.starts_at || t.ends_at) && <option value="custom">Custom dates (below)</option>}
+          </select>
         </label>
+        {initial && (
+          <label className="text-xs">
+            <span className="text-muted">id</span>
+            <input value={t.id} disabled />
+          </label>
+        )}
         <label className="text-xs">
           <span className="text-muted">title</span>
           <input value={t.title} onChange={(e) => set("title", e.target.value)} />
@@ -185,8 +207,12 @@ export function TaskEditor({ initial }: { initial?: TaskDraft }) {
           <input value={t.description} onChange={(e) => set("description", e.target.value)} />
         </label>
         <label className="text-xs">
-          <span className="text-muted">points</span>
+          <span className="text-muted">TROUBLE reward</span>
           <input type="number" value={t.points} onChange={(e) => set("points", Number(e.target.value))} />
+        </label>
+        <label className="text-xs">
+          <span className="text-muted">free crates reward</span>
+          <input type="number" min={0} max={10} value={t.crates ?? 1} onChange={(e) => set("crates", Number(e.target.value))} />
         </label>
         <label className="text-xs">
           <span className="text-muted">sort</span>
@@ -230,13 +256,6 @@ export function TaskEditor({ initial }: { initial?: TaskDraft }) {
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={t.active} onChange={(e) => set("active", e.target.checked)} className="h-4 w-4" /> active
         </label>
-        <label className="flex items-start gap-2 text-sm sm:col-span-2">
-          <input type="checkbox" checked={!!t.gives_book} onChange={(e) => set("gives_book", e.target.checked)} className="mt-0.5 h-4 w-4" />
-          <span>
-            gives Vlad&apos;s Book
-            <span className="block text-xs text-muted">Players get the book once they finish this task AND assemble their Nottie, in either order. Players who already qualify get it as soon as you save.</span>
-          </span>
-        </label>
       </div>
       <div className="mt-3 flex items-center gap-3">
         <button
@@ -244,18 +263,46 @@ export function TaskEditor({ initial }: { initial?: TaskDraft }) {
           onClick={async () => {
             setState("saving");
             try {
-              const r = await api<{ result: { given: number } | null }>("/api/admin", { action: "task", task: t });
-              setState(r.result?.given ? `saved · ${r.result.given} book${r.result.given === 1 ? "" : "s"} given` : "saved");
+              await api("/api/admin", { action: "task", task: t });
+              setState("saved");
+              // A new mission form clears for the next one, keeping the same round.
+              if (!initial) setT((x) => ({ ...blank(), starts_at: x.starts_at, ends_at: x.ends_at }));
               router.refresh();
             } catch (e) {
               setState(e instanceof Error ? e.message : "failed");
             }
           }}
         >
-          Save task
+          {initial ? "Save" : "Add mission"}
         </button>
         {state && <span className="text-xs text-muted">{state}</span>}
       </div>
     </div>
+  );
+}
+
+export function ArchiveExpiredButton({ count }: { count: number }) {
+  const router = useRouter();
+  const [state, setState] = useState<string | null>(null);
+  return (
+    <span className="flex items-center gap-2">
+      <button
+        className="btn btn-ghost text-sm"
+        disabled={!count || state === "…"}
+        onClick={async () => {
+          setState("…");
+          try {
+            const r = await api<{ result: { archived: number } }>("/api/admin", { action: "archive_expired" });
+            setState(`archived ${r.result.archived}`);
+            router.refresh();
+          } catch (e) {
+            setState(e instanceof Error ? e.message : "failed");
+          }
+        }}
+      >
+        Clear old missions ({count})
+      </button>
+      {state && state !== "…" && <span className="text-xs text-muted">{state}</span>}
+    </span>
   );
 }

@@ -3,6 +3,7 @@ import { GameError, query, withTx, type Q } from "../db";
 import { FRAGMENT_BY_TYPE, type FragmentType } from "./config";
 import { addFragment, getSettings, logRisk, requireActive, type UserRow } from "./core";
 import { completeTask } from "./tasks";
+import { sendMail } from "./mail";
 
 export async function lookupRecipient(handle: string, q?: Q) {
   const h = handle.trim().replace(/^@/, "");
@@ -51,6 +52,7 @@ export async function transferFragment(senderId: string, recipientHandle: string
     await addFragment(q, senderId, type, -qty, "trade_out", trade.id, `trade:${trade.id}:out`);
     await addFragment(q, recipient.id, type, qty, "trade_in", trade.id, `trade:${trade.id}:in`);
 
+    await sendMail(q, recipient.id, { kind: "gift", title: `@${sender.x_username} sent you ${qty} × ${FRAGMENT_BY_TYPE[type].name}`, body: "It's already in your stash.", part: type, idem: `gift:${trade.id}` });
     await completeTask(q, sender.id, "first_trade", settings).catch(() => {});
 
     return { replayed: false, tradeId: trade.id, to: recipient.username };

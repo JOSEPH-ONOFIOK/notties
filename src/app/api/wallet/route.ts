@@ -1,14 +1,14 @@
 import { handler, json } from "@/lib/api";
-import { issueNonce, linkWallet, listWallets, setPrimary, walletMessage } from "@/lib/game/wallet";
+import { cleanAddress, issueNonce, linkWallet, listWallets, setPrimary, submitWallet, walletMessage } from "@/lib/game/wallet";
 import { GameError } from "@/lib/db";
-import { getAddress, isAddress } from "viem";
 
 export const GET = handler({ name: "wallet" }, async (user) => ({ wallets: await listWallets(user.id) }));
 
 export const POST = handler({ name: "wallet", limit: [20, 60_000] }, async (user, req) => {
-  const b = await json<{ action?: "nonce" | "link" | "primary"; address?: string; signature?: `0x${string}` }>(req);
-  if (!b.address || !isAddress(b.address)) throw new GameError("Invalid address");
-  const address = getAddress(b.address);
+  const b = await json<{ action?: "nonce" | "link" | "primary" | "submit"; address?: string; signature?: `0x${string}` }>(req);
+  if (!b.address) throw new GameError("Enter your wallet address");
+  const address = cleanAddress(b.address);
+  if (b.action === "submit") return { result: await submitWallet(user.id, address) };
   if (b.action === "nonce") {
     const nonce = await issueNonce(user.id);
     return { message: walletMessage({ username: user.x_username, address, nonce }) };

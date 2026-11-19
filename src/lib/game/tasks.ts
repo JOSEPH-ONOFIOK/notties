@@ -1,9 +1,10 @@
 import "server-only";
 import { GameError, query, withTx, type Q } from "../db";
 import type { Settings } from "./config";
-import { addPoints, getSettings, logRisk, requireActive, streakView, utcDay } from "./core";
+import { getSettings, logRisk, requireActive, streakView, utcDay } from "./core";
 import { awardBookIfEarned } from "./book";
 import { pushFeed } from "./feed";
+import { boostedPoints, sendMail } from "./mail";
 
 export interface TaskRow {
   id: string;
@@ -19,6 +20,7 @@ export interface TaskRow {
   ends_at: string | null;
   proof_hint: string | null;
   gives_book: boolean;
+  crates: number;
 }
 
 const ONCE_DAY = "1970-01-01";
@@ -62,10 +64,21 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
     await q.query("update users set streak = $2, best_streak = greatest(best_streak, $2), last_checkin = $3 where id = $1", [userId, streak, utcDay()]);
     if (streak === 7 || streak === 30 || streak === 100) await pushFeed(q, userId, "streak", { days: streak });
   }
-  pts = await addPoints(q, userId, pts, `task:${taskId}`, String(ins.rows[0].id), `task:${userId}:${taskId}:${day}`);
+  // The reward goes to the mailbox: TROUBLE (boosted now if an event is live) plus free crates.
+  pts = await boostedPoints(q, pts, `task:${taskId}`);
+  const crates = Math.max(0, Number(t.crates) || 0);
+  await sendMail(q, userId, {
+    kind: "reward",
+    title: `Mission done: ${t.title}`,
+    body: crates ? "Claim it to add the crates to your Hunt page." : null,
+    points: pts,
+    crates,
+    reason: `task:${taskId}`,
+    idem: `task:${userId}:${taskId}:${day}`,
+  });
   if (taskId === "onboarding") await q.query("update users set onboarded = true where id = $1", [userId]);
   if (t.gives_book) await awardBookIfEarned(q, userId, settings);
-  return pts;
+  return { points: pts, crates };
 }
 
 /** Player-initiated claim. Checks the task's verification method before paying. */
@@ -73,8 +86,8 @@ export async function claimTask(userId: string, taskId: string) {
   return withTx(async (q) => {
     const settings = await getSettings(q);
     await requireActive(q, userId);
-    const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active", [taskId])).rows[0];
-    if (!t) throw new GameError("Task not available");
+    const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now())", [taskId])).rows[0];
+    if (!t) throw new GameError("That mission has ended. Fresh ones drop every round.");
 
     if (t.verify === "link") {
       const c = (await q.query<{ clicked_at: string }>("select clicked_at from task_clicks where user_id = $1 and task_id = $2", [userId, taskId])).rows[0];
@@ -93,8 +106,7 @@ export async function claimTask(userId: string, taskId: string) {
       throw new GameError("Submit your proof and the team will review it");
     }
 
-    const pts = await completeTask(q, userId, taskId, settings);
-    return { points: pts };
+    return completeTask(q, userId, taskId, settings);
   });
 }
 
@@ -104,7 +116,7 @@ export async function submitTask(userId: string, taskId: string, proof: string) 
   if (p.length < 4) throw new GameError("Add a link or a short note as proof");
   return withTx(async (q) => {
     await requireActive(q, userId);
-    const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active and verify = 'manual'", [taskId])).rows[0];
+    const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active and verify = 'manual' and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now())", [taskId])).rows[0];
     if (!t) throw new GameError("Task not available");
     const done = await q.query("select 1 from task_completions where user_id = $1 and task_id = $2", [userId, taskId]);
     if (done.rows.length) throw new GameError("Already completed");
@@ -125,6 +137,10 @@ export async function reviewSubmission(admin: string, id: string, approve: boole
     if (!s || s.status !== "pending") throw new GameError("Nothing to review");
     await q.query("update task_submissions set status = $2, reviewed_by = $3, reviewed_at = now() where id = $1", [id, approve ? "approved" : "rejected", admin]);
     if (approve) await completeTask(q, s.user_id, s.task_id, await getSettings(q));
+    else {
+      const t = (await q.query<{ title: string }>("select title from tasks where id = $1", [s.task_id])).rows[0];
+      await sendMail(q, s.user_id, { kind: "review", title: `Not approved: ${t?.title ?? s.task_id}`, body: "The team couldn't verify your proof. Fix it and submit again on the Mission Board.", idem: `review:${id}:${Date.now()}` });
+    }
   });
 }
 
