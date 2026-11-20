@@ -78,9 +78,9 @@ export function Nav({ player }: { player: PlayerView }) {
             {MAIN.filter((m) => m.href !== "/chat").map((m) => {
               const active = path.startsWith(m.href);
               return (
-                <Link key={m.href} href={m.href} onClick={() => sfx.click()} className={`display flex items-center gap-1.5 rounded-xl border-[3px] px-2.5 py-1.5 text-xs tracking-wider transition xl:px-3 xl:text-sm ${active ? "-translate-y-0.5 border-black bg-accent text-black shadow-[0_4px_0_#000]" : "border-transparent text-muted hover:-translate-y-0.5 hover:border-black hover:bg-raised hover:text-text hover:shadow-[0_4px_0_#000]"}`}>
+                <Link key={m.href} href={m.href} title={m.label} aria-label={m.label} onClick={() => sfx.click()} className={`display flex items-center gap-1.5 rounded-xl border-[3px] px-2.5 py-1.5 text-xs tracking-wider transition xl:px-3 xl:text-sm ${active ? "-translate-y-0.5 border-black bg-accent text-black shadow-[0_4px_0_#000]" : "border-transparent text-muted hover:-translate-y-0.5 hover:border-black hover:bg-raised hover:text-text hover:shadow-[0_4px_0_#000]"}`}>
                   <m.icon size={17} strokeWidth={active ? 2.6 : 2.2} />
-                  {m.label}
+                  <span className="hidden xl:inline">{m.label}</span>
                 </Link>
               );
             })}
@@ -235,7 +235,7 @@ function CrateChip({ at, crates }: { at: string | null | "need"; crates: number 
   return (
     <Link href={need && crates === 0 ? "/trade" : "/hunt"} onClick={() => sfx.click()} className={`relative hidden items-center gap-1.5 rounded-full border-[3px] border-black px-3 py-1.5 shadow-[0_3px_0_#000] sm:flex ${ready ? "anim-glow bg-accent text-black" : "bg-black/50 text-muted"}`}>
       <TbBox size={16} strokeWidth={2.4} />
-      <span className="display text-xs tabular-nums">{!mounted ? "…" : crates > 0 ? `${crates} crate${crates === 1 ? "" : "s"}` : need ? "0 crates" : ready ? "Ready!" : fmtDuration(left).replace(/ \d+s$/, "")}</span>
+      <span className="display whitespace-nowrap text-xs tabular-nums">{!mounted ? "…" : crates > 0 ? `${crates} crate${crates === 1 ? "" : "s"}` : need ? "0 crates" : ready ? "Ready!" : fmtDuration(left).replace(/ \d+s$/, "")}</span>
     </Link>
   );
 }
