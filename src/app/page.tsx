@@ -12,7 +12,6 @@ import { readFeed } from "@/lib/game/feed";
 import { getXUser } from "@/lib/session";
 import { getSettings } from "@/lib/game/core";
 import { FreeMintCard } from "@/components/game/Promos";
-import { ClaimBanner } from "@/components/game/ClaimBanner";
 import { guestMode } from "@/lib/guest";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +27,10 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
   const sp = await searchParams;
   const x = await getXUser();
   if (x && !sp.x) redirect("/dashboard");
-  const [s, timeline, feed, settings] = await Promise.all([
+  const [s, timeline, feed] = await Promise.all([
     stats().catch(() => ({ players: 0, forged: 0, claims: 0, trades: 0 })),
     eventTimeline(),
     readFeed(0, 20),
-    getSettings(),
   ]);
   const guest = guestMode();
   const login = guest ? `/enter${sp.ref ? `?ref=${encodeURIComponent(sp.ref)}` : ""}` : `/api/x/login${sp.ref ? `?ref=${encodeURIComponent(sp.ref)}` : ""}`;
@@ -44,7 +42,6 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
   return (
     <main className="relative overflow-x-clip">
       <div className="relative z-20">
-        <ClaimBanner until={settings.claim_deadline} label={settings.claim_label} />
         <LiveBar initial={timeline} feed={feed} />
       </div>
       {/* ── hero ── */}
@@ -199,28 +196,6 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           </div>
         </div>
       </section>
-
-      {/* ── partners ── */}
-      {(settings.partners ?? []).length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-20">
-          <div className="text-xs font-bold uppercase tracking-[0.3em] text-accent">Partners</div>
-          <h2 className="display mt-2 text-4xl sm:text-5xl">Allowlist spots for our friends.</h2>
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(settings.partners ?? []).map((p) => (
-              <li key={p.name} className="card flex items-center justify-between gap-4 p-5">
-                <div className="min-w-0">
-                  <div className="display truncate text-2xl">{p.name}</div>
-                  <div className="text-sm text-muted">Partner community</div>
-                </div>
-                <div className="shrink-0 rounded-2xl border-[3px] border-black bg-accent px-4 py-2 text-center text-black shadow-[0_4px_0_#000]">
-                  <div className="display text-3xl leading-none">{p.spots}</div>
-                  <div className="display text-[10px] tracking-widest">WL spots</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* ── original four ── */}
       <section className="mx-auto max-w-6xl px-4 pb-20">

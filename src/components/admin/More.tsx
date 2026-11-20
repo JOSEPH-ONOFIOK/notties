@@ -339,7 +339,7 @@ export function RemoveRole({ username }: { username: string }) {
   );
 }
 
-export function TextSetting({ k, label, value, hint, parse }: { k: string; label: string; value: string; hint?: string; parse: "numbers" | "mint" | "text" | "list" | "partners" | "datetime" }) {
+export function TextSetting({ k, label, value, hint, parse }: { k: string; label: string; value: string; hint?: string; parse: "numbers" | "mint" | "text" | "list" }) {
   const { act, busy, Msg } = useAct();
   const [v, setV] = useState(value);
   return (
@@ -352,7 +352,7 @@ export function TextSetting({ k, label, value, hint, parse }: { k: string; label
           className="btn btn-ghost text-sm"
           disabled={busy}
           onClick={() => {
-            const value = parse === "numbers" ? v.split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0) : parse === "list" ? v.split(/[,\s]+/).filter(Boolean) : parse === "partners" ? v.split(";").map((x) => x.split(":")).filter((x) => x[0]?.trim()).map(([name, spots]) => ({ name: name.trim(), spots: Number(spots) || 0 })) : parse === "datetime" ? (v.trim() && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : "") : v.trim();
+            const value = parse === "numbers" ? v.split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0) : parse === "list" ? v.split(/[,\s]+/).filter(Boolean) : v.trim();
             act({ action: "setting", key: k, value });
           }}
         >

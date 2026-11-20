@@ -35,9 +35,6 @@ async function loadSettings(q?: Q): Promise<Settings> {
   s.market_prices = known(DEFAULT_SETTINGS.market_prices, s.market_prices);
   s.market_prices = { ...(s.market_prices as object), book: 0, shadow: 0 };
   s.drop_weights = { ...(s.drop_weights as object), shadow: 0 };
-  s.partners = (Array.isArray(s.partners) ? (s.partners as { name: string; spots: number }[]) : []).filter((p) => p && p.name).map((p) => ({ name: String(p.name).slice(0, 60), spots: Math.max(0, Number(p.spots) || 0) }));
-  s.claim_deadline = String(s.claim_deadline ?? "");
-  s.claim_label = String(s.claim_label ?? "Claim ends in").slice(0, 40) || "Claim ends in";
   s.wallet_tasks = (Array.isArray(s.wallet_tasks) ? (s.wallet_tasks as unknown[]) : []).map(String).map((x) => x.trim()).filter(Boolean);
   s.late_reward_pct = Math.max(0, Math.min(100, Number(s.late_reward_pct ?? 50)));
   s.late_window_hours = Math.max(0, Number(s.late_window_hours ?? 24));
