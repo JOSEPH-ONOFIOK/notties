@@ -1,5 +1,6 @@
 import { FragmentIcon } from "@/components/FragmentIcon";
-import { PawnShop } from "@/components/PawnShop";
+import Link from "next/link";
+import { TbArrowsExchange, TbGift } from "react-icons/tb";
 import { FragmentCard } from "@/components/game/FragmentCard";
 import { PageTitle, Points, ProgressBar, fmtDateTime } from "@/components/ui";
 import { FRAGMENTS, FRAGMENT_BY_TYPE, PARTS, type FragmentType } from "@/lib/game/config";
@@ -9,7 +10,7 @@ import { currentPlayer } from "@/lib/player";
 
 export const metadata = { title: "Stash" };
 
-const REASON: Record<string, string> = { crate: "Crate", shop_crate: "Bonus crate", free_crate: "Free crate", trade_in: "Received", trade_out: "Sent", swap_in: "Swap", swap_out: "Swap", escrow: "Swap offer", escrow_return: "Offer cancelled", forge: "Assembled", pawn: "Pawned", admin: "Gift" };
+const REASON: Record<string, string> = { crate: "Crate", shop_crate: "Bought crate", free_crate: "Free crate", trade_in: "Received", trade_out: "Sent", swap_in: "Swap", swap_out: "Swap", escrow: "Swap offer", escrow_return: "Offer cancelled", forge: "Assembled", pawn: "Pawned", admin: "Gift" };
 
 export default async function Inventory() {
   const p = await currentPlayer();
@@ -20,6 +21,8 @@ export default async function Inventory() {
   const found = PARTS.filter((f) => p.inventory[f.type] > 0).length;
   // Vlad's Book only shows once you actually hold one.
   const cards = FRAGMENTS.filter((f) => !f.special || p.inventory[f.type] > 0);
+  const spares = PARTS.map((f) => ({ f, n: Math.max(0, p.inventory[f.type] - (s.recipe[f.type] ?? 1)) })).filter((x) => x.n > 0);
+  const missing = PARTS.filter((f) => p.inventory[f.type] === 0);
 
   return (
     <>
@@ -40,7 +43,36 @@ export default async function Inventory() {
       </ul>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_380px]">
-        <PawnShop inventory={p.inventory} prices={s.pawn_prices} enabled={s.pawn_enabled} suspended={p.accountStatus !== "active"} />
+        <div className="card p-5 sm:p-6">
+          <div className="display flex items-center gap-2 text-2xl">
+            <TbArrowsExchange size={26} className="text-accent" /> Trade your spares
+          </div>
+          <p className="mt-1 text-sm text-muted">Duplicates are worth more in someone else&apos;s hands. Swap them for the parts you&apos;re missing, or gift one to a friend (that counts for your daily gift job).</p>
+          {spares.length === 0 ? (
+            <p className="mt-5 rounded-2xl border-2 border-dashed border-border p-5 text-center text-sm text-muted">No spares yet. Open more crates and duplicates will show up here.</p>
+          ) : (
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {spares.map(({ f, n }) => (
+                <li key={f.type} className="flex items-center gap-2 rounded-xl border-2 border-black bg-black/40 py-1 pl-1 pr-3 text-sm">
+                  <FragmentIcon type={f.type} size={28} /> {f.name} <b className="text-accent">×{n}</b>
+                </li>
+              ))}
+            </ul>
+          )}
+          {missing.length > 0 && (
+            <p className="mt-4 text-sm">
+              Still missing: <b>{missing.map((f) => f.name).join(", ")}</b>
+            </p>
+          )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link href="/trade" className="btn btn-accent">
+              <TbArrowsExchange size={18} /> Post a swap
+            </Link>
+            <Link href="/trade?tab=gift" className="btn btn-ghost">
+              <TbGift size={18} /> Gift a card
+            </Link>
+          </div>
+        </div>
         <div className="card p-6">
           <div className="display text-2xl">Card log</div>
           {ledger.rows.length === 0 ? (

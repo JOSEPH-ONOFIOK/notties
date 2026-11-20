@@ -107,7 +107,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
             <span style={{ fontSize: 110, lineHeight: 0.9, color: lime, marginTop: 8 }}>{u.forged_at ? "NOW ONE" : "ALMOST"}</span>
             <span style={{ fontSize: 110, lineHeight: 0.9 }}>{u.forged_at ? "OF US." : "THERE."}</span>
             <span style={{ fontSize: 30, color: "#b3baa3", marginTop: 26 }}>{u.forged_at ? "Assembled a Nottie and locked a guaranteed mint spot." : "Collecting parts in Vlad's lab."}</span>
-            <span style={{ display: "flex", alignSelf: "flex-start", marginTop: 26, fontSize: 28, background: lime, color: ink, border: `4px solid ${ink}`, borderRadius: 999, padding: "8px 22px", boxShadow: `0 6px 0 ${ink}` }}>CAUSE TROUBLE WITH US</span>
+            <span style={{ display: "flex", alignSelf: "flex-start", marginTop: 26, fontSize: 28, background: lime, color: ink, border: `4px solid ${ink}`, borderRadius: 999, padding: "8px 22px", boxShadow: `0 6px 0 ${ink}` }}>CAUSE $NOTTIES WITH US</span>
           </div>
         </Frame>
       ),
@@ -138,7 +138,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
           <div style={{ display: "flex", flexDirection: "column", marginLeft: 60, flex: 1 }}>
             <span style={{ fontSize: 30, color: "#d9c79a" }}>REWARD</span>
             <span style={{ fontSize: 120, lineHeight: 0.95, color: lime }}>{u.points.toLocaleString()}</span>
-            <span style={{ fontSize: 40 }}>TROUBLE</span>
+            <span style={{ fontSize: 40 }}>$NOTTIES</span>
             <span style={{ fontSize: 30, color: "#d9c79a", marginTop: 24 }}>
               LV {lv.level} · {lv.title.toUpperCase()}
             </span>

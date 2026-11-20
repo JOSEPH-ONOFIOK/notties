@@ -91,13 +91,17 @@ export async function claimCrate(userId: string, idemKey: string) {
 
 const dayStartSql = "date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'";
 
+const buyCooldownMs = (s: Settings) => Math.max(0, Number(s.crate_buy_cooldown_minutes) || 0) * 60_000;
+
 export async function shopStatus(userId: string, settings: Settings) {
-  const { rows } = await query<{ n: string }>(`select count(*)::text as n from crate_claims where user_id = $1 and source = 'shop' and created_at >= ${dayStartSql}`, [userId]);
+  const { rows } = await query<{ n: string; last: string | null }>(`select count(*) filter (where created_at >= ${dayStartSql})::text as n, max(created_at) as last from crate_claims where user_id = $1 and source = 'shop'`, [userId]);
   const bought = Number(rows[0]?.n ?? 0);
-  return { price: Number(settings.crate_price) || 0, left: Math.max(0, (Number(settings.crate_buys_per_day) || 0) - bought), enabled: !!settings.shop_enabled };
+  const last = rows[0]?.last ? new Date(rows[0].last).getTime() : 0;
+  const next = last && buyCooldownMs(settings) ? last + buyCooldownMs(settings) : 0;
+  return { price: Number(settings.crate_price) || 0, left: Math.max(0, (Number(settings.crate_buys_per_day) || 0) - bought), enabled: !!settings.shop_enabled, cooldownMinutes: Math.max(0, Number(settings.crate_buy_cooldown_minutes) || 0), nextBuyAt: next > Date.now() ? new Date(next).toISOString() : null };
 }
 
-/** Spend TROUBLE on a bonus crate. Doesn't touch the timer; capped per UTC day. */
+/** Spend $NOTTIES on a crate. Doesn't touch the free timer; one per hour (crate_buy_cooldown_minutes) and capped per UTC day. */
 export async function buyCrate(userId: string, idemKey: string) {
   if (!/^[a-zA-Z0-9_-]{8,64}$/.test(idemKey)) throw new GameError("Bad request");
   return withTx(async (q) => {
@@ -109,8 +113,11 @@ export async function buyCrate(userId: string, idemKey: string) {
     const u = await requireActive(q, userId);
     const price = Math.max(0, Number(settings.crate_price) || 0);
     const bought = Number((await q.query<{ n: string }>(`select count(*)::text as n from crate_claims where user_id = $1 and source = 'shop' and created_at >= ${dayStartSql}`, [userId])).rows[0].n);
-    if (bought >= (Number(settings.crate_buys_per_day) || 0)) throw new GameError("You've bought all your bonus crates today. Back tomorrow.", 429);
-    if (Number(u.points) < price) throw new GameError(`You need ${price} TROUBLE for a bonus crate.`);
+    if (bought >= (Number(settings.crate_buys_per_day) || 0)) throw new GameError("You've bought all your crates today. Back tomorrow.", 429);
+    const last = (await q.query<{ last: string | null }>("select max(created_at) as last from crate_claims where user_id = $1 and source = 'shop'", [userId])).rows[0]?.last;
+    const wait = last ? new Date(last).getTime() + buyCooldownMs(settings) - Date.now() : 0;
+    if (wait > 0) throw new GameError(`You can buy your next crate in ${Math.ceil(wait / 60_000)} min.`, 429);
+    if (Number(u.points) < price) throw new GameError(`You need ${price} $NOTTIES for a crate. Do missions to earn more.`);
 
     await addPoints(q, userId, -price, "shop_crate", undefined, `shopbuy:${idemKey}`);
     const r = await openCrate(q, u, settings, "shop", idemKey);

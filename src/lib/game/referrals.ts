@@ -10,6 +10,12 @@ import { boostedPoints, sendMail } from "./mail";
 export async function checkReferralProgress(q: Q, refereeId: string, claimsNow: number, settings: Settings) {
   const need = Math.max(1, Number(settings.referral_qualify_claims) || 3);
   if (claimsNow < need) return;
+  // If a recruit mission is set (e.g. "engage the launch post"), they must have finished it too.
+  const mission = String(settings.referral_task ?? "").trim();
+  if (mission) {
+    const done = await q.query("select 1 from task_completions where user_id = $1 and task_id = $2 limit 1", [refereeId, mission]);
+    if (!done.rows.length) return;
+  }
   const ref = (await q.query<{ id: string; referrer_id: string; status: string }>("select id, referrer_id, status from referrals where referee_id = $1 for update", [refereeId])).rows[0];
   if (!ref || ref.status !== "pending") return;
 
@@ -19,7 +25,7 @@ export async function checkReferralProgress(q: Q, refereeId: string, claimsNow: 
     return;
   }
   await q.query("update referrals set status = 'verified', verified_at = now() where id = $1", [ref.id]);
-  // The recruiter's bonus (TROUBLE + free crates) arrives in their mailbox.
+  // The recruiter's bonus ($NOTTIES + free crates) arrives in their mailbox.
   const who = (await q.query<{ x_username: string }>("select x_username from users where id = $1", [refereeId])).rows[0]?.x_username ?? "a recruit";
   await sendMail(q, ref.referrer_id, {
     kind: "referral",

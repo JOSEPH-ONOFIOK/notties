@@ -23,11 +23,10 @@ const CHAPTERS = [
   ["cards", "The 8 parts"],
   ["lab", "Vlad's Lab"],
   ["trade", "Black Market & swaps"],
-  ["pawn", "Pawn Shop"],
   ["missions", "Missions & mailbox"],
-  ["trouble", "TROUBLE & levels"],
+  ["trouble", "$NOTTIES & levels"],
   ["streaks", "Streaks & the lucky meter"],
-  ["shop", "Bonus crates"],
+  ["shop", "Buying crates"],
   ["events", "Live events"],
   ["gangs", "Gangs"],
   ["recruit", "Recruiting"],
@@ -126,11 +125,11 @@ export default async function Wiki() {
           <Chapter id="quick" n={2} title="The 30-second version">
             <ol className="grid gap-3 sm:grid-cols-5">
               {[
-                ["1", "Hunt", `A crate washes up ${every}. Tap it open.`],
-                ["2", "Collect", "Each crate drops one of 8 parts."],
-                ["3", "Trade", "Swap spares with other players."],
+                ["1", "Earn", `Do missions, check in, gift cards, recruit friends. All pay ${POINTS_NAME}.`],
+                ["2", "Open crates", `Spend ${POINTS_NAME} on crates, plus a free one ${every}.`],
+                ["3", "Trade", "Swap your doubles for the parts you're missing."],
                 ["4", "Assemble", "All 8 parts? Build your Nottie."],
-                ["5", "One of us", "That locks your guaranteed mint spot."],
+                ["5", "Add wallet", "Your guaranteed free mint spot is locked."],
               ].map(([n, t, d]) => (
                 <li key={n} className="card p-4">
                   <div className="display grid h-9 w-9 place-items-center rounded-full border-[3px] border-black bg-accent text-black">{n}</div>
@@ -139,12 +138,12 @@ export default async function Wiki() {
                 </li>
               ))}
             </ol>
-            <Tip>Everything else (missions, the Pawn Shop, recruiting) earns you {POINTS_NAME} and bragging rights while you wait for your next crate.</Tip>
+            <Tip>{POINTS_NAME} is the in-game token. The more you show up, the more crates you can open.</Tip>
           </Chapter>
 
           <Chapter id="crates" n={3} title="Crates">
             <p>
-              A Portal Crate washes up <b>{every}</b>. Go to <b>Hunt</b> and <b>tap it three times</b> to crack it open. Inside: exactly one part, plus <b>+{P.crate} {POINTS_NAME}</b>. Then the timer starts again.
+              Two ways to get a crate on the <b>Hunt</b> page: a <b>free one {every}</b>, or <b>buy one for {s.crate_price} {POINTS_NAME}</b> (one per hour). Missions and recruits also send free crates to your mailbox. <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
               <li>The timer runs on my clock, not yours. Changing your phone&apos;s time won&apos;t help. I checked.</li>
@@ -216,40 +215,7 @@ export default async function Wiki() {
             <p className="mt-3 text-muted">Every swap and gift is logged on both sides. I can see them all. I see everything.</p>
           </Chapter>
 
-          <Chapter id="pawn" n={7} title="Pawn Shop">
-            <p>
-              Hood runs a little shop in your <b>Stash</b>. He buys spare cards for {POINTS_NAME}. House rule: <b>you always keep one of each</b>, so you can never sell your way out of building a Nottie.
-            </p>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[420px] text-sm">
-                <thead className="display text-left text-xs tracking-widest text-muted">
-                  <tr>
-                    <th className="pb-2">Card</th>
-                    <th className="pb-2">Rarity</th>
-                    <th className="pb-2 text-right">Hood pays</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y-2 divide-black/50">
-                  {PARTS.map((f) => (
-                    <tr key={f.type}>
-                      <td className="py-2 font-semibold">{f.name}</td>
-                      <td className="py-2" style={{ color: RARITY_COLOR[f.rarity] }}>
-                        {RARITY_LABEL[f.rarity]}
-                      </td>
-                      <td className="py-2 text-right">
-                        <span className="inline-flex items-center gap-1 font-bold text-accent">
-                          <Coin size={16} /> {s.pawn_prices[f.type]}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Tip>Before you pawn, check whether a friend needs that card. A trade might get you the part you&apos;re missing.</Tip>
-          </Chapter>
-
-          <Chapter id="missions" n={8} title="Missions & mailbox">
+          <Chapter id="missions" n={7} title="Missions & mailbox">
             <p>
               Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME} <b>and free crates</b>. Fresh missions drop twice a day, at the start of each round, and disappear when the round ends. A timer on the board shows how long is left.
             </p>
@@ -269,14 +235,16 @@ export default async function Wiki() {
             </ul>
           </Chapter>
 
-          <Chapter id="trouble" n={9} title={`${POINTS_NAME} & levels`}>
+          <Chapter id="trouble" n={8} title={`${POINTS_NAME} & levels`}>
             <p>
-              <b>{POINTS_NAME}</b> is the score. You earn it by playing:
+              <b>{POINTS_NAME}</b> is the in-game token. Spend it on crates. You earn it by playing (round missions pay whatever the board says):
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {[
-                ["Cracking a crate", P.crate],
-                ["Daily roll call", P.daily_checkin],
+                ["Cracking a free crate", P.crate],
+                ["Daily roll call (climbs with your streak)", P.daily_checkin],
+                ["Daily gift (send a card to someone)", P.daily_gift],
+                ["Your first trade", P.first_trade],
                 ["Onboarding mission", P.onboarding],
                 ["Following on X", P.follow_x],
                 ["Linking a wallet", P.link_wallet],
@@ -304,7 +272,7 @@ export default async function Wiki() {
             <Tip>{POINTS_NAME} is an in-game score. It isn&apos;t money and it has no promised value. Anything it&apos;s used for later will be announced officially, with the rules, before it happens.</Tip>
           </Chapter>
 
-          <Chapter id="streaks" n={10} title="Streaks & the lucky meter">
+          <Chapter id="streaks" n={9} title="Streaks & the lucky meter">
             <p>
               <b>Roll call streak.</b> Claim the daily roll call on consecutive days (UTC) and the reward climbs:
             </p>
@@ -321,13 +289,13 @@ export default async function Wiki() {
             </p>
           </Chapter>
 
-          <Chapter id="shop" n={11} title="Bonus crates">
+          <Chapter id="shop" n={10} title="Buying crates">
             <p>
-              Can&apos;t wait for the timer? Spend <b>{s.crate_price} {POINTS_NAME}</b> on a bonus crate (up to <b>{s.crate_buys_per_day} a day</b>, reset at midnight UTC). It cracks just like a normal crate, fills your lucky meter, and doesn&apos;t touch your timer.
+              Spend <b>{s.crate_price} {POINTS_NAME}</b> on a crate, once every <b>{s.crate_buy_cooldown_minutes} minutes</b>. It cracks just like a free crate, fills your lucky meter, and doesn&apos;t touch your free-crate timer.
             </p>
           </Chapter>
 
-          <Chapter id="events" n={12} title="Live events">
+          <Chapter id="events" n={11} title="Live events">
             <p>Some days the lab gets weird. Events turn on and off by themselves on the server clock, so everyone gets them at exactly the same moment. Look for the banner under the top bar.</p>
             <ul className="mt-3 space-y-2">
               {(s.recurring_events ?? [])
@@ -341,7 +309,7 @@ export default async function Wiki() {
                     </span>
                     <div className="text-sm">
                       {e.effects.drop_mult ? `Drop odds boosted: ${Object.entries(e.effects.drop_mult).map(([t, m]) => `${FRAGMENTS.find((f) => f.type === t)?.name} ×${m}`).join(", ")}.` : ""}
-                      {e.effects.points_mult ? ` Every TROUBLE reward ×${e.effects.points_mult}.` : ""}
+                      {e.effects.points_mult ? ` Every $NOTTIES reward ×${e.effects.points_mult}.` : ""}
                       {e.effects.cooldown_mult ? ` Crate timers ×${e.effects.cooldown_mult}.` : ""}
                     </div>
                   </li>
@@ -351,8 +319,8 @@ export default async function Wiki() {
             <p className="mt-3 text-muted">The team also drops surprise events. Follow {BRAND.xHandle} so you don&apos;t miss them.</p>
           </Chapter>
 
-          <Chapter id="gangs" n={13} title="Gangs">
-            <p>After your first crate you pick a gang. It&apos;s a one-time choice. Your TROUBLE adds to your gang&apos;s total on the Most Wanted board.</p>
+          <Chapter id="gangs" n={12} title="Gangs">
+            <p>After your first crate you pick a gang. It&apos;s a one-time choice. Your $NOTTIES adds to your gang&apos;s total on the Most Wanted board.</p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {FACTIONS.map((f) => (
                 <li key={f.id} className="overflow-hidden rounded-xl border-[3px] border-black" style={{ background: f.color }}>
@@ -371,18 +339,18 @@ export default async function Wiki() {
             </p>
           </Chapter>
 
-          <Chapter id="recruit" n={14} title="Recruiting">
+          <Chapter id="recruit" n={13} title="Recruiting">
             <p>
               Your <b>Recruit Office</b> has a personal link. When someone joins through it and actually plays (cracks <b>{s.referral_qualify_claims} crates</b>), you get <b>+{P.referral} {POINTS_NAME}</b>. Signing up and leaving doesn&apos;t count.
             </p>
             <p className="mt-2 text-muted">Recruiting yourself, or a pile of fake accounts, gets them rejected and you flagged. I can tell.</p>
           </Chapter>
 
-          <Chapter id="wanted" n={15} title="Most Wanted">
+          <Chapter id="wanted" n={14} title="Most Wanted">
             <p>The leaderboard: most {POINTS_NAME}, first to assemble, most crates, best recruiters and most missions. The top three get wanted posters. Only fair, checked activity counts. Anyone under review is taken off the board until they&apos;re cleared.</p>
           </Chapter>
 
-          <Chapter id="rules" n={16} title="House rules">
+          <Chapter id="rules" n={15} title="House rules">
             <ul className="space-y-2">
               {[
                 ["One person, one account.", "Extra accounts to farm crates or recruits get flagged and reviewed."],
@@ -400,11 +368,11 @@ export default async function Wiki() {
             </ul>
           </Chapter>
 
-          <Chapter id="faq" n={17} title="FAQ">
+          <Chapter id="faq" n={16} title="FAQ">
             <div className="space-y-2">
               {[
                 ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
-                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your TROUBLE and free crates. Free crates wait on the Hunt page and have no timer."],
+                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES and free crates. Free crates wait on the Hunt page and have no timer."],
                 ["When do new missions drop?", `Twice a day, at ${s.task_rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" and ")} ${s.task_rounds.label}. Each round's missions disappear when the next round starts, so don't leave them for later.`],
                 ["Do I need a wallet to play?", "No. Play first. You only need to link a wallet before the allowlist snapshot so your Nottie can be delivered."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],

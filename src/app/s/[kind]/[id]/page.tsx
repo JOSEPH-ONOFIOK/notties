@@ -19,7 +19,7 @@ async function load(kind: string, id: string) {
     const u = await shareUser(id);
     if (!u) return null;
     if (kind === "nottie") return { title: u.forged_at ? `@${u.username} is now one of us` : `@${u.username} is assembling a Nottie`, line: "Collect 8 parts. Build a Nottie. Lock a guaranteed mint spot.", ref: u.ref_code };
-    return { title: `WANTED: @${u.username}`, line: `Rank #${u.rank} with ${u.points.toLocaleString()} TROUBLE.`, ref: u.ref_code };
+    return { title: `WANTED: @${u.username}`, line: `Rank #${u.rank} with ${u.points.toLocaleString()} $NOTTIES.`, ref: u.ref_code };
   }
   return null;
 }

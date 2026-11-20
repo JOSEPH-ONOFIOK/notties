@@ -1,4 +1,4 @@
-/** The TROUBLE coin: lime coin, black ink, a Notties goggle eye stamped in the middle. */
+/** The $NOTTIES coin: lime coin, black ink, a Notties goggle eye stamped in the middle. */
 export function Coin({ size = 22, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" className={className} aria-hidden>

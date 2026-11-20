@@ -13,12 +13,14 @@ export default async function Economy() {
       <div className="grid gap-4 sm:grid-cols-2">
         <NumberField k="crate_cooldown_minutes" label="Crate cooldown (minutes)" value={s.crate_cooldown_minutes} hint="120 = one crate every 2 hours. Applies to claims made after the change." min={1} />
         <NumberField k="pity_threshold" label="Lucky meter size" value={s.pity_threshold} hint="Crates without a Rare+ before the next one is guaranteed Rare or better." min={2} />
-        <NumberField k="crate_price" label="Bonus crate price (TROUBLE)" value={s.crate_price} hint="What a shop crate costs. It's the main TROUBLE sink." min={0} />
-        <NumberField k="crate_buys_per_day" label="Bonus crates per day" value={s.crate_buys_per_day} hint="Per player, resets at midnight UTC. 0 turns the shop off." min={0} />
-        <TextSetting k="streak_bonus" label="Roll call streak rewards" value={(s.streak_bonus ?? []).join(", ")} hint="TROUBLE for day 1, 2, 3… of a streak. After the last number it keeps paying that." parse="numbers" />
+        <NumberField k="crate_price" label="Crate price ($NOTTIES)" value={s.crate_price} hint="What a bought crate costs. It's where players spend their $NOTTIES." min={0} />
+        <NumberField k="crate_buy_cooldown_minutes" label="Minutes between bought crates" value={s.crate_buy_cooldown_minutes} hint="60 = a player can buy one crate per hour." min={0} />
+        <NumberField k="crate_buys_per_day" label="Bought crates per day (max)" value={s.crate_buys_per_day} hint="Per player, resets at midnight UTC. 0 turns buying off." min={0} />
+        <TextSetting k="streak_bonus" label="Roll call streak rewards" value={(s.streak_bonus ?? []).join(", ")} hint="$NOTTIES for day 1, 2, 3… of a streak. After the last number it keeps paying that." parse="numbers" />
         <NumberField k="welcome_crates" label="Welcome gift (free crates)" value={s.welcome_crates} hint="Sent to every new player's mailbox when they sign up. 0 = none." min={0} />
-        <NumberField k="referral_crates" label="Recruit bonus (free crates)" value={s.referral_crates} hint="Sent to the recruiter's mailbox, with the TROUBLE bonus, when a recruit plays." min={0} />
-        <NumberField k="referral_qualify_claims" label="Referral qualifies after N crates" value={s.referral_qualify_claims} hint="The referee must open this many crates before the referrer is paid." min={1} />
+        <NumberField k="referral_crates" label="Recruit bonus (free crates)" value={s.referral_crates} hint="Sent to the recruiter's mailbox, with the $NOTTIES bonus, when a recruit plays." min={0} />
+        <NumberField k="referral_qualify_claims" label="Referral qualifies after N crates" value={s.referral_qualify_claims} hint="The recruit must open this many crates before the recruiter is paid." min={1} />
+        <TextSetting k="referral_task" label="Recruit mission (optional)" value={s.referral_task} hint="A mission id (from the Missions page) the recruit must also finish before the recruiter is paid, e.g. your launch-post mission. Leave blank to skip." parse="text" />
       </div>
       <div className="mt-4">
         <RoundsSetting value={s.task_rounds} />
@@ -28,13 +30,12 @@ export default async function Economy() {
       </div>
       <div className="mt-4 grid gap-4">
         <MapField k="drop_weights" label="Crate drop weights" value={s.drop_weights} labels={labels} hint="Relative weights; percentages are computed from the total. Set 0 to stop a fragment dropping." />
-        <MapField k="pawn_prices" label={`Pawn Shop buyback (${POINTS_NAME})`} value={s.pawn_prices} labels={labels} hint="What the shop pays per spare fragment. Players always keep one of each." />
         <MapField k="recipe" label="Forge recipe" value={s.recipe} labels={labels} hint="How many of each fragment one Nottie needs. Changing this after launch changes everyone's progress. Announce it first." />
         <MapField
           k="points"
           label={`${POINTS_NAME} rewards`}
           value={s.points}
-          labels={{ crate: "Per crate", onboarding: "Onboarding task", follow_x: "Follow X task", link_wallet: "Link wallet task", daily_checkin: "Daily roll call", referral: "Verified referral", forge: "Assembling a Nottie" }}
+          labels={{ crate: "Per free crate", onboarding: "Onboarding mission", follow_x: "Follow X mission", link_wallet: "Add wallet mission", daily_checkin: "Daily roll call (first day; the streak list above overrides)", daily_gift: "Daily gift", first_trade: "First trade", referral: "Verified recruit", forge: "Assembling a Nottie" }}
         />
       </div>
     </>

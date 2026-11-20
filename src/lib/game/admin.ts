@@ -48,7 +48,7 @@ export async function setAdminRole(by: string, username: string, role: Role | nu
   await audit(by, role ? "set_role" : "remove_role", u, { role });
 }
 
-/** Manual correction: move a player's TROUBLE and/or cards, with a reason in the audit log. */
+/** Manual correction: move a player's $NOTTIES and/or cards, with a reason in the audit log. */
 export async function adjustPlayer(by: string, userId: string, a: { points?: number; type?: string; qty?: number; reason: string }) {
   const { addFragment, addPoints, newIdem } = await import("./core");
   const { FRAGMENT_BY_TYPE } = await import("./config");
@@ -58,7 +58,7 @@ export async function adjustPlayer(by: string, userId: string, a: { points?: num
     if (!u) throw new Error("Player not found");
     const pts = Math.trunc(Number(a.points) || 0);
     if (pts) {
-      if (Number(u.points) + pts < 0) throw new Error("That would make their TROUBLE negative");
+      if (Number(u.points) + pts < 0) throw new Error("That would make their $NOTTIES negative");
       await addPoints(q, userId, pts, "admin", a.reason.slice(0, 120), `adj:${newIdem()}`);
     }
     const qty = Math.trunc(Number(a.qty) || 0);

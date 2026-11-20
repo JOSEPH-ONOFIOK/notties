@@ -79,7 +79,7 @@ export default async function Leaderboard({ searchParams }: { searchParams: Prom
                 </div>
                 <div className="grid grid-cols-4 border-t-[3px] border-black text-center text-xs">
                   {[
-                    ["TROUBLE", f.trouble.toLocaleString()],
+                    ["$NOTTIES", f.trouble.toLocaleString()],
                     ["Members", f.members],
                     ["Assembled", f.forged],
                     ["Crates", f.crates.toLocaleString()],

@@ -31,7 +31,10 @@ async function loadSettings(q?: Q): Promise<Settings> {
   // The mint is free, always.
   s.mint = { ...DEFAULT_SETTINGS.mint, ...(s.mint as object), price: "Free" };
   s.book_cap = Math.max(0, Number(s.book_cap) || 0);
+  // The token used to be called TROUBLE; rename the event saved under the old name.
+  s.recurring_events = (s.recurring_events as Settings["recurring_events"]).map((e) => (e.name === "Double Trouble Hour" ? { ...e, name: "Double $NOTTIES Hour" } : e));
   s.task_rounds = cleanRounds(s.task_rounds as Partial<RoundCfg>);
+  s.referral_task = String(s.referral_task ?? "").trim().slice(0, 64);
   s.welcome_crates = Math.max(0, Number(s.welcome_crates) || 0);
   s.referral_crates = Math.max(0, Number(s.referral_crates) || 0);
   return s as Settings;
@@ -129,10 +132,10 @@ export async function requireActive(q: Q, userId: string) {
 
 /* ───────────────────────── points + inventory helpers (inside a tx) ───────────────────────── */
 
-/** Rewards that live events (e.g. Double Trouble) multiply. Exchanges, spending and admin fixes never are. */
+/** Rewards that live events (e.g. Double $NOTTIES Hour) multiply. Exchanges, spending and admin fixes never are. */
 export const BOOSTABLE = (reason: string) => reason === "crate" || reason === "referral" || reason === "forge" || reason.startsWith("task:");
 
-/** Credit or debit TROUBLE, idempotently. Returns the amount actually applied (after event boosts). */
+/** Credit or debit $NOTTIES, idempotently. Returns the amount actually applied (after event boosts). */
 export async function addPoints(q: Q, userId: string, delta: number, reason: string, refId?: string, idemKey?: string): Promise<number> {
   if (delta === 0) return 0;
   if (delta > 0 && BOOSTABLE(reason)) {

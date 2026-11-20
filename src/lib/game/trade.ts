@@ -54,6 +54,8 @@ export async function transferFragment(senderId: string, recipientHandle: string
 
     await sendMail(q, recipient.id, { kind: "gift", title: `@${sender.x_username} sent you ${qty} × ${FRAGMENT_BY_TYPE[type].name}`, body: "It's already in your stash.", part: type, idem: `gift:${trade.id}` });
     await completeTask(q, sender.id, "first_trade", settings).catch(() => {});
+    // Gifting counts for today's daily gift job automatically.
+    await completeTask(q, sender.id, "daily_gift", settings).catch(() => {});
 
     return { replayed: false, tradeId: trade.id, to: recipient.username };
   });

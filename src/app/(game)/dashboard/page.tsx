@@ -32,14 +32,16 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
       ? { title: "You've got mail", body: `${p.mail} letter${p.mail === 1 ? "" : "s"} waiting. Mission rewards and free crates are inside.`, href: "/mail", cta: "Open mailbox" }
       : p.crates > 0
         ? { title: `Open ${p.crates} free crate${p.crates === 1 ? "" : "s"}`, body: "No timer on these. Crack them open and see what parts fall out.", href: "/hunt", cta: "Go hunt" }
+        : p.points >= settings.crate_price && !p.forgedAt && !p.progress.complete
+          ? { title: "Buy a crate", body: `You've got ${p.points.toLocaleString()} $NOTTIES. A crate costs ${settings.crate_price}. Go see what's inside.`, href: "/hunt", cta: "Go hunt" }
         : p.claims === 0
       ? { title: "Crack your first crate", body: "A Portal Crate just washed up. Tap it open and see what falls out.", href: "/hunt", cta: "Go hunt" }
       : !p.onboarded
-        ? { title: "Report for trouble", body: "Claim your onboarding bounty on the Mission Board. Easy TROUBLE.", href: "/tasks", cta: "Open missions" }
+        ? { title: "Report for trouble", body: "Claim your onboarding bounty on the Mission Board. Easy $NOTTIES.", href: "/tasks", cta: "Open missions" }
         : p.forgedAt && !p.wallet
           ? { title: "Link a getaway wallet", body: "Your Nottie is assembled. Tell us where to deliver it before the snapshot.", href: "/wallet", cta: "Link wallet" }
           : p.forgedAt
-            ? { title: "Recruit the crew", body: "You're one of us. Bring friends: each recruit who plays pays you 100 TROUBLE.", href: "/referrals", cta: "Get your link" }
+            ? { title: "Recruit the crew", body: `You're one of us. Bring friends: each recruit who plays pays you ${settings.points.referral} $NOTTIES.`, href: "/referrals", cta: "Get your link" }
             : p.progress.complete
               ? { title: "Assemble your Nottie!", body: "Every part is on the bench. Fire up Vlad's machine.", href: "/forge", cta: "To the lab" }
               : {
@@ -118,7 +120,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
                 <div className="display text-accent">{lv.title}</div>
               </div>
               <div className="rounded-lg border-2 border-black bg-black/40 p-2">
-                <div className="text-muted">TROUBLE</div>
+                <div className="text-muted">$NOTTIES</div>
                 <div className="display flex items-center gap-1 text-accent">
                   <Coin size={14} /> {p.points.toLocaleString()}
                 </div>
@@ -139,7 +141,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         <Spot href="/forge" img="/notties/221.webp" name="Vlad's Lab" tag="Forge" pos="center 30%" badge={p.forgedAt ? "Done" : `${p.progress.pct}%`} hot={p.progress.complete && !p.forgedAt} />
         <Spot href="/tasks" img="/characters/Hood.webp" name="Mission Board" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
         <Spot href="/trade" img="/notties/86.webp" name="Black Market" pos="center 30%" tag="Trade" badge="Swap spares" />
-        <Spot href="/inventory" img="/notties/6.webp" name="Pawn Shop" tag="Stash" pos="center 30%" badge={`${spares} spare${spares === 1 ? "" : "s"}`} />
+        <Spot href="/inventory" img="/notties/6.webp" name="Your Stash" tag="Cards" pos="center 30%" badge={`${spares} spare${spares === 1 ? "" : "s"}`} />
         <Spot href="/leaderboard" img="/characters/Dild.webp" name="Most Wanted" tag="Ranks" pos="center 30%" badge="Wanted" />
         <Spot href="/referrals" img="/characters/Woody.webp" name="Recruit Office" pos="center 30%" tag="Invite" badge={`${p.referralsVerified} recruits`} />
         <Spot href="/showroom" img="/notties/248.webp" name="The Gallery" tag="Showroom" className="col-span-2 lg:col-span-2" pos="center 35%" badge={`${BRAND.supply.toLocaleString()} Notties`} />

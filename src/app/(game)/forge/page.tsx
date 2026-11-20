@@ -17,7 +17,7 @@ export default async function Forge() {
       {!p.forgedAt && (
         <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
           <Tip t="Missing something?" d="Trade spares with other players." href="/trade" />
-          <Tip t="Too many of one thing?" d="Pawn duplicates for TROUBLE." href="/inventory" />
+          <Tip t="Too many of one thing?" d="Swap your duplicates on the Black Market." href="/trade" />
           <Tip t="Where does my Nottie go?" d="Link your mint wallet before the snapshot." href="/wallet" />
         </div>
       )}

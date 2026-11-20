@@ -38,14 +38,14 @@ export default async function TasksAdmin() {
       <PageTitle
         kicker="Admin"
         title="Missions"
-        sub={`Pick a round when you add a mission. It shows up when the round starts and disappears when it ends, so each day starts fresh at ${rounds.hours[0]}:00 ${rounds.label}. Every mission pays TROUBLE plus free crates, sent to the player's mailbox.`}
+        sub={`Pick a round when you add a mission. It shows up when the round starts and disappears when it ends, so each day starts fresh at ${rounds.hours[0]}:00 ${rounds.label}. Every mission pays $NOTTIES plus free crates, sent to the player's mailbox.`}
       />
       <div className="grid gap-4 lg:grid-cols-2">
         <TaskEditor rounds={rounds} />
       </div>
       {group("Live this round", live)}
       {group("Scheduled", scheduled, "Will appear when their round starts.")}
-      {group("Always on", always, "No round. Built-in ids (onboarding, follow_x, link_wallet, daily_checkin) take their TROUBLE from Economy.")}
+      {group("Always on", always, "No round. Built-in ids (onboarding, follow_x, link_wallet, daily_checkin) take their $NOTTIES from Economy.")}
       {expired.length > 0 && (
         <section className="mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">

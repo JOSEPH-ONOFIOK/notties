@@ -28,7 +28,7 @@ export default async function Settings() {
             {[
               ["Level", `${lv.level} · ${lv.title}`],
               ["Player code", p.refCode],
-              ["TROUBLE now", p.points.toLocaleString()],
+              ["$NOTTIES now", p.points.toLocaleString()],
               ["Total earned", p.lifetimePoints.toLocaleString()],
               ["Spent", p.spent.toLocaleString()],
               ["Best streak", `${p.bestStreak} days`],

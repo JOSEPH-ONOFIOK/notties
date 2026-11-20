@@ -158,7 +158,7 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
               title="Crack the crates."
               body={
                 <>
-                  A Portal Crate washes up <b>{every}</b>. Tap it <b>three times</b> and it cracks open with one part inside, plus a bit of <b>TROUBLE</b>. Some parts are common. Some are very, very not.
+                  A Portal Crate washes up <b>{every}</b>. Tap it <b>three times</b> and it cracks open with one part inside, plus a bit of <b>$NOTTIES</b>. Some parts are common. Some are very, very not.
                 </>
               }
             />
@@ -180,7 +180,7 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
               title="Find all 8 parts."
               body={
                 <>
-                  A background, a shadow, shoes, an outfit, a mouth, eyes, something for the hands or head, and the rarest of all, the <b>Body</b>. (My book went missing too. If you ever find it, it&apos;s worth a lot.) Doubles? <b>Trade</b> them with other players or pawn them for TROUBLE.
+                  A background, a shadow, shoes, an outfit, a mouth, eyes, something for the hands or head, and the rarest of all, the <b>Body</b>. The Body and the Hand &amp; Head are the hardest to find. Doubles? <b>Trade</b> them with other players for what you&apos;re missing.
                 </>
               }
             />
@@ -209,7 +209,7 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
               title="While you wait…"
               body={
                 <>
-                  Do <b>missions</b>, help friends with trades, and <b>recruit</b> your crew to earn TROUBLE and climb the <b>Most Wanted</b> board. Every bit of TROUBLE levels you up, from Stray all the way to Legend of Robinhood.
+                  Do <b>missions</b>, check in daily, gift cards and <b>recruit</b> your crew to earn <b>$NOTTIES</b>. Spend them on more crates, and climb the <b>Most Wanted</b> board. Every bit of $NOTTIES levels you up, from Stray all the way to Legend of Robinhood.
                 </>
               }
             />

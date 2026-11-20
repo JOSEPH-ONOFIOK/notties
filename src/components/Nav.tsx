@@ -28,7 +28,7 @@ const MAIN: { href: string; label: string; icon: IconType }[] = [
 ];
 const MORE = [
   { href: "/mail", label: "Mailbox" },
-  { href: "/inventory", label: "Stash & Pawn Shop" },
+  { href: "/inventory", label: "Stash" },
   { href: "/leaderboard", label: "Most Wanted" },
   { href: "/referrals", label: "Recruit" },
   { href: "/wallet", label: "Getaway Wallet" },
@@ -86,7 +86,7 @@ export function Nav({ player }: { player: PlayerView }) {
               <TbFlame size={18} strokeWidth={2.4} className={!player.checkedInToday && player.streak ? "anim-wiggle text-warn" : ""} />
               <span className="display text-sm tabular-nums">{player.streak}</span>
             </Link>
-            <Link href="/inventory" className="flex items-center gap-1.5 rounded-full border-[3px] border-black bg-black/50 py-1 pl-1 pr-3 shadow-[0_3px_0_#000]" title="TROUBLE">
+            <Link href="/inventory" className="flex items-center gap-1.5 rounded-full border-[3px] border-black bg-black/50 py-1 pl-1 pr-3 shadow-[0_3px_0_#000]" title="$NOTTIES">
               <Coin size={26} />
               <CountUp value={player.points} className="display text-sm" />
             </Link>

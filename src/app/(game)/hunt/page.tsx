@@ -20,7 +20,7 @@ export default async function Hunt() {
 
   return (
     <>
-      <PageTitle kicker="Hunt" title="Raid the lab" sub={`A Portal Crate washes up every ${hours === 1 ? "hour" : Number.isInteger(hours) ? `${hours} hours` : `${cooldown} minutes`}. Tap it open. One fragment inside, +${settings.points.crate} TROUBLE. Vlad's clock runs the timer, so no cheating.`} />
+      <PageTitle kicker="Hunt" title="Raid the lab" sub={`A free crate every ${hours === 1 ? "hour" : Number.isInteger(hours) ? `${hours} hours` : `${cooldown} minutes`}, and you can buy one with ${settings.crate_price} $NOTTIES every ${settings.crate_buy_cooldown_minutes === 60 ? "hour" : `${settings.crate_buy_cooldown_minutes} minutes`}. Each crate drops one random part. Doubles? Trade them.`} />
 
       <CrateClaim nextClaimAt={p.nextClaimAt} enabled={settings.claims_enabled} suspended={p.accountStatus !== "active"} cooldownMinutes={cooldown} pity={p.pity} pityThreshold={Math.max(2, Number(settings.pity_threshold) || 10)} shop={shop} points={p.points} eventName={fx.names.join(" + ") || null} freeCrates={p.crates} />
 

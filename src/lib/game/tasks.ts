@@ -12,7 +12,7 @@ export interface TaskRow {
   description: string;
   points: number;
   kind: "once" | "daily";
-  verify: "auto" | "link" | "wallet" | "trade" | "manual";
+  verify: "auto" | "link" | "wallet" | "trade" | "gift_today" | "manual";
   link: string | null;
   sort: number;
   active: boolean;
@@ -27,7 +27,9 @@ const ONCE_DAY = "1970-01-01";
 const todayUtc = () => new Date().toISOString().slice(0, 10);
 
 export async function listTasks(userId: string) {
-  const tasks = (await query<TaskRow>("select * from tasks where active order by sort, id")).rows;
+  const settings = await getSettings();
+  // Built-in missions are paid from Economy settings, so show that amount, not the table's.
+  const tasks = (await query<TaskRow>("select * from tasks where active order by sort, id")).rows.map((t) => (t.id in settings.points ? { ...t, points: Number(settings.points[t.id as keyof Settings["points"]]) } : t));
   const done = (await query<{ task_id: string; day: string; created_at: string }>("select task_id, day::text as day, created_at from task_completions where user_id = $1", [userId])).rows;
   const clicks = (await query<{ task_id: string; clicked_at: string }>("select task_id, clicked_at from task_clicks where user_id = $1", [userId])).rows;
   const subs = (await query<{ task_id: string; status: string }>("select task_id, status from task_submissions where user_id = $1", [userId])).rows;
@@ -64,7 +66,7 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
     await q.query("update users set streak = $2, best_streak = greatest(best_streak, $2), last_checkin = $3 where id = $1", [userId, streak, utcDay()]);
     if (streak === 7 || streak === 30 || streak === 100) await pushFeed(q, userId, "streak", { days: streak });
   }
-  // The reward goes to the mailbox: TROUBLE (boosted now if an event is live) plus free crates.
+  // The reward goes to the mailbox: $NOTTIES (boosted now if an event is live) plus free crates.
   pts = await boostedPoints(q, pts, `task:${taskId}`);
   const crates = Math.max(0, Number(t.crates) || 0);
   await sendMail(q, userId, {
@@ -77,6 +79,11 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
     idem: `task:${userId}:${taskId}:${day}`,
   });
   if (taskId === "onboarding") await q.query("update users set onboarded = true where id = $1", [userId]);
+  if (settings.referral_task && taskId === settings.referral_task) {
+    const { checkReferralProgress } = await import("./referrals");
+    const claims = (await q.query<{ claims: number }>("select claims from users where id = $1", [userId])).rows[0]?.claims ?? 0;
+    await checkReferralProgress(q, userId, Number(claims), settings);
+  }
   if (t.gives_book) await awardBookIfEarned(q, userId, settings);
   return { points: pts, crates };
 }
@@ -102,6 +109,9 @@ export async function claimTask(userId: string, taskId: string) {
     } else if (t.verify === "trade") {
       const tr = await q.query("select 1 from trades where sender_id = $1 union all select 1 from trade_offers where status = 'filled' and (maker_id = $1 or taker_id = $1) limit 1", [userId]);
       if (!tr.rows.length) throw new GameError("Send or swap a card with someone first");
+    } else if (t.verify === "gift_today") {
+      const g = await q.query("select 1 from trades where sender_id = $1 and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC' limit 1", [userId]);
+      if (!g.rows.length) throw new GameError("Gift a card to someone today first (Trade → Gift a card)");
     } else if (t.verify === "manual") {
       throw new GameError("Submit your proof and the team will review it");
     }

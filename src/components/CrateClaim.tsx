@@ -30,7 +30,7 @@ export function CrateClaim(p: {
   cooldownMinutes: number;
   pity: number;
   pityThreshold: number;
-  shop: { price: number; left: number; enabled: boolean };
+  shop: { price: number; left: number; enabled: boolean; cooldownMinutes: number; nextBuyAt: string | null };
   points: number;
   eventName: string | null;
   freeCrates: number;
@@ -48,6 +48,7 @@ export function CrateClaim(p: {
   const [error, setError] = useState<string | null>(null);
   const [pity, setPity] = useState(p.pity);
   const [shopLeft, setShopLeft] = useState(p.shop.left);
+  const [nextBuy, setNextBuy] = useState(p.shop.nextBuyAt);
   const [freeLeft, setFreeLeft] = useState(p.freeCrates);
   const [freeFrom, setFreeFrom] = useState(p.freeCrates);
   if (freeFrom !== p.freeCrates) {
@@ -69,7 +70,8 @@ export function CrateClaim(p: {
   const ready = mode === "shop" ? !p.suspended : mode === "free" ? !p.suspended && p.enabled && freeLeft > 0 : timerReady;
   const cooldownMs = p.cooldownMinutes * 60_000;
   const charge = ready ? 1 : Math.max(0, Math.min(1, 1 - left / cooldownMs));
-  const canBuy = p.shop.enabled && p.enabled && !p.suspended && shopLeft > 0;
+  const buyWait = mounted ? timeLeft(nextBuy, now) : 0;
+  const canBuy = p.shop.enabled && p.enabled && !p.suspended && shopLeft > 0 && buyWait === 0;
   const affordable = p.points >= p.shop.price;
 
   function shake() {
@@ -112,7 +114,10 @@ export function CrateClaim(p: {
       setResult(r);
       if (r.nextClaimAt) setNext(r.nextClaimAt);
       setPity(r.pity);
-      if (mode === "shop") setShopLeft((x) => Math.max(0, x - 1));
+      if (mode === "shop") {
+        setShopLeft((x) => Math.max(0, x - 1));
+        if (p.shop.cooldownMinutes) setNextBuy(new Date(serverNow() + p.shop.cooldownMinutes * 60_000).toISOString());
+      }
       if (mode === "free") setFreeLeft((x) => Math.max(0, x - 1));
       setPhase("opening");
       sfx.whoosh();
@@ -133,7 +138,7 @@ export function CrateClaim(p: {
       sfx.error();
       setPhase("idle");
       setTaps(0);
-      if (/not ready|bought all|need \d+|no free crates/i.test(msg)) {
+      if (/not ready|bought all|need \d+|no free crates|buy your next/i.test(msg)) {
         key.current = null;
         if (mode !== "timer") setMode("timer");
         const me = await api<{ player: { nextClaimAt: string | null } }>("/api/me").catch(() => null);
@@ -198,7 +203,7 @@ export function CrateClaim(p: {
                 <div className="display text-3xl">{p.suspended ? "Claims paused" : "Crates locked"}</div>
               ) : ready || phase !== "idle" ? (
                 <>
-                  {mode === "shop" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Bonus crate · {p.shop.price} TROUBLE</div>}
+                  {mode === "shop" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Bought crate · {p.shop.price} $NOTTIES</div>}
                   {mode === "free" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Free crate · {freeLeft} left</div>}
                   <div className="display ink-text text-4xl text-white sm:text-5xl">{phase === "opening" ? "!!!" : taps === 0 ? "Tap to crack!" : taps === 1 ? "Again!" : "One more!"}</div>
                   <div className="mt-3 flex justify-center gap-2" aria-hidden>
@@ -241,10 +246,10 @@ export function CrateClaim(p: {
                       }}
                       disabled={!canBuy || !affordable}
                       className="btn btn-ghost mt-4 !min-h-[44px] text-sm"
-                      title={!affordable ? `You need ${p.shop.price} TROUBLE` : undefined}
+                      title={!affordable ? `You need ${p.shop.price} $NOTTIES` : undefined}
                     >
-                      <TbShoppingBag size={17} /> Can&apos;t wait? Bonus crate <Coin size={16} /> {p.shop.price}
-                      <span className="text-xs text-muted">({shopLeft} left today)</span>
+                      <TbShoppingBag size={17} /> Buy a crate <Coin size={16} /> {p.shop.price}
+                      {buyWait > 0 && <span className="text-xs text-muted">(next in {fmtDuration(buyWait).replace(/ \d+s$/, "")})</span>}
                     </button>
                   )}
                 </>
@@ -281,7 +286,7 @@ export function CrateClaim(p: {
               {result.points > 0 && (
                 <div className="relative mt-5 inline-flex items-center gap-2 rounded-full border-[3px] border-black bg-black/60 px-4 py-1.5 anim-pop">
                   <Coin size={24} />
-                  <span className="display text-lg text-accent">+{result.points} TROUBLE</span>
+                  <span className="display text-lg text-accent">+{result.points} $NOTTIES</span>
                 </div>
               )}
               <div className="relative mt-6 flex flex-wrap justify-center gap-3">

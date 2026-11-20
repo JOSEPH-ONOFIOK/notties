@@ -293,7 +293,7 @@ create table if not exists task_submissions (
 alter table users add column if not exists crates int not null default 0;
 -- false = the address was pasted in, not proven with a signature.
 alter table wallets add column if not exists signed boolean not null default true;
--- How many crates a mission pays on top of its TROUBLE.
+-- How many crates a mission pays on top of its $NOTTIES.
 alter table tasks add column if not exists crates int not null default 1;
 
 create table if not exists mail (
@@ -366,6 +366,16 @@ const TASKS = [
     sort: 5,
   },
   {
+    id: "daily_gift",
+    title: "Daily gift",
+    description: "Send one of your spare cards to another player today. Someone out there needs it.",
+    points: DEFAULT_SETTINGS.points.daily_gift,
+    kind: "daily",
+    verify: "gift_today",
+    link: "/trade",
+    sort: 6,
+  },
+  {
     id: "first_trade",
     title: "Pass it along",
     description: "Send a spare fragment to another player. Sharing is a crime we endorse.",
@@ -377,9 +387,24 @@ const TASKS = [
   },
 ];
 
+/** Bump when the default economy changes enough that live settings should be reset to it, once. */
+const ECONOMY_VERSION = 2;
+const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes"] as const;
+
 export async function SEED(q: Q) {
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
     await q.query(`insert into settings (key, value) values ($1, $2::jsonb) on conflict (key) do nothing`, [key, JSON.stringify(value)]);
+  }
+  // v2 economy ($NOTTIES): bigger rewards, crates bought hourly, rarer Body and Hand & Head.
+  // Applied once to existing databases; admin edits after that are kept.
+  const ver = Number((await q.query<{ value: unknown }>("select value from settings where key = 'economy_version'")).rows[0]?.value ?? 1);
+  if (ver < ECONOMY_VERSION) {
+    for (const k of ECONOMY_KEYS) {
+      await q.query(`insert into settings (key, value, updated_at) values ($1, $2::jsonb, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [k, JSON.stringify(DEFAULT_SETTINGS[k])]);
+    }
+    await q.query(`insert into settings (key, value) values ('economy_version', $1::jsonb) on conflict (key) do update set value = excluded.value`, [JSON.stringify(ECONOMY_VERSION)]);
+    // Built-in task rewards follow the new economy too.
+    await q.query("update tasks set points = 100 where id = 'read_origin' and points = 15");
   }
   for (const t of TASKS) {
     await q.query(

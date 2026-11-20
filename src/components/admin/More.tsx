@@ -32,7 +32,7 @@ function useAct() {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const PRESETS: Record<string, { label: string; kind: string; effects: Record<string, unknown> }> = {
   shard_storm: { label: "Portal Storm (Bodies ×2, Hand & Head ×1.5)", kind: "shard_storm", effects: { drop_mult: { body: 2, gear: 1.5 } } },
-  double_trouble: { label: "Double Trouble (all TROUBLE rewards ×2)", kind: "double_trouble", effects: { points_mult: 2 } },
+  double_trouble: { label: "Double $NOTTIES (all $NOTTIES rewards ×2)", kind: "double_trouble", effects: { points_mult: 2 } },
   rush_hour: { label: "Rush Hour (crate timers ×0.5)", kind: "rush_hour", effects: { cooldown_mult: 0.5 } },
   eye_rain: { label: "Eye Rain (Eyes ×3)", kind: "custom", effects: { drop_mult: { eyes: 3 } } },
 };
@@ -165,7 +165,7 @@ export function AdjustForm({ userId }: { userId: string }) {
       <div className="display text-xl">Manual correction</div>
       <p className="mt-1 text-xs text-muted">Use negative numbers to take away. Logged with your name and reason.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-4">
-        <input type="number" value={points} onChange={(e) => setPoints(e.target.value)} placeholder="± TROUBLE" />
+        <input type="number" value={points} onChange={(e) => setPoints(e.target.value)} placeholder="± $NOTTIES" />
         <select value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">Card…</option>
           {PARTS.map((f) => (
@@ -339,7 +339,7 @@ export function RemoveRole({ username }: { username: string }) {
   );
 }
 
-export function TextSetting({ k, label, value, hint, parse }: { k: string; label: string; value: string; hint?: string; parse: "numbers" | "mint" }) {
+export function TextSetting({ k, label, value, hint, parse }: { k: string; label: string; value: string; hint?: string; parse: "numbers" | "mint" | "text" }) {
   const { act, busy, Msg } = useAct();
   const [v, setV] = useState(value);
   return (
@@ -352,7 +352,7 @@ export function TextSetting({ k, label, value, hint, parse }: { k: string; label
           className="btn btn-ghost text-sm"
           disabled={busy}
           onClick={() => {
-            const value = parse === "numbers" ? v.split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0) : v;
+            const value = parse === "numbers" ? v.split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0) : v.trim();
             act({ action: "setting", key: k, value });
           }}
         >

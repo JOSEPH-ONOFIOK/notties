@@ -4,7 +4,7 @@ import { BOOSTABLE, addPoints, requireActive } from "./core";
 
 /**
  * The mailbox. Mission rewards, recruit bonuses and the welcome gift arrive here as letters with
- * TROUBLE and/or free crates attached; the player claims them. Cards sent by other players and
+ * $NOTTIES and/or free crates attached; the player claims them. Cards sent by other players and
  * finished swaps also leave a letter (those cards are already in the stash).
  */
 export type MailKind = "reward" | "referral" | "welcome" | "gift" | "swap" | "review" | "system";
@@ -40,7 +40,7 @@ export async function markMailRead(userId: string) {
   await query("update mail set read_at = now() where user_id = $1 and read_at is null", [userId]);
 }
 
-/** Live-event boosts (Double Trouble) apply when a reward is earned, so the mailed amount is already final. */
+/** Live-event boosts (Double $NOTTIES Hour) apply when a reward is earned, so the mailed amount is already final. */
 export async function boostedPoints(q: Q, points: number, reason: string) {
   if (points <= 0 || !BOOSTABLE(reason)) return points;
   const { activeEffects } = await import("./events");

@@ -1,5 +1,5 @@
 /**
- * Player level, derived from lifetime TROUBLE (spent points still count as XP).
+ * Player level, derived from lifetime $NOTTIES (spent points still count as XP).
  * Level n starts at 25·n·(n−1): L2 = 50, L3 = 150, L4 = 300, L5 = 500, L6 = 750 …
  * Display only — no gameplay or eligibility depends on it.
  */

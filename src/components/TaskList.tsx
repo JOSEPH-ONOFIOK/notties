@@ -17,7 +17,7 @@ export type TaskItem = {
   description: string;
   points: number;
   kind: "once" | "daily";
-  verify: "auto" | "link" | "wallet" | "trade" | "manual";
+  verify: "auto" | "link" | "wallet" | "trade" | "gift_today" | "manual";
   link: string | null;
   completed: boolean;
   clicked: string | null;

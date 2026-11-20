@@ -167,7 +167,7 @@ const toLocal = (v?: string | null) => (v ? new Date(new Date(v).getTime() - new
 export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: RoundCfg }) {
   const router = useRouter();
   const options = upcomingRounds(rounds, 6);
-  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 10, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 1, starts_at: options[0].start, ends_at: options[0].end });
+  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 100, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 1, starts_at: options[0].start, ends_at: options[0].end });
   const [t, setT] = useState<TaskDraft>(initial ?? blank());
   const roundIdx = options.findIndex((r) => r.start === (t.starts_at ? new Date(t.starts_at).toISOString() : null) && r.end === (t.ends_at ? new Date(t.ends_at).toISOString() : null));
   const pickRound = (v: string) => {
@@ -207,7 +207,7 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
           <input value={t.description} onChange={(e) => set("description", e.target.value)} />
         </label>
         <label className="text-xs">
-          <span className="text-muted">TROUBLE reward</span>
+          <span className="text-muted">$NOTTIES reward</span>
           <input type="number" value={t.points} onChange={(e) => set("points", Number(e.target.value))} />
         </label>
         <label className="text-xs">
@@ -232,6 +232,7 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
             <option value="link">link (must open link first)</option>
             <option value="wallet">wallet linked</option>
             <option value="trade">has sent a trade</option>
+            <option value="gift_today">gifted a card today (daily)</option>
             <option value="manual">manual review (player submits proof)</option>
           </select>
         </label>

@@ -36,7 +36,7 @@ export function FactionPicker() {
         <div>
           <div className="display inline-block -rotate-2 rounded-md border-[3px] border-black bg-accent px-2 py-0.5 text-xs tracking-[0.2em] text-black shadow-[0_3px_0_#000]">Pick a gang</div>
           <h2 className="display ink-text mt-2 text-3xl text-white">Who are you rolling with?</h2>
-          <p className="text-sm text-muted">Your gang&apos;s TROUBLE adds up on the Most Wanted board. You pick once, so choose wisely.</p>
+          <p className="text-sm text-muted">Your gang&apos;s $NOTTIES adds up on the Most Wanted board. You pick once, so choose wisely.</p>
         </div>
       </div>
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
