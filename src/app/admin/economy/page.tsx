@@ -22,6 +22,9 @@ export default async function Economy() {
         <NumberField k="welcome_crates" label="Welcome gift (free crates)" value={s.welcome_crates} hint="Sent to every new player's mailbox when they sign up. 0 = none." min={0} />
         <NumberField k="referral_crates" label="Recruit bonus (free crates)" value={s.referral_crates} hint="Sent to the recruiter's mailbox, with the $NOTTIES bonus, when a recruit plays." min={0} />
         <NumberField k="referral_qualify_claims" label="Referral qualifies after N crates" value={s.referral_qualify_claims} hint="The recruit must open this many crates before the recruiter is paid." min={1} />
+        <TextSetting k="claim_deadline" label="Countdown banner: ends at" value={s.claim_deadline} hint="Shown on every page as a countdown. Use a date like 2026-11-21 17:30 (your local time) or leave blank to hide it. Nothing actually closes." parse="datetime" />
+        <TextSetting k="claim_label" label="Countdown banner: text" value={s.claim_label} hint='e.g. "Claim ends in"' parse="text" />
+        <TextSetting k="partners" label="Partners (WL spots)" value={s.partners.map((p) => `${p.name}:${p.spots}`).join("; ")} hint="Shown on the homepage. Format: Name:spots; Name:spots" parse="partners" />
         <TextSetting k="wallet_tasks" label="Missions before wallet" value={s.wallet_tasks.join(", ")} hint="Mission ids a player must finish (after building their Nottie) before they can submit a wallet. Default: follow_x, like_post, comment_post. Set the like/comment missions' link to your launch post on the Missions page." parse="list" />
         <TextSetting k="referral_task" label="Recruit mission (optional)" value={s.referral_task} hint="A mission id (from the Missions page) the recruit must also finish before the recruiter is paid, e.g. your launch-post mission. Leave blank to skip." parse="text" />
       </div>

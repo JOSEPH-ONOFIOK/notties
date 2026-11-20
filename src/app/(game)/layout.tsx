@@ -6,6 +6,7 @@ import { getSettings } from "@/lib/game/core";
 import { LiveBar } from "@/components/game/LiveBar";
 import { MusicPlayer } from "@/components/game/MusicPlayer";
 import { ChatDock } from "@/components/game/ChatDock";
+import { ClaimBanner } from "@/components/game/ClaimBanner";
 import { eventTimeline } from "@/lib/game/events";
 import { readFeed } from "@/lib/game/feed";
 
@@ -17,6 +18,7 @@ export default async function GameLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-dvh pb-28 transition-[padding] duration-300 lg:pb-0 lg:pr-[var(--dock,0px)]">
       <div className="sticky top-0 z-40">
+        <ClaimBanner until={settings.claim_deadline} label={settings.claim_label} />
         <Nav player={player} />
         <LiveBar initial={timeline} feed={feed} />
       </div>

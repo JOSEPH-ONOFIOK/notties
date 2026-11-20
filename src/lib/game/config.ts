@@ -120,6 +120,14 @@ export const DEFAULT_SETTINGS = {
   // late_window_hours more, then disappear.
   // Missions a player must finish (after building their Nottie) before they can submit a wallet.
   wallet_tasks: ["follow_x", "like_post", "rt_post"] as string[],
+  // Countdown banner on every page ("Claim ends in …"). Display only: nothing closes. "" hides it.
+  claim_deadline: "2026-11-21T16:30:00Z",
+  claim_label: "Claim ends in",
+  // Partner communities and their allowlist spots, shown on the homepage.
+  partners: [
+    { name: "ccff00 & Companion", spots: 40 },
+    { name: "Goat Ranch", spots: 30 },
+  ] as { name: string; spots: number }[],
   late_reward_pct: 50,
   late_window_hours: 24,
   // Marketplace: buy parts directly with $NOTTIES. Rare parts cost a lot on purpose.
