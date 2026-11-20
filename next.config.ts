@@ -14,8 +14,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // The art is already small WebP, so skip Vercel's image optimizer: its free tier caps
+  // transformations per month, and resizing these gains almost nothing.
   images: {
-    formats: ["image/avif", "image/webp"],
+    unoptimized: true,
   },
 };
 

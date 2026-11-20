@@ -244,28 +244,37 @@ export interface PlayerView {
   crateAt: string | null | "need";
   /** Joined through a friend's link or code. */
   referred: boolean;
+  /** Id of the newest announcement (for the "new" dot on the chat icon). */
+  latestAnnouncement: number;
 }
 
 export async function getPlayer(xId: string): Promise<PlayerView | null> {
   const u = await getUserByXId(xId);
   if (!u) return null;
-  const [settings, inv, wallet, tasks, refs, forge, elig, mail, lastBuy] = await Promise.all([
+  // Everything about the player in one round trip (this runs on every page view).
+  const [settings, row] = await Promise.all([
     getSettings(),
-    getInventory(u.id),
-    one<{ address: string }>("select address from wallets where user_id = $1 and is_primary order by verified_at desc limit 1", [u.id]),
-    one<{ n: string }>("select count(*)::text as n from task_completions where user_id = $1", [u.id]),
-    one<{ n: string }>("select count(*)::text as n from referrals where referrer_id = $1 and status = 'verified'", [u.id]),
-    one<{ created_at: string; nottie_seed: number }>("select created_at, nottie_seed from forge_completions where user_id = $1", [u.id]),
-    one<{ status: string }>("select status from mint_eligibility where user_id = $1 and category = 'forge'", [u.id]),
-    one<{ n: string }>("select count(*)::text as n from mail where user_id = $1 and (read_at is null or claimed_at is null)", [u.id]),
-    one<{ last: string | null }>("select max(created_at) as last from crate_claims where user_id = $1 and source = 'shop'", [u.id]),
+    one<{ inv: Record<string, number> | null; wallet: string | null; tasks: number; refs: number; forged_at: string | null; seed: number | null; elig: string | null; mail: number }>(
+      `select
+         (select json_object_agg(type, qty) from inventory where user_id = $1) as inv,
+         (select address from wallets where user_id = $1 and is_primary order by verified_at desc limit 1) as wallet,
+         (select count(*)::int from task_completions where user_id = $1) as tasks,
+         (select count(*)::int from referrals where referrer_id = $1 and status = 'verified') as refs,
+         f.created_at as forged_at, f.nottie_seed as seed,
+         (select status from mint_eligibility where user_id = $1 and category = 'forge') as elig,
+         (select count(*)::int from mail where user_id = $1 and (read_at is null or claimed_at is null)) as mail
+       from (select 1) x left join forge_completions f on f.user_id = $1`,
+      [u.id],
+    ),
   ]);
-  const buyAt = lastBuy?.last ? new Date(lastBuy.last).getTime() + Math.max(0, Number(settings.crate_buy_cooldown_minutes) || 0) * 60_000 : 0;
-  const crateAt: string | null | "need" =
-    Number(u.crates) > 0 ? null
-    : settings.timer_crates ? u.next_claim_at
-    : Number(u.points) >= Number(settings.crate_price) && settings.shop_enabled ? (buyAt > Date.now() ? new Date(buyAt).toISOString() : null)
-    : "need";
+  const inv = Object.fromEntries(FRAGMENT_TYPES.map((t) => [t, Number(row?.inv?.[t] ?? 0)])) as Record<FragmentType, number>;
+  const wallet = row?.wallet ? { address: row.wallet } : null;
+  const tasks = { n: row?.tasks ?? 0 };
+  const refs = { n: row?.refs ?? 0 };
+  const forge = row?.forged_at ? { created_at: row.forged_at, nottie_seed: Number(row.seed) } : null;
+  const elig = row?.elig ? { status: row.elig } : null;
+  const mail = { n: row?.mail ?? 0 };
+  const crateAt: string | null | "need" = Number(u.crates) > 0 ? null : settings.timer_crates ? u.next_claim_at : "need";
   const progress = recipeProgress(inv, settings.recipe);
   const fragments = Object.values(inv).reduce((a, b) => a + b, 0);
   const gtd = elig?.status === "approved";
@@ -302,6 +311,7 @@ export async function getPlayer(xId: string): Promise<PlayerView | null> {
     mail: Number(mail?.n ?? 0),
     crateAt,
     referred: !!u.referred_by,
+    latestAnnouncement: await (await import("./chat")).readChat("announce").then((m) => m.at(-1)?.id ?? 0).catch(() => 0),
   };
 }
 

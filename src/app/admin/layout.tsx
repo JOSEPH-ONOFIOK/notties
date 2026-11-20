@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ["/admin/events", "Events"],
     ["/admin/mint", "Mint"],
     ["/admin/team", "Team"],
+    ["/chat?tab=announce", "Announce"],
   ];
   return (
     <div className="min-h-dvh">

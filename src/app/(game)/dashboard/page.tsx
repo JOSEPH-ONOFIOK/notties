@@ -32,9 +32,9 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
     p.mail > 0
       ? { title: "You've got mail", body: `${p.mail} letter${p.mail === 1 ? "" : "s"} waiting. Your $NOTTIES rewards are inside.`, href: "/mail", cta: "Open mailbox" }
       : p.crates > 0
-        ? { title: `Open ${p.crates} free crate${p.crates === 1 ? "" : "s"}`, body: "It's on the house. Crack it open and see what part falls out.", href: "/hunt", cta: "Go hunt" }
+        ? { title: `Open your ${p.crates} crate${p.crates === 1 ? "" : "s"}`, body: "Crack them open and see what parts fall out.", href: "/hunt", cta: "Go hunt" }
         : p.points >= settings.crate_price && !p.forgedAt && !p.progress.complete
-          ? { title: "Buy a crate", body: `You've got ${p.points.toLocaleString()} $NOTTIES. A crate costs ${settings.crate_price}. Go see what's inside.`, href: "/hunt", cta: "Go hunt" }
+          ? { title: "Buy a crate", body: `You've got ${p.points.toLocaleString()} $NOTTIES. A crate costs ${settings.crate_price}. Grab some in the Market.`, href: "/trade", cta: "To the Market" }
         : p.claims === 0
       ? { title: "Crack your first crate", body: "A Portal Crate just washed up. Tap it open and see what falls out.", href: "/hunt", cta: "Go hunt" }
       : !p.onboarded
@@ -142,7 +142,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
       </div>
 
       <div className="grid auto-rows-[150px] grid-cols-2 gap-3 sm:auto-rows-[170px] sm:gap-4 lg:grid-cols-4">
-        <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={p.crateAt === "need" ? `Crate: ${settings.crate_price} $NOTTIES` : <Countdown until={p.crateAt} readyText="READY!" className="display text-sm" plain />} hot={p.crateAt === null} big />
+        <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={p.crates > 0 ? `${p.crates} crate${p.crates === 1 ? "" : "s"} to open` : p.crateAt === "need" ? "0 crates" : <Countdown until={p.crateAt} readyText="READY!" className="display text-sm" plain />} hot={p.crateAt === null} big />
         <Spot href="/forge" img="/notties/221.webp" name="Vlad's Lab" tag="Forge" pos="center 30%" badge={p.forgedAt ? "Done" : `${p.progress.pct}%`} hot={p.progress.complete && !p.forgedAt} />
         <Spot href="/tasks" img="/characters/Hood.webp" name="Earn $NOTTIES" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
         <Spot href="/trade" img="/notties/86.webp" name="The Market" pos="center 30%" tag="Shop & swap" badge="Buy parts" />

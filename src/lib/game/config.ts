@@ -119,7 +119,7 @@ export const DEFAULT_SETTINGS = {
   // Missions with a deadline pay in full until it, then late_reward_pct of the reward for
   // late_window_hours more, then disappear.
   // Missions a player must finish (after building their Nottie) before they can submit a wallet.
-  wallet_tasks: ["follow_x", "like_post", "comment_post"] as string[],
+  wallet_tasks: ["follow_x", "like_post", "rt_post"] as string[],
   late_reward_pct: 50,
   late_window_hours: 24,
   // Marketplace: buy parts directly with $NOTTIES. Rare parts cost a lot on purpose.

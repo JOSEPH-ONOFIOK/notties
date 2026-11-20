@@ -22,7 +22,7 @@ export function EarnStrip({ points, streakTop, referral, forge, cratePrice, comp
           <p className="text-sm font-semibold text-black/70">Spend them on crates ({cratePrice} each) to unlock parts.</p>
         </div>
       </div>
-      <ul className={`mt-4 grid gap-2 ${compact ? "sm:grid-cols-2 lg:grid-cols-5" : "sm:grid-cols-2 lg:grid-cols-5"}`}>
+      <ul className={`mt-4 grid gap-2 ${compact ? "grid-cols-2 lg:grid-cols-5 [&>li:last-child]:col-span-2 lg:[&>li:last-child]:col-span-1" : "sm:grid-cols-2 lg:grid-cols-5"}`}>
         {ways.map((w) => (
           <li key={w.title}>
             <Link href={w.href} className="flex h-full flex-col rounded-xl border-[3px] border-black bg-black p-3 text-white shadow-[0_4px_0_rgba(0,0,0,.35)] transition hover:-translate-y-0.5">

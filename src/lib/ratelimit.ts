@@ -1,25 +1,26 @@
 import "server-only";
-import { query } from "./db";
 
 /**
- * Fixed-window rate limiter stored in Postgres, so it's shared by every server instance (on
- * Vercel each request can land on a different one). One upsert per check.
+ * Fixed-window rate limiter kept in server memory. It used to be a Postgres upsert on every
+ * request, which cost a database write per tap; in memory it's free. Each server instance
+ * counts on its own, which is fine here: every game action is also guarded by database
+ * transactions, idempotency keys and per-player checks.
  */
+type Win = { n: number; reset: number };
+const g = globalThis as unknown as { __nottiesRate?: Map<string, Win> };
+const wins = (g.__nottiesRate ??= new Map());
 let lastPurge = 0;
+
 export async function rateLimit(key: string, max: number, windowMs: number): Promise<boolean> {
-  const { rows } = await query<{ n: number }>(
-    `insert into rate_limits (key, n, reset_at) values ($1, 1, now() + make_interval(secs => $2::double precision))
-     on conflict (key) do update set
-       n = case when rate_limits.reset_at < now() then 1 else rate_limits.n + 1 end,
-       reset_at = case when rate_limits.reset_at < now() then excluded.reset_at else rate_limits.reset_at end
-     returning n`,
-    [key, windowMs / 1000],
-  );
-  if (Date.now() - lastPurge > 10 * 60_000) {
-    lastPurge = Date.now();
-    void query("delete from rate_limits where reset_at < now() - interval '1 hour'").catch(() => {});
+  const now = Date.now();
+  const w = wins.get(key);
+  if (!w || w.reset < now) wins.set(key, { n: 1, reset: now + windowMs });
+  else w.n++;
+  if (now - lastPurge > 60_000) {
+    lastPurge = now;
+    for (const [k, v] of wins) if (v.reset < now) wins.delete(k);
   }
-  return Number(rows[0]?.n ?? 1) <= max;
+  return (wins.get(key)?.n ?? 1) <= max;
 }
 
 export function clientIp(req: Request) {

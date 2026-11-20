@@ -4,16 +4,17 @@ import { ForgeBench } from "@/components/ForgeBench";
 import { PageTitle, StatusPill } from "@/components/ui";
 import { getSettings } from "@/lib/game/core";
 import { currentPlayer } from "@/lib/player";
+import { walletGate } from "@/lib/game/wallet";
 
 export const metadata = { title: "Forge" };
 
 export default async function Forge() {
   const p = await currentPlayer();
-  const s = await getSettings();
+  const [s, gate] = await Promise.all([getSettings(), walletGate(p.id)]);
   return (
     <>
-      <PageTitle kicker="Forge" title="Vlad's Lab" sub="Collect all 7 parts and watch your Nottie come together. Fire up the machine once and your GTD spot is locked." right={<StatusPill status={p.status} />} />
-      <ForgeBench playerId={p.id} slots={p.progress.slots} pct={p.progress.pct} complete={p.progress.complete} enabled={s.forge_enabled} suspended={p.accountStatus !== "active"} forgedAt={p.forgedAt} seed={p.nottieSeed} username={p.username} wallet={p.wallet} forgePoints={s.points.forge} />
+      <PageTitle kicker="Forge" title="Vlad's Lab" sub="Collect all 7 parts and watch your Nottie come together. Fire up the machine once and your GTD spot is locked." right={<StatusPill status={p.forgedAt ? (p.wallet && gate.open ? "gtd" : "assembled") : p.status} />} />
+      <ForgeBench playerId={p.id} slots={p.progress.slots} pct={p.progress.pct} complete={p.progress.complete} enabled={s.forge_enabled} suspended={p.accountStatus !== "active"} forgedAt={p.forgedAt} seed={p.nottieSeed} username={p.username} wallet={p.wallet} forgePoints={s.points.forge} gate={gate.tasks} />
       {!p.forgedAt && (
         <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
           <Tip t="Missing something?" d="Buy it in the Market, or swap with other players." href="/trade" />

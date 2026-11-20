@@ -43,9 +43,9 @@ export function CrateClaim(p: {
   const [next, setNext] = useState<string | null>(p.nextClaimAt);
   const [now, setNow] = useState(() => serverNow());
   const [phase, setPhase] = useState<Phase>("idle");
-  const [mode, setMode] = useState<"timer" | "shop" | "free">(p.timerOn ? "timer" : p.freeCrates > 0 ? "free" : "shop");
+  const [mode, setMode] = useState<"timer" | "shop" | "free">(p.timerOn && p.freeCrates === 0 ? "timer" : "free");
   // Where the crate goes back to after a reveal: the timer if it's on, else a free crate, else the shop.
-  const home = (free: number) => (p.timerOn ? "timer" : free > 0 ? "free" : "shop");
+  const home = (free: number) => (p.timerOn && free === 0 ? "timer" : "free");
   const [taps, setTaps] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -75,10 +75,7 @@ export function CrateClaim(p: {
   const ready = mode === "shop" ? !p.suspended && p.enabled && p.shop.enabled && shopLeft > 0 && buyWaitNow === 0 && p.points >= p.shop.price : mode === "free" ? !p.suspended && p.enabled && freeLeft > 0 : timerReady;
   const cooldownMs = p.cooldownMinutes * 60_000;
   const buyMs = Math.max(1, p.shop.cooldownMinutes * 60_000);
-  const charge = ready ? 1 : mode === "shop" ? (buyWaitNow > 0 ? Math.max(0, 1 - buyWaitNow / buyMs) : Math.min(1, p.points / Math.max(1, p.shop.price))) : Math.max(0, Math.min(1, 1 - left / cooldownMs));
-  const buyWait = mounted ? timeLeft(nextBuy, now) : 0;
-  const canBuy = p.shop.enabled && p.enabled && !p.suspended && shopLeft > 0 && buyWait === 0;
-  const affordable = p.points >= p.shop.price;
+  const charge = ready ? 1 : mode === "free" ? 0 : mode === "shop" ? (buyWaitNow > 0 ? Math.max(0, 1 - buyWaitNow / buyMs) : Math.min(1, p.points / Math.max(1, p.shop.price))) : Math.max(0, Math.min(1, 1 - left / cooldownMs));
 
   function shake() {
     const el = shakeRef.current;
@@ -210,7 +207,7 @@ export function CrateClaim(p: {
               ) : ready || phase !== "idle" ? (
                 <>
                   {mode === "shop" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Crate · {p.shop.price} $NOTTIES · you have {p.points.toLocaleString()}</div>}
-                  {mode === "free" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Free crate · {freeLeft} left</div>}
+                  {mode === "free" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">You have {freeLeft} crate{freeLeft === 1 ? "" : "s"}</div>}
                   <div className="display ink-text text-4xl text-white sm:text-5xl">{phase === "opening" ? "!!!" : taps === 0 ? "Tap to crack!" : taps === 1 ? "Again!" : "One more!"}</div>
                   <div className="mt-3 flex justify-center gap-2" aria-hidden>
                     {Array.from({ length: TAPS }).map((_, i) => (
@@ -224,34 +221,34 @@ export function CrateClaim(p: {
                     </button>
                   )}
                 </>
-              ) : mode === "shop" ? (
+              ) : mode !== "timer" ? (
                 <>
-                  {!p.shop.enabled ? (
-                    <div className="display text-3xl">Crate shop closed</div>
-                  ) : buyWait > 0 ? (
+                  <div className="display text-sm tracking-[0.25em] text-muted">Your crates</div>
+                  <div className="display goo-text mt-1 text-6xl">0</div>
+                  {p.points >= p.shop.price ? (
                     <>
-                      <div className="display text-sm tracking-[0.25em] text-muted">Next crate in</div>
-                      <div className="display goo-text mt-1 text-5xl tabular-nums sm:text-6xl" aria-live="polite">
-                        {fmtDuration(buyWait)}
+                      <div className="mt-1 text-sm text-muted">
+                        You have {p.points.toLocaleString()} $NOTTIES. A crate costs {p.shop.price}.
                       </div>
-                      <div className="mt-1 text-sm text-muted">One crate an hour. Earn $NOTTIES while you wait.</div>
+                      <Link href="/trade" className="btn btn-accent mt-4">
+                        <TbShoppingBag size={18} /> Buy crates in the Market
+                      </Link>
                     </>
-                  ) : shopLeft <= 0 ? (
-                    <div className="display text-3xl">That&apos;s all for today</div>
                   ) : (
                     <>
-                      <div className="display text-sm tracking-[0.25em] text-muted">A crate costs</div>
-                      <div className="display goo-text mt-1 flex items-center justify-center gap-2 text-5xl sm:text-6xl">
-                        <Coin size={44} /> {p.shop.price}
-                      </div>
                       <div className="mt-1 text-sm text-muted">
-                        You have {p.points.toLocaleString()} $NOTTIES. You need {(p.shop.price - p.points).toLocaleString()} more.
+                        A crate costs {p.shop.price} $NOTTIES. You have {p.points.toLocaleString()}. Complete missions to earn more.
+                      </div>
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        <Link href="/tasks" className="btn btn-accent">
+                          <Coin size={18} /> Earn $NOTTIES
+                        </Link>
+                        <Link href="/trade" className="btn btn-ghost">
+                          <TbShoppingBag size={17} /> Market
+                        </Link>
                       </div>
                     </>
                   )}
-                  <Link href="/tasks" className="btn btn-accent mt-4">
-                    <Coin size={18} /> Earn $NOTTIES
-                  </Link>
                 </>
               ) : (
                 <>
@@ -269,24 +266,12 @@ export function CrateClaim(p: {
                       }}
                       className="btn btn-accent mt-4 anim-glow"
                     >
-                      <TbGift size={18} /> Open a free crate ({freeLeft})
+                      <TbGift size={18} /> Open a crate ({freeLeft} left)
                     </button>
                   )}
-                  {p.shop.enabled && (
-                    <button
-                      onClick={() => {
-                        sfx.click();
-                        setError(null);
-                        setMode("shop");
-                      }}
-                      disabled={!canBuy || !affordable}
-                      className="btn btn-ghost mt-4 !min-h-[44px] text-sm"
-                      title={!affordable ? `You need ${p.shop.price} $NOTTIES` : undefined}
-                    >
-                      <TbShoppingBag size={17} /> Buy a crate <Coin size={16} /> {p.shop.price}
-                      {buyWait > 0 && <span className="text-xs text-muted">(next in {fmtDuration(buyWait).replace(/ \d+s$/, "")})</span>}
-                    </button>
-                  )}
+                  <Link href="/trade" className="btn btn-ghost mt-4 !min-h-[44px] text-sm">
+                    <TbShoppingBag size={17} /> Buy crates in the Market
+                  </Link>
                 </>
               )}
               {error && (

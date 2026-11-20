@@ -136,7 +136,7 @@ export async function openFreeCrate(userId: string, idemKey: string) {
     if (replay) return { ...replay, points: 0, replayed: true };
 
     const u = await requireActive(q, userId);
-    if (Number(u.crates) < 1) throw new GameError("No free crates left. Finish missions to earn more.");
+    if (Number(u.crates) < 1) throw new GameError("No crates left. Buy more in the Market.");
     await q.query("update users set crates = crates - 1 where id = $1", [userId]);
     const r = await openCrate(q, u, settings, "free", idemKey);
     return { ...r, cratesLeft: Number(u.crates) - 1, replayed: false };

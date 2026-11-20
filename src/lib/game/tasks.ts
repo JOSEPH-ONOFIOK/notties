@@ -4,6 +4,7 @@ import type { Settings } from "./config";
 import { getSettings, logRisk, requireActive, streakView, utcDay } from "./core";
 import { awardBookIfEarned } from "./book";
 import { pushFeed } from "./feed";
+import { cached } from "../cache";
 import { boostedPoints, sendMail } from "./mail";
 
 export interface TaskRow {
@@ -35,7 +36,8 @@ const todayUtc = () => new Date().toISOString().slice(0, 10);
 export async function listTasks(userId: string) {
   const settings = await getSettings();
   // Built-in missions are paid from Economy settings, so show that amount, not the table's.
-  const tasks = (await query<TaskRow>("select * from tasks where active order by sort, id")).rows.map((t) => (t.id in settings.points ? { ...t, points: Number(settings.points[t.id as keyof Settings["points"]]) } : t));
+  const all = await cached("tasks", 30_000, async () => (await query<TaskRow>("select * from tasks where active order by sort, id")).rows);
+  const tasks = all.map((t) => (t.id in settings.points ? { ...t, points: Number(settings.points[t.id as keyof Settings["points"]]) } : t));
   const done = (await query<{ task_id: string; day: string; created_at: string }>("select task_id, day::text as day, created_at from task_completions where user_id = $1", [userId])).rows;
   const clicks = (await query<{ task_id: string; clicked_at: string }>("select task_id, clicked_at from task_clicks where user_id = $1", [userId])).rows;
   const subs = (await query<{ task_id: string; status: string }>("select task_id, status from task_submissions where user_id = $1", [userId])).rows;

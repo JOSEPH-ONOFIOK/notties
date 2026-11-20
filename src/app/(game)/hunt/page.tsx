@@ -24,7 +24,7 @@ export default async function Hunt() {
 
   return (
     <>
-      <PageTitle kicker="Hunt" title="Raid the lab" sub={settings.timer_crates ? `A free crate every ${hours === 1 ? "hour" : Number.isInteger(hours) ? `${hours} hours` : `${cooldown} minutes`}, or buy one for ${settings.crate_price} $NOTTIES. Each crate drops one random part. Doubles? Trade them.` : `Buy a crate for ${settings.crate_price} $NOTTIES${settings.crate_buy_cooldown_minutes ? `, one every ${settings.crate_buy_cooldown_minutes} minutes` : ", any time"}. Each crate drops one random part. Want a specific part? Buy it in the Market.`} />
+      <PageTitle kicker="Hunt" title="Raid the lab" sub={`You have ${p.crates} crate${p.crates === 1 ? "" : "s"}. Tap one open to get a random part. Buy more crates in the Market (${settings.crate_price} $NOTTIES each).`} />
 
       {mailCrates > 0 && (
         <Link href="/mail" className="card card-lime mb-4 flex items-center gap-3 p-4 text-black anim-pop">

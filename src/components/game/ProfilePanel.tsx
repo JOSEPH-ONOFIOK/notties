@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IconType } from "react-icons";
-import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlask2, TbMail, TbSend, TbTrophy, TbUsers, TbWallet } from "react-icons/tb";
+import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlask2, TbMail, TbSend, TbTrophy, TbUsers, TbWallet, TbMessages } from "react-icons/tb";
 import { api, idem } from "@/lib/client";
 import { fx } from "@/lib/fx";
 import { sfx } from "@/lib/sfx";
@@ -45,6 +45,7 @@ const NAV: { href: string; label: string; icon: IconType }[] = [
   { href: "/wallet", label: "Wallet", icon: TbWallet },
   { href: "/referrals", label: "Recruit", icon: TbUsers },
   { href: "/leaderboard", label: "Most Wanted", icon: TbTrophy },
+  { href: "/chat", label: "Chat", icon: TbMessages },
 ];
 
 /** Everything about the player in one place: balance, parts, referral link, transfers and shortcuts. */

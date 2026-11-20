@@ -32,7 +32,7 @@ export default async function Trade({ searchParams }: { searchParams: Promise<{ 
         ))}
       </div>
       {tab === "shop" ? (
-        <MarketShop prices={s.market_prices} cratePrice={s.crate_price} points={p.points} inventory={p.inventory} enabled={s.market_enabled} suspended={p.accountStatus !== "active"} />
+        <MarketShop prices={s.market_prices} cratePrice={s.crate_price} points={p.points} inventory={p.inventory} enabled={s.market_enabled} suspended={p.accountStatus !== "active"} crates={p.crates} />
       ) : tab === "swap" ? (
         <SwapBoard inventory={p.inventory} open={offers.open} mine={offers.mine} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} />
       ) : (

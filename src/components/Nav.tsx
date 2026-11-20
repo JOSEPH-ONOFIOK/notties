@@ -13,10 +13,11 @@ import { Coin } from "./game/Coin";
 import { CountUp } from "./game/CountUp";
 import { SoundToggle } from "./game/SoundToggle";
 import { useMounted } from "./useMounted";
-import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX, TbCoin, TbBuildingStore, TbUserCircle } from "react-icons/tb";
+import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX, TbCoin, TbBuildingStore, TbUserCircle, TbMessages } from "react-icons/tb";
 import { BRAND, FACTIONS } from "@/lib/game/config";
 import type { IconType } from "react-icons";
 import { replayIntro } from "./game/IntroStory";
+import { MusicToggle } from "./game/MusicPlayer";
 
 const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/dashboard", label: "City", icon: TbMap2 },
@@ -24,9 +25,11 @@ const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/trade", label: "Market", icon: TbBuildingStore },
   { href: "/tasks", label: "Earn", icon: TbCoin },
   { href: "/forge", label: "Forge", icon: TbFlask2 },
+  { href: "/chat", label: "Chat", icon: TbMessages },
   { href: "/profile", label: "Profile", icon: TbUserCircle },
 ];
 const MORE = [
+  { href: "/chat", label: "Announcements & chat" },
   { href: "/forge", label: "Vlad's Lab (Forge)" },
   { href: "/showroom", label: "Gallery" },
   { href: "/mail", label: "Mailbox" },
@@ -55,7 +58,7 @@ export function Nav({ player }: { player: PlayerView }) {
               <Avatar src={player.avatar} name={player.username} size={42} ring />
               <span className="display absolute -bottom-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full border-[3px] border-black bg-accent px-1 text-[11px] leading-none text-black">{lv.level}</span>
             </div>
-            <div className="hidden min-w-0 sm:block">
+            <div className="hidden min-w-0 sm:block lg:hidden 2xl:block">
               <div className="flex items-baseline gap-2">
                 <span className="display truncate text-sm leading-none">@{player.username}</span>
               </div>
@@ -70,11 +73,11 @@ export function Nav({ player }: { player: PlayerView }) {
           </Link>
 
           {/* desktop nav */}
-          <nav className="ml-2 hidden items-center gap-1.5 lg:flex">
-            {MAIN.map((m) => {
+          <nav className="ml-1 hidden items-center gap-1 lg:flex">
+            {MAIN.filter((m) => m.href !== "/forge" && m.href !== "/chat").map((m) => {
               const active = path.startsWith(m.href);
               return (
-                <Link key={m.href} href={m.href} onClick={() => sfx.click()} className={`display flex items-center gap-1.5 rounded-xl border-[3px] px-2.5 py-1.5 text-xs tracking-wider transition ${active ? "-translate-y-0.5 border-black bg-accent text-black shadow-[0_4px_0_#000]" : "border-transparent text-muted hover:-translate-y-0.5 hover:border-black hover:bg-raised hover:text-text hover:shadow-[0_4px_0_#000]"}`}>
+                <Link key={m.href} href={m.href} onClick={() => sfx.click()} className={`display flex items-center gap-1.5 rounded-xl border-[3px] px-2.5 py-1.5 text-xs tracking-wider transition xl:px-3 xl:text-sm ${active ? "-translate-y-0.5 border-black bg-accent text-black shadow-[0_4px_0_#000]" : "border-transparent text-muted hover:-translate-y-0.5 hover:border-black hover:bg-raised hover:text-text hover:shadow-[0_4px_0_#000]"}`}>
                   <m.icon size={17} strokeWidth={active ? 2.6 : 2.2} />
                   {m.label}
                 </Link>
@@ -83,8 +86,8 @@ export function Nav({ player }: { player: PlayerView }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <CrateChip at={player.crateAt} />
-            <Link href="/tasks" title={player.checkedInToday ? `${player.streak}-day streak. Back tomorrow!` : player.streak ? `${player.streak}-day streak. Roll call to keep it!` : "Start a streak at roll call"} className={`flex items-center gap-1 rounded-full border-[3px] border-black py-1 pl-1.5 pr-2.5 shadow-[0_3px_0_#000] ${player.checkedInToday ? "bg-warn text-black" : "bg-black/50 text-muted"}`}>
+            <CrateChip at={player.crateAt} crates={player.crates} />
+            <Link href="/tasks" title={player.checkedInToday ? `${player.streak}-day streak. Back tomorrow!` : player.streak ? `${player.streak}-day streak. Roll call to keep it!` : "Start a streak at roll call"} className={`hidden items-center gap-1 rounded-full border-[3px] border-black py-1 pl-1.5 pr-2.5 shadow-[0_3px_0_#000] sm:flex ${player.checkedInToday ? "bg-warn text-black" : "bg-black/50 text-muted"}`}>
               <TbFlame size={18} strokeWidth={2.4} className={!player.checkedInToday && player.streak ? "anim-wiggle text-warn" : ""} />
               <span className="display text-sm tabular-nums">{player.streak}</span>
             </Link>
@@ -92,6 +95,7 @@ export function Nav({ player }: { player: PlayerView }) {
               <Coin size={26} />
               <CountUp value={player.points} className="display text-sm" />
             </Link>
+            <ChatIcon latest={player.latestAnnouncement} active={path === "/chat"} />
             <Link
               href="/mail"
               onClick={() => sfx.click()}
@@ -154,6 +158,7 @@ export function Nav({ player }: { player: PlayerView }) {
                         <TbPlayerPlayFilled size={14} /> Replay intro
                       </span>
                     </button>
+                    <MusicToggle className="display block w-full rounded-xl px-3 py-2.5 text-left text-sm tracking-wide hover:bg-raised" />
                     <div className="flex items-center justify-between px-3 py-2 sm:hidden">
                       <span className="display text-sm">Sound</span>
                       <SoundToggle />
@@ -175,7 +180,7 @@ export function Nav({ player }: { player: PlayerView }) {
       {/* mobile bottom bar: big raised Hunt button in the middle */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-black bg-[#151910]/95 backdrop-blur lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <ul className="grid grid-cols-5 items-end">
-          {[MAIN[0], MAIN[2], MAIN[1], MAIN[3], MAIN[5]].map((m) => {
+          {[MAIN[0], MAIN[2], MAIN[1], MAIN[3], MAIN[6]].map((m) => {
             const active = path.startsWith(m.href);
             if (m.href === "/hunt")
               return (
@@ -183,7 +188,7 @@ export function Nav({ player }: { player: PlayerView }) {
                   <Link href={m.href} onClick={() => sfx.click()} className={`relative -mt-7 mb-1 flex h-[70px] w-[70px] flex-col items-center justify-center rounded-full border-[3px] border-black text-black shadow-[0_5px_0_#000] transition active:translate-y-[5px] active:shadow-none ${active ? "bg-accent-hover" : "bg-accent"}`}>
                     <TbBox size={28} strokeWidth={2.4} />
                     <span className="display text-[10px] leading-none">Hunt</span>
-                    <ReadyDot at={player.crateAt} />
+                    <ReadyDot at={player.crateAt} crates={player.crates} />
                   </Link>
                 </li>
               );
@@ -213,7 +218,7 @@ function useNow(ms = 1000) {
   return now;
 }
 
-function CrateChip({ at }: { at: string | null | "need" }) {
+function CrateChip({ at, crates }: { at: string | null | "need"; crates: number }) {
   const mounted = useMounted();
   const now = useNow();
   const need = at === "need";
@@ -227,18 +232,39 @@ function CrateChip({ at }: { at: string | null | "need" }) {
   }, [ready, mounted]);
   useCrateNotification(nextClaimAt);
   return (
-    <Link href="/hunt" onClick={() => sfx.click()} className={`relative hidden items-center gap-1.5 rounded-full border-[3px] border-black px-3 py-1.5 shadow-[0_3px_0_#000] sm:flex ${ready ? "anim-glow bg-accent text-black" : "bg-black/50 text-muted"}`}>
+    <Link href={need && crates === 0 ? "/trade" : "/hunt"} onClick={() => sfx.click()} className={`relative hidden items-center gap-1.5 rounded-full border-[3px] border-black px-3 py-1.5 shadow-[0_3px_0_#000] sm:flex ${ready ? "anim-glow bg-accent text-black" : "bg-black/50 text-muted"}`}>
       <TbBox size={16} strokeWidth={2.4} />
-      <span className="display text-xs tabular-nums">{!mounted ? "…" : need ? "Earn more" : ready ? "Ready!" : fmtDuration(left).replace(/ \d+s$/, "")}</span>
+      <span className="display text-xs tabular-nums">{!mounted ? "…" : crates > 0 ? `${crates} crate${crates === 1 ? "" : "s"}` : need ? "0 crates" : ready ? "Ready!" : fmtDuration(left).replace(/ \d+s$/, "")}</span>
     </Link>
   );
 }
 
-function ReadyDot({ at }: { at: string | null | "need" }) {
+function ReadyDot({ at, crates }: { at: string | null | "need"; crates: number }) {
   const mounted = useMounted();
   const now = useNow();
+  if (crates > 0) return <span className="display absolute -right-1 -top-1 grid h-6 min-w-6 place-items-center rounded-full border-[3px] border-black bg-[#ff5d4d] px-1 text-[11px] leading-none text-white">{crates > 99 ? "99+" : crates}</span>;
   if (!mounted || at === "need" || timeLeft(at, now) > 0) return null;
   return <span className="ping-ring absolute -right-0.5 -top-0.5 h-5 w-5 rounded-full border-[3px] border-black bg-[#ff5d4d]" />;
+}
+
+/** Chat & announcements button; a red dot means an announcement you haven't opened yet. */
+function ChatIcon({ latest, active }: { latest: number; active: boolean }) {
+  const [unseen, setUnseen] = useState(false);
+  useEffect(() => {
+    let seen = 0;
+    try {
+      seen = Number(localStorage.getItem("nt_ann_seen") || 0);
+      if (active) localStorage.setItem("nt_ann_seen", String(latest));
+    } catch {}
+    const t = setTimeout(() => setUnseen(!active && latest > seen), 0);
+    return () => clearTimeout(t);
+  }, [latest, active]);
+  return (
+    <Link href={unseen ? "/chat?tab=announce" : "/chat"} onClick={() => sfx.click()} aria-label={unseen ? "Chat, new announcement" : "Chat"} title="Announcements & chat" className={`relative grid h-10 w-10 place-items-center rounded-full border-[3px] border-black shadow-[0_3px_0_#000] transition active:translate-y-[3px] active:shadow-none ${active ? "bg-accent text-black" : "bg-raised"}`}>
+      <TbMessages size={19} strokeWidth={2.4} />
+      {unseen && <span className="ping-ring absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-black bg-[#ff5d4d]" />}
+    </Link>
+  );
 }
 
 /**
@@ -272,7 +298,7 @@ function MailPing({ count, hidden }: { count: number; hidden: boolean }) {
   };
   if (!show) return null;
   return (
-    <div className="fixed inset-x-3 top-3 z-[70] mx-auto max-w-sm anim-pop" role="status">
+    <div className="fixed inset-x-3 bottom-24 z-[70] mx-auto max-w-sm anim-pop lg:bottom-auto lg:left-auto lg:right-6 lg:top-20 lg:mx-0" role="status">
       <div className="card card-lime flex items-center gap-3 p-3 text-black">
         <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl border-[3px] border-black bg-black text-accent">
           <TbMail size={22} />

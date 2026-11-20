@@ -2,7 +2,7 @@ import "server-only";
 import { query } from "./db";
 import type { FragmentType, Rarity } from "./game/config";
 
-export type ShareKind = "pull" | "nottie" | "wanted";
+export type ShareKind = "pull" | "nottie" | "wanted" | "gtd";
 
 export async function sharePull(id: string) {
   if (!/^\d+$/.test(id)) return null;
@@ -24,5 +24,6 @@ export async function shareUser(id: string) {
   ).rows[0];
   if (!u) return null;
   const rank = Number((await query<{ n: string }>("select count(*)::text as n from users where status = 'active' and lifetime_points > $1", [u.lifetime_points])).rows[0].n) + 1;
-  return { ...u, points: Number(u.lifetime_points), rank };
+  const wallet = (await query<{ address: string }>("select address from wallets where user_id = $1 and is_primary order by verified_at desc limit 1", [u.id])).rows[0]?.address ?? null;
+  return { ...u, points: Number(u.lifetime_points), rank, wallet };
 }

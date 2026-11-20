@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { TbCheck } from "react-icons/tb";
+import { TbCheck, TbDownload, TbExternalLink } from "react-icons/tb";
 import { ShareCard } from "./CopyButton";
 import { api, idem } from "@/lib/client";
 import { FRAGMENT_BY_TYPE, POINTS_NAME, type FragmentType } from "@/lib/game/config";
@@ -17,7 +17,7 @@ import { ProgressBar, fmtDate } from "./ui";
 
 type Slot = { type: FragmentType; need: number; have: number; done: boolean };
 
-export function ForgeBench(p: { playerId?: string; slots: Slot[]; pct: number; complete: boolean; enabled: boolean; suspended: boolean; forgedAt: string | null; seed: number | null; username: string; wallet: string | null; forgePoints: number }) {
+export function ForgeBench(p: { playerId?: string; slots: Slot[]; pct: number; complete: boolean; enabled: boolean; suspended: boolean; forgedAt: string | null; seed: number | null; username: string; wallet: string | null; forgePoints: number; gate?: GateTask[] }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [phase, setPhase] = useState<"idle" | "charging" | "flash">("idle");
@@ -54,7 +54,7 @@ export function ForgeBench(p: { playerId?: string; slots: Slot[]; pct: number; c
     }
   }
 
-  if (done) return <ForgeComplete forgedAt={done.forgedAt} seed={done.seed} username={p.username} wallet={p.wallet} fresh={done.fresh} playerId={p.playerId} />;
+  if (done) return <ForgeComplete forgedAt={done.forgedAt} seed={done.seed} username={p.username} wallet={p.wallet} fresh={done.fresh} playerId={p.playerId} gate={p.gate ?? []} suspended={p.suspended} />;
 
   const left = p.slots.slice(0, 4);
   const right = p.slots.slice(4);
@@ -145,7 +145,10 @@ function SlotColumn({ slots }: { slots: Slot[] }) {
   );
 }
 
-export function ForgeComplete({ forgedAt, seed, username, wallet, fresh = false, playerId }: { forgedAt: string; seed: number; username: string; wallet: string | null; fresh?: boolean; playerId?: string }) {
+export type GateTask = { id: string; title: string; link: string | null; done: boolean };
+
+export function ForgeComplete({ forgedAt, seed, username, wallet, fresh = false, playerId, gate = [], suspended = false }: { forgedAt: string; seed: number; username: string; wallet: string | null; fresh?: boolean; playerId?: string; gate?: GateTask[]; suspended?: boolean }) {
+  const secured = !!wallet && gate.every((t) => t.done);
   return (
     <div className="card card-lime relative overflow-hidden p-6 sm:p-10 anim-rise">
       <div className="beams" style={{ ["--beam" as string]: "#ffffff", opacity: 0.35 }} />
@@ -156,7 +159,7 @@ export function ForgeComplete({ forgedAt, seed, username, wallet, fresh = false,
             <div className="absolute inset-x-0 bottom-0 bg-black/75 p-2 text-center text-[10px] font-bold uppercase tracking-widest text-white/80">Preview · final traits reveal at mint</div>
           </div>
           <div className={`stamp absolute -right-4 -top-5 text-2xl ${fresh ? "anim-slam" : ""}`} style={{ background: "#000" }}>
-            Approved
+            {secured ? "GTD secured" : "Approved"}
           </div>
         </div>
         <div className="text-black">
@@ -166,13 +169,26 @@ export function ForgeComplete({ forgedAt, seed, username, wallet, fresh = false,
             <br />
             of us.
           </h2>
-          <p className="mt-3 max-w-md font-semibold text-black/75">@{username} assembled a Nottie on {fmtDate(forgedAt)}. Your guaranteed mint spot is booked. Now go cause trouble until mint day.</p>
-          {playerId && <ShareCard kind="nottie" id={playerId} text="I just assembled my Nottie and I'm officially one of us. Come cause trouble with @thenottiesworld" label="Share my Nottie" className="btn btn-ghost mt-5" />}
+          <p className="mt-3 max-w-md font-semibold text-black/75">
+            {secured ? <>@{username} assembled a Nottie on {fmtDate(forgedAt)}. GTD free mint secured. See you on mint day.</> : <>@{username} assembled a Nottie on {fmtDate(forgedAt)}. Finish the steps below to secure your GTD free mint.</>}
+          </p>
+          {secured ? (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {playerId && (
+                <a href={`/api/og/gtd/${playerId}?download=1`} download="my-nottie-gtd.png" className="btn border-black bg-black text-accent" onClick={() => sfx.click()}>
+                  <TbDownload size={18} /> Download card
+                </a>
+              )}
+              {playerId && <ShareCard kind="nottie" id={playerId} text="My Nottie is assembled and my GTD free mint is secured. Come cause trouble with @thenottiesworld" label="Share on X" className="btn btn-ghost" />}
+            </div>
+          ) : (
+            <FinalSteps gate={gate} wallet={wallet} suspended={suspended} />
+          )}
           <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
-            <Row k="Status" v="One of Us" />
+            <Row k="Status" v={secured ? "GTD secured" : "Finish the steps"} warn={!secured} />
             <Row k="Mint phase" v="1 · Guaranteed" />
             <Row k="Assembled" v={fmtDate(forgedAt)} />
-            <Row k="Mint wallet" v={wallet ? `${wallet.slice(0, 6)}…${wallet.slice(-4)}` : "Link one"} href={wallet ? undefined : "/wallet"} warn={!wallet} />
+            <Row k="Mint wallet" v={wallet ? `${wallet.slice(0, 6)}…${wallet.slice(-4)}` : "Not added yet"} warn={!wallet} />
           </dl>
         </div>
       </div>
@@ -194,5 +210,92 @@ function Row({ k, v, href, warn }: { k: string; v: string; href?: string; warn?:
     </Link>
   ) : (
     <div className={cls}>{inner}</div>
+  );
+}
+
+/** The last steps on the finished card: the X missions, then the EVM wallet. */
+function FinalSteps({ gate, wallet, suspended }: { gate: GateTask[]; wallet: string | null; suspended: boolean }) {
+  const router = useRouter();
+  const [opened, setOpened] = useState<Record<string, number>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [addr, setAddr] = useState("");
+  const allTasks = gate.every((t) => t.done);
+
+  async function open(t: GateTask) {
+    sfx.click();
+    if (t.link && /^https?:/.test(t.link)) window.open(t.link, "_blank", "noopener");
+    setOpened((o) => ({ ...o, [t.id]: o[t.id] ?? Date.now() }));
+    await api("/api/tasks", { action: "click", taskId: t.id }).catch(() => {});
+  }
+  async function claim(t: GateTask) {
+    setBusy(t.id);
+    setErr(null);
+    try {
+      await api("/api/tasks", { action: "claim", taskId: t.id });
+      sfx.coin();
+      router.refresh();
+    } catch (e) {
+      sfx.error();
+      setErr(e instanceof Error ? e.message : "Couldn't verify");
+    } finally {
+      setBusy(null);
+    }
+  }
+  async function saveWallet() {
+    setBusy("wallet");
+    setErr(null);
+    try {
+      await api("/api/wallet", { action: "submit", address: addr.trim() });
+      sfx.stamp();
+      fx.burst({ count: 140, power: 14 });
+      router.refresh();
+    } catch (e) {
+      sfx.error();
+      setErr(e instanceof Error ? e.message : "Couldn't save the wallet");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-2xl border-[3px] border-black bg-black p-4 text-white shadow-[0_6px_0_rgba(0,0,0,.4)]">
+      <div className="display text-sm tracking-widest text-accent">Lock your GTD</div>
+      <ol className="mt-3 space-y-2">
+        {gate.map((t, i) => (
+          <li key={t.id} className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-white/15 p-2.5">
+            <span className={`display grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-black text-xs ${t.done ? "bg-accent text-black" : "bg-white/10 text-white/70"}`}>{t.done ? <TbCheck size={15} strokeWidth={3} /> : i + 1}</span>
+            <span className="min-w-0 flex-1 text-sm font-bold">{t.title}</span>
+            {!t.done && (
+              <span className="flex gap-1.5">
+                <button onClick={() => open(t)} className="btn btn-ghost !min-h-[34px] !px-3 text-xs">
+                  {opened[t.id] ? "Again" : "Open"} <TbExternalLink size={13} />
+                </button>
+                <button onClick={() => claim(t)} disabled={!opened[t.id] || busy === t.id || suspended} className="btn btn-accent !min-h-[34px] !px-3 text-xs">
+                  {busy === t.id ? "…" : "Done"}
+                </button>
+              </span>
+            )}
+          </li>
+        ))}
+        <li className={`rounded-xl border-2 p-2.5 ${allTasks ? "border-accent" : "border-white/15 opacity-60"}`}>
+          <div className="flex items-center gap-2">
+            <span className={`display grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-black text-xs ${wallet ? "bg-accent text-black" : "bg-white/10 text-white/70"}`}>{wallet ? <TbCheck size={15} strokeWidth={3} /> : gate.length + 1}</span>
+            <span className="text-sm font-bold">Drop your EVM wallet</span>
+          </div>
+          {allTasks && !wallet && (
+            <div className="mt-2 flex gap-2">
+              <input value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="0x…" autoCapitalize="off" spellCheck={false} className="min-w-0 flex-1 font-mono text-sm" aria-label="EVM wallet address" />
+              <button onClick={saveWallet} disabled={busy === "wallet" || suspended || !/^0x[0-9a-fA-F]{40}$/.test(addr.trim())} className="btn btn-accent shrink-0 text-sm">
+                {busy === "wallet" ? "…" : "Submit"}
+              </button>
+            </div>
+          )}
+          {!allTasks && <div className="mt-1 pl-9 text-xs text-white/60">Unlocks after the steps above.</div>}
+        </li>
+      </ol>
+      <div className="mt-2 text-xs text-white/60">Open each link, do it on X, then tap Done. Then GTD secured, and download your card to post.</div>
+      {err && <div className="mt-2 text-sm font-bold text-error">{err}</div>}
+    </div>
   );
 }

@@ -115,6 +115,53 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
     );
   }
 
+  if (kind === "gtd") {
+    const u = await shareUser(id);
+    if (!u || !u.forged_at) return new Response("Not found", { status: 404 });
+    const all = { background: true, shadow: true, body: true, shoes: true, outfit: true, mouth: true, eyes: true, gear: true };
+    const look = u.seed ? lookFromSeed(Number(u.seed)) : DEFAULT_LOOK;
+    const srcMap = await traitPngs(LAYER_ORDER.map((l) => look[l].src));
+    const date = new Date(u.forged_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase();
+    const row = (k: string, v: string, hi = false) => (
+      <div style={{ display: "flex", flexDirection: "column", width: 300, background: ink, borderRadius: 18, padding: "16px 20px", boxShadow: "0 6px 0 rgba(0,0,0,.45)" }}>
+        <span style={{ fontSize: 16, color: "rgba(255,255,255,.6)", letterSpacing: 2 }}>{k}</span>
+        <span style={{ fontSize: 28, color: hi ? lime : "#fff", marginTop: 4 }}>{v}</span>
+      </div>
+    );
+    const dl = new URL(_req.url).searchParams.has("download");
+    return new ImageResponse(
+      (
+        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", background: lime, fontFamily: "Berlin", color: ink, position: "relative", padding: 56 }}>
+          <div style={{ position: "absolute", inset: 0, display: "flex", backgroundImage: "radial-gradient(circle at 28% 50%, rgba(255,255,255,0.55), rgba(255,255,255,0) 55%)" }} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", width: 420 }}>
+            <div style={{ display: "flex", flexDirection: "column", width: 400, border: `6px solid ${ink}`, borderRadius: 32, overflow: "hidden", boxShadow: `0 12px 0 ${ink}`, background: "#9aa09a" }}>
+              <NottieFigure have={all} size={388} seed={u.seed ? Number(u.seed) : undefined} srcMap={srcMap} />
+              <div style={{ display: "flex", justifyContent: "center", background: "rgba(0,0,0,.8)", color: "rgba(255,255,255,.85)", fontSize: 15, padding: 10, letterSpacing: 1 }}>PREVIEW · TRAITS REVEAL AT MINT</div>
+            </div>
+            <div style={{ display: "flex", position: "absolute", top: -26, right: -40, background: ink, color: lime, fontSize: 40, padding: "8px 22px", borderRadius: 12, transform: "rotate(-8deg)", border: `4px solid ${lime}` }}>GTD SECURED</div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", position: "relative", marginLeft: 56, flex: 1, justifyContent: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo} width={48} height={50} alt="" />
+              <span style={{ fontSize: 26, background: ink, color: lime, padding: "4px 14px", borderRadius: 10 }}>THE NOTTIES · FREE MINT</span>
+            </div>
+            <span style={{ fontSize: 112, lineHeight: 0.9, marginTop: 22 }}>NOW ONE</span>
+            <span style={{ fontSize: 112, lineHeight: 0.9 }}>OF US.</span>
+            <span style={{ fontSize: 30, marginTop: 18, color: "rgba(0,0,0,.75)" }}>@{u.username} · GTD free mint secured · nottiesraid.fun</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 26 }}>
+              {row("STATUS", "GTD SECURED", true)}
+              {row("MINT PHASE", "1 · GUARANTEED")}
+              {row("ASSEMBLED", date)}
+              {row("MINT WALLET", u.wallet ? `${u.wallet.slice(0, 6)}…${u.wallet.slice(-4)}` : "NOT ADDED", !!u.wallet)}
+            </div>
+          </div>
+        </div>
+      ),
+      { ...opts, width: 1500, height: 840, headers: { ...opts.headers, "Cache-Control": "no-store", ...(dl ? { "Content-Disposition": `attachment; filename="notties-gtd-${u.username}.png"` } : {}) } },
+    );
+  }
+
   if (kind === "wanted") {
     const lv = levelInfo(u.points);
     const f = FACTIONS.find((x) => x.id === u.faction);

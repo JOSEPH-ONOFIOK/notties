@@ -275,6 +275,7 @@ export async function archiveExpiredTasks(admin: string) {
   const hours = (await getSettings()).late_window_hours;
   const { rows } = await query<{ id: string }>("update tasks set active = false where active and ends_at is not null and ends_at + make_interval(hours => $1::int) < now() returning id", [hours]);
   bust("book:");
+  bust("tasks");
   await audit(admin, "archive_expired_tasks", undefined, { count: rows.length });
   return { archived: rows.length };
 }
@@ -291,6 +292,7 @@ export async function upsertTask(admin: string, t: { id: string; title: string; 
     [t.id, t.title, t.description, t.points, t.kind, t.verify, t.link, t.sort, t.active, when(t.starts_at), when(t.ends_at), t.proof_hint ?? null, !!t.gives_book, Math.max(0, Math.min(10, Math.round(Number(t.crates ?? 0)) || 0))],
   );
   bust("book:");
+  bust("tasks");
   await audit(admin, "upsert_task", t.id, t);
   // Players who already did this task and assembled get their book right away.
   if (t.gives_book) {

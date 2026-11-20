@@ -313,6 +313,18 @@ create table if not exists mail (
   created_at timestamptz not null default now()
 );
 create index if not exists mail_user_idx on mail (user_id, id desc);
+
+-- Live chat (any player) and announcements (team only).
+create table if not exists chat_messages (
+  id bigserial primary key,
+  channel text not null,
+  user_id bigint references users(id),
+  author text not null,
+  body text not null,
+  deleted boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists chat_channel_idx on chat_messages (channel, id desc);
 `;
 
 const TASKS = [
@@ -367,6 +379,16 @@ const TASKS = [
     sort: 4,
   },
   {
+    id: "rt_post",
+    title: "Retweet the launch post",
+    description: "Repost our pinned \"Notties Raid is live\" post on X. Final step before your wallet.",
+    points: 100,
+    kind: "once",
+    verify: "link",
+    link: "https://x.com/thenottiesworld",
+    sort: 4,
+  },
+  {
     id: "comment_post",
     title: "Comment on the launch post",
     description: "Drop a comment on our pinned \"Notties Raid is live\" post. Final step before your wallet.",
@@ -409,8 +431,8 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 4;
-const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices"] as const;
+const ECONOMY_VERSION = 5;
+const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks"] as const;
 
 export async function SEED(q: Q) {
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {

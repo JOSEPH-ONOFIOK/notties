@@ -4,6 +4,7 @@ import { currentPlayer } from "@/lib/player";
 import { IntroStory } from "@/components/game/IntroStory";
 import { getSettings } from "@/lib/game/core";
 import { LiveBar } from "@/components/game/LiveBar";
+import { MusicPlayer } from "@/components/game/MusicPlayer";
 import { eventTimeline } from "@/lib/game/events";
 import { readFeed } from "@/lib/game/feed";
 
@@ -18,6 +19,7 @@ export default async function GameLayout({ children }: { children: React.ReactNo
         <Nav player={player} />
         <LiveBar initial={timeline} feed={feed} />
       </div>
+      <MusicPlayer />
       <IntroStory playerId={player.id} username={player.username} cooldownMinutes={settings.crate_cooldown_minutes} cratePrice={settings.crate_price} timerOn={!!settings.timer_crates} />
       <FxLayer>
         <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">

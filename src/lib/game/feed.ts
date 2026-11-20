@@ -1,5 +1,6 @@
 import "server-only";
 import { cached } from "../cache";
+import { maybeHousekeep } from "../housekeeping";
 import { query, type Q } from "../db";
 
 export type FeedItem = { id: number; username: string; avatar: string | null; kind: "pull" | "forge" | "swap" | "streak" | "faction" | "book"; data: Record<string, unknown>; created_at: string };
@@ -16,6 +17,7 @@ const FEED_SIZE = 20;
  */
 export async function readFeed(after = 0, limit = FEED_SIZE): Promise<FeedItem[]> {
   const latest = await cached("feed", 10_000, async () => {
+    maybeHousekeep();
     const { rows } = await query<FeedItem>(
       `select f.id, u.x_username as username, u.avatar_url as avatar, f.kind, f.data, f.created_at
          from feed f join users u on u.id = f.user_id
