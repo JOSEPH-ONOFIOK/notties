@@ -53,7 +53,7 @@ export function Nav({ player }: { player: PlayerView }) {
       <header className="relative z-40 border-b-[3px] border-black bg-[#151910]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
           {/* player plate */}
-          <Link href="/profile" className="group flex min-w-0 items-center gap-2" onClick={() => sfx.click()} title="Your profile">
+          <Link href="/profile" className="group flex min-w-0 shrink-0 items-center gap-2" onClick={() => sfx.click()} title="Your profile">
             <div className="relative shrink-0">
               <Avatar src={player.avatar} name={player.username} size={42} ring />
               <span className="display absolute -bottom-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full border-[3px] border-black bg-accent px-1 text-[11px] leading-none text-black">{lv.level}</span>

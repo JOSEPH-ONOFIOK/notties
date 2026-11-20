@@ -34,7 +34,7 @@ function merge(a: ChatMessage[], b: ChatMessage[]) {
   for (const x of [...a, ...b]) m.set(x.id, x);
   return [...m.values()].sort((x, y) => x.id - y.id).slice(-150);
 }
-export function ChatRoom({ channel, initial, me, isAdmin, canPost }: { channel: Channel; initial: ChatMessage[]; me: string; isAdmin: boolean; canPost: boolean }) {
+export function ChatRoom({ channel, initial, me, isAdmin, canPost, fill = false }: { channel: Channel; initial: ChatMessage[]; me: string; isAdmin: boolean; canPost: boolean; fill?: boolean }) {
   const [msgs, setMsgs] = useState(initial);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,6 +42,7 @@ export function ChatRoom({ channel, initial, me, isAdmin, canPost }: { channel: 
   const last = useRef(initial.at(-1)?.id ?? 0);
   const box = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
+  const hasInitial = initial.length > 0;
 
   // Show what this device already has, merged with what the server sent.
   useEffect(() => {
@@ -84,13 +85,14 @@ export function ChatRoom({ channel, initial, me, isAdmin, canPost }: { channel: 
       }
       if (!stop) t = setTimeout(tick, channel === "chat" ? 6_000 : 30_000);
     };
-    t = setTimeout(tick, channel === "chat" ? 6_000 : 30_000);
+    // Opened without server data (the side panel): fetch right away.
+    t = setTimeout(tick, hasInitial ? (channel === "chat" ? 6_000 : 30_000) : 0);
     return () => {
       stop = true;
       clearTimeout(t);
       evs.forEach((e) => window.removeEventListener(e, poke));
     };
-  }, [channel]);
+  }, [channel, hasInitial]);
 
   useEffect(() => {
     const el = box.current;
@@ -125,7 +127,7 @@ export function ChatRoom({ channel, initial, me, isAdmin, canPost }: { channel: 
 
   const announce = channel === "announce";
   return (
-    <div className="card flex h-[calc(100dvh-360px)] min-h-[360px] flex-col overflow-hidden p-0 lg:h-[calc(100dvh-250px)]">
+    <div className={fill ? "flex h-full min-h-0 flex-col overflow-hidden" : "card flex h-[calc(100dvh-360px)] min-h-[360px] flex-col overflow-hidden p-0 lg:h-[calc(100dvh-250px)]"}>
       <div
         ref={box}
         onScroll={(e) => {
