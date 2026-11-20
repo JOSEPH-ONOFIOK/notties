@@ -42,7 +42,7 @@ export function ReplayIntro({ className = "btn btn-ghost" }: { className?: strin
  * The entrance story: five comic panels narrated by Vlad, shown the first time a player enters on
  * this browser (or with ?intro=1, or via replayIntro()). Skippable at any point.
  */
-export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: string; username: string; cooldownMinutes: number }) {
+export function IntroStory({ playerId, username, cooldownMinutes, cratePrice, timerOn }: { playerId: string; username: string; cooldownMinutes: number; cratePrice: number; timerOn: boolean }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const hours = cooldownMinutes / 60;
@@ -158,7 +158,16 @@ export function IntroStory({ playerId, username, cooldownMinutes }: { playerId: 
               title="Crack the crates."
               body={
                 <>
-                  A Portal Crate washes up <b>{every}</b>. Tap it <b>three times</b> and it cracks open with one part inside, plus a bit of <b>$NOTTIES</b>. Some parts are common. Some are very, very not.
+                  {timerOn ? (
+                    <>
+                      A Portal Crate washes up <b>{every}</b>. Tap it <b>three times</b> and it cracks open with one part inside.
+                    </>
+                  ) : (
+                    <>
+                      Your first crate is <b>free</b> (check your mailbox). After that, crates cost <b>{cratePrice} $NOTTIES</b>. Tap one <b>three times</b> and it cracks open with one part inside.
+                    </>
+                  )}{" "}
+                  Some parts are common. Some are very, very not.
                 </>
               }
             />

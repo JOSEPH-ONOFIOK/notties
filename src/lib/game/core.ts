@@ -233,12 +233,19 @@ export interface PlayerView {
   crates: number;
   /** Letters in the mailbox that are unread or have a reward to claim. */
   mail: number;
+  /**
+   * When the player can next open a crate: null = right now, an ISO time = then, "need" = they
+   * need more $NOTTIES first. Covers free crates, the timer (if on) and buying.
+   */
+  crateAt: string | null | "need";
+  /** Joined through a friend's link or code. */
+  referred: boolean;
 }
 
 export async function getPlayer(xId: string): Promise<PlayerView | null> {
   const u = await getUserByXId(xId);
   if (!u) return null;
-  const [settings, inv, wallet, tasks, refs, forge, elig, mail] = await Promise.all([
+  const [settings, inv, wallet, tasks, refs, forge, elig, mail, lastBuy] = await Promise.all([
     getSettings(),
     getInventory(u.id),
     one<{ address: string }>("select address from wallets where user_id = $1 and is_primary order by verified_at desc limit 1", [u.id]),
@@ -247,7 +254,14 @@ export async function getPlayer(xId: string): Promise<PlayerView | null> {
     one<{ created_at: string; nottie_seed: number }>("select created_at, nottie_seed from forge_completions where user_id = $1", [u.id]),
     one<{ status: string }>("select status from mint_eligibility where user_id = $1 and category = 'forge'", [u.id]),
     one<{ n: string }>("select count(*)::text as n from mail where user_id = $1 and (read_at is null or claimed_at is null)", [u.id]),
+    one<{ last: string | null }>("select max(created_at) as last from crate_claims where user_id = $1 and source = 'shop'", [u.id]),
   ]);
+  const buyAt = lastBuy?.last ? new Date(lastBuy.last).getTime() + Math.max(0, Number(settings.crate_buy_cooldown_minutes) || 0) * 60_000 : 0;
+  const crateAt: string | null | "need" =
+    Number(u.crates) > 0 ? null
+    : settings.timer_crates ? u.next_claim_at
+    : Number(u.points) >= Number(settings.crate_price) && settings.shop_enabled ? (buyAt > Date.now() ? new Date(buyAt).toISOString() : null)
+    : "need";
   const progress = recipeProgress(inv, settings.recipe);
   const fragments = Object.values(inv).reduce((a, b) => a + b, 0);
   const gtd = elig?.status === "approved";
@@ -282,6 +296,8 @@ export async function getPlayer(xId: string): Promise<PlayerView | null> {
     faction: u.faction,
     crates: Number(u.crates) || 0,
     mail: Number(mail?.n ?? 0),
+    crateAt,
+    referred: !!u.referred_by,
   };
 }
 

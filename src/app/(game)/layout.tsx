@@ -18,7 +18,7 @@ export default async function GameLayout({ children }: { children: React.ReactNo
         <Nav player={player} />
         <LiveBar initial={timeline} feed={feed} />
       </div>
-      <IntroStory playerId={player.id} username={player.username} cooldownMinutes={settings.crate_cooldown_minutes} />
+      <IntroStory playerId={player.id} username={player.username} cooldownMinutes={settings.crate_cooldown_minutes} cratePrice={settings.crate_price} timerOn={!!settings.timer_crates} />
       <FxLayer>
         <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
           {player.accountStatus === "suspended" && (

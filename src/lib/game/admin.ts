@@ -286,7 +286,7 @@ export async function upsertTask(admin: string, t: { id: string; title: string; 
   await query(
     `insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at, proof_hint, gives_book, crates) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      on conflict (id) do update set title = excluded.title, description = excluded.description, points = excluded.points, kind = excluded.kind, verify = excluded.verify, link = excluded.link, sort = excluded.sort, active = excluded.active, starts_at = excluded.starts_at, ends_at = excluded.ends_at, proof_hint = excluded.proof_hint, gives_book = excluded.gives_book, crates = excluded.crates`,
-    [t.id, t.title, t.description, t.points, t.kind, t.verify, t.link, t.sort, t.active, when(t.starts_at), when(t.ends_at), t.proof_hint ?? null, !!t.gives_book, Math.max(0, Math.min(10, Math.round(Number(t.crates ?? 1)) || 0))],
+    [t.id, t.title, t.description, t.points, t.kind, t.verify, t.link, t.sort, t.active, when(t.starts_at), when(t.ends_at), t.proof_hint ?? null, !!t.gives_book, Math.max(0, Math.min(10, Math.round(Number(t.crates ?? 0)) || 0))],
   );
   bust("book:");
   await audit(admin, "upsert_task", t.id, t);

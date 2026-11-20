@@ -164,10 +164,13 @@ export function ResolveButton({ riskId }: { riskId: string }) {
 type TaskDraft = { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean; crates?: number };
 const toLocal = (v?: string | null) => (v ? new Date(new Date(v).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 
+/** Built-in missions whose $NOTTIES come from Economy → rewards, not the mission's own field. */
+const BUILTIN_REWARD = ["onboarding", "follow_x", "link_wallet", "daily_checkin", "daily_gift", "first_trade"];
+
 export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: RoundCfg }) {
   const router = useRouter();
   const options = upcomingRounds(rounds, 6);
-  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 100, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 1, starts_at: options[0].start, ends_at: options[0].end });
+  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 100, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 0, starts_at: options[0].start, ends_at: options[0].end });
   const [t, setT] = useState<TaskDraft>(initial ?? blank());
   const roundIdx = options.findIndex((r) => r.start === (t.starts_at ? new Date(t.starts_at).toISOString() : null) && r.end === (t.ends_at ? new Date(t.ends_at).toISOString() : null));
   const pickRound = (v: string) => {
@@ -179,7 +182,7 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
   return (
     <div className="card p-5">
       <div className="display text-xl">{initial ? `Edit · ${initial.id}` : "New mission"}</div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
         <label className="text-xs sm:col-span-2">
           <span className="text-muted">round (fresh missions drop at {rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" & ")} {rounds.label}; they disappear when the round ends)</span>
           <select value={!t.starts_at && !t.ends_at ? "none" : roundIdx >= 0 ? String(roundIdx) : "custom"} onChange={(e) => pickRound(e.target.value)}>
@@ -206,13 +209,20 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
           <span className="text-muted">description</span>
           <input value={t.description} onChange={(e) => set("description", e.target.value)} />
         </label>
-        <label className="text-xs">
-          <span className="text-muted">$NOTTIES reward</span>
-          <input type="number" value={t.points} onChange={(e) => set("points", Number(e.target.value))} />
-        </label>
+        {initial && BUILTIN_REWARD.includes(t.id) ? (
+          <div className="text-xs">
+            <span className="text-muted">$NOTTIES reward</span>
+            <p className="mt-1 rounded-lg border-2 border-border p-2 text-muted">Set on the Economy page ($NOTTIES rewards).</p>
+          </div>
+        ) : (
+          <label className="text-xs">
+            <span className="text-muted">$NOTTIES reward</span>
+            <input type="number" value={t.points} onChange={(e) => set("points", Number(e.target.value))} />
+          </label>
+        )}
         <label className="text-xs">
           <span className="text-muted">free crates reward</span>
-          <input type="number" min={0} max={10} value={t.crates ?? 1} onChange={(e) => set("crates", Number(e.target.value))} />
+          <input type="number" min={0} max={10} value={t.crates ?? 0} onChange={(e) => set("crates", Number(e.target.value))} />
         </label>
         <label className="text-xs">
           <span className="text-muted">sort</span>

@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 const LOOP = [
   { n: "01", t: "Earn $NOTTIES", icon: TbBackpack, d: "Do missions, check in daily, gift cards and invite friends. Every one pays $NOTTIES, the in-game token." },
-  { n: "02", t: "Open crates", icon: TbBox, d: "Spend $NOTTIES on crates (one an hour), plus a free crate every 2 hours. Each one drops a random part." },
+  { n: "02", t: "Open crates", icon: TbBox, d: "Your first crate is free. After that, spend $NOTTIES on crates, one an hour. Each one drops a random part." },
   { n: "03", t: "Trade", icon: TbArrowsExchange, d: "You'll get doubles. Swap them with other players for the parts you're missing. The Body and Hand & Head are the hardest to find." },
   { n: "04", t: "Assemble", icon: TbFlask2, d: "Collect all eight parts, build your Nottie, add your wallet. Your guaranteed free mint spot is locked." },
 ];
@@ -184,7 +184,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           <div className="card relative overflow-hidden p-6 sm:p-8">
             <div className="display inline-block -rotate-2 rounded-md border-[3px] border-black bg-warn px-2 py-0.5 text-xs tracking-[0.2em] text-black">Twice a day</div>
             <h3 className="display mt-4 text-4xl leading-[0.9] sm:text-5xl">Missions pay $NOTTIES.</h3>
-            <p className="mt-3 max-w-md text-sm text-muted">Fresh missions drop at 9am and 9pm. Every one you finish sends $NOTTIES (and often a free crate) to your mailbox. Spend them on crates, collect your parts, and trade for the rest.</p>
+            <p className="mt-3 max-w-md text-sm text-muted">Fresh missions drop at 9am and 9pm. Every one you finish sends $NOTTIES to your mailbox. Spend them on crates, collect your parts, and trade for the rest.</p>
             <ul className="mt-5 grid gap-2 text-sm font-bold">
               {["Earn $NOTTIES from your missions", "Spend them on crates to unlock parts", "Collect the full set (crates + trading), then add your wallet"].map((t, i) => (
                 <li key={t} className="flex items-center gap-2">

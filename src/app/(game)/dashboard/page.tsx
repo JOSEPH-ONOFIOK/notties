@@ -12,6 +12,7 @@ import { listTasks } from "@/lib/game/tasks";
 import { getSettings } from "@/lib/game/core";
 import { FactionPicker } from "@/components/game/FactionPicker";
 import { currentPlayer } from "@/lib/player";
+import { EarnStrip } from "@/components/game/EarnStrip";
 
 export const metadata = { title: "Robinhood City" };
 
@@ -29,9 +30,9 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
 
   const objective: Objective =
     p.mail > 0
-      ? { title: "You've got mail", body: `${p.mail} letter${p.mail === 1 ? "" : "s"} waiting. Mission rewards and free crates are inside.`, href: "/mail", cta: "Open mailbox" }
+      ? { title: "You've got mail", body: `${p.mail} letter${p.mail === 1 ? "" : "s"} waiting. Your $NOTTIES rewards are inside.`, href: "/mail", cta: "Open mailbox" }
       : p.crates > 0
-        ? { title: `Open ${p.crates} free crate${p.crates === 1 ? "" : "s"}`, body: "No timer on these. Crack them open and see what parts fall out.", href: "/hunt", cta: "Go hunt" }
+        ? { title: `Open ${p.crates} free crate${p.crates === 1 ? "" : "s"}`, body: "It's on the house. Crack it open and see what part falls out.", href: "/hunt", cta: "Go hunt" }
         : p.points >= settings.crate_price && !p.forgedAt && !p.progress.complete
           ? { title: "Buy a crate", body: `You've got ${p.points.toLocaleString()} $NOTTIES. A crate costs ${settings.crate_price}. Go see what's inside.`, href: "/hunt", cta: "Go hunt" }
         : p.claims === 0
@@ -130,6 +131,10 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         </Link>
       </div>
 
+      <div className="mt-6">
+        <EarnStrip compact points={settings.points} streakTop={Math.max(...(settings.streak_bonus ?? [settings.points.daily_checkin]).map(Number))} referral={settings.points.referral} forge={settings.points.forge} cratePrice={settings.crate_price} />
+      </div>
+
       {/* ── the city ── */}
       <div className="mt-8 mb-3 flex items-end justify-between">
         <h2 className="display ink-text text-3xl text-white sm:text-4xl">Robinhood City</h2>
@@ -137,9 +142,9 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
       </div>
 
       <div className="grid auto-rows-[150px] grid-cols-2 gap-3 sm:auto-rows-[170px] sm:gap-4 lg:grid-cols-4">
-        <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={<Countdown until={p.nextClaimAt} readyText="READY!" className="display text-sm" plain />} hot={!p.nextClaimAt || new Date(p.nextClaimAt) <= new Date()} big />
+        <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={p.crateAt === "need" ? `Crate: ${settings.crate_price} $NOTTIES` : <Countdown until={p.crateAt} readyText="READY!" className="display text-sm" plain />} hot={p.crateAt === null} big />
         <Spot href="/forge" img="/notties/221.webp" name="Vlad's Lab" tag="Forge" pos="center 30%" badge={p.forgedAt ? "Done" : `${p.progress.pct}%`} hot={p.progress.complete && !p.forgedAt} />
-        <Spot href="/tasks" img="/characters/Hood.webp" name="Mission Board" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
+        <Spot href="/tasks" img="/characters/Hood.webp" name="Earn $NOTTIES" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
         <Spot href="/trade" img="/notties/86.webp" name="Black Market" pos="center 30%" tag="Trade" badge="Swap spares" />
         <Spot href="/inventory" img="/notties/6.webp" name="Your Stash" tag="Cards" pos="center 30%" badge={`${spares} spare${spares === 1 ? "" : "s"}`} />
         <Spot href="/leaderboard" img="/characters/Dild.webp" name="Most Wanted" tag="Ranks" pos="center 30%" badge="Wanted" />

@@ -27,7 +27,7 @@ export default async function MintAdmin() {
         <Link href="/api/admin?export=eligibility" className="ml-auto text-accent underline">GTD CSV</Link>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
         <div className="space-y-6">
           <SnapshotForm />
           <div className="card p-5">

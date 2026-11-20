@@ -13,7 +13,7 @@ import { Coin } from "./game/Coin";
 import { CountUp } from "./game/CountUp";
 import { SoundToggle } from "./game/SoundToggle";
 import { useMounted } from "./useMounted";
-import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX } from "react-icons/tb";
+import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX, TbCoin } from "react-icons/tb";
 import { BRAND, FACTIONS } from "@/lib/game/config";
 import type { IconType } from "react-icons";
 import { replayIntro } from "./game/IntroStory";
@@ -23,10 +23,11 @@ const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/hunt", label: "Hunt", icon: TbBox },
   { href: "/forge", label: "Forge", icon: TbFlask2 },
   { href: "/trade", label: "Trade", icon: TbArrowsExchange },
-  { href: "/tasks", label: "Missions", icon: TbClipboardCheck },
+  { href: "/tasks", label: "Earn", icon: TbCoin },
   { href: "/showroom", label: "Gallery", icon: TbPhoto },
 ];
 const MORE = [
+  { href: "/profile", label: "Profile" },
   { href: "/mail", label: "Mailbox" },
   { href: "/inventory", label: "Stash" },
   { href: "/leaderboard", label: "Most Wanted" },
@@ -48,7 +49,7 @@ export function Nav({ player }: { player: PlayerView }) {
       <header className="relative z-40 border-b-[3px] border-black bg-[#151910]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
           {/* player plate */}
-          <Link href="/dashboard" className="group flex min-w-0 items-center gap-2" onClick={() => sfx.click()}>
+          <Link href="/profile" className="group flex min-w-0 items-center gap-2" onClick={() => sfx.click()} title="Your profile">
             <div className="relative shrink-0">
               <Avatar src={player.avatar} name={player.username} size={42} ring />
               <span className="display absolute -bottom-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full border-[3px] border-black bg-accent px-1 text-[11px] leading-none text-black">{lv.level}</span>
@@ -81,7 +82,7 @@ export function Nav({ player }: { player: PlayerView }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <CrateChip nextClaimAt={player.nextClaimAt} />
+            <CrateChip at={player.crateAt} />
             <Link href="/tasks" title={player.checkedInToday ? `${player.streak}-day streak. Back tomorrow!` : player.streak ? `${player.streak}-day streak. Roll call to keep it!` : "Start a streak at roll call"} className={`flex items-center gap-1 rounded-full border-[3px] border-black py-1 pl-1.5 pr-2.5 shadow-[0_3px_0_#000] ${player.checkedInToday ? "bg-warn text-black" : "bg-black/50 text-muted"}`}>
               <TbFlame size={18} strokeWidth={2.4} className={!player.checkedInToday && player.streak ? "anim-wiggle text-warn" : ""} />
               <span className="display text-sm tabular-nums">{player.streak}</span>
@@ -181,7 +182,7 @@ export function Nav({ player }: { player: PlayerView }) {
                   <Link href={m.href} onClick={() => sfx.click()} className={`relative -mt-7 mb-1 flex h-[70px] w-[70px] flex-col items-center justify-center rounded-full border-[3px] border-black text-black shadow-[0_5px_0_#000] transition active:translate-y-[5px] active:shadow-none ${active ? "bg-accent-hover" : "bg-accent"}`}>
                     <TbBox size={28} strokeWidth={2.4} />
                     <span className="display text-[10px] leading-none">Hunt</span>
-                    <ReadyDot nextClaimAt={player.nextClaimAt} />
+                    <ReadyDot at={player.crateAt} />
                   </Link>
                 </li>
               );
@@ -211,11 +212,13 @@ function useNow(ms = 1000) {
   return now;
 }
 
-function CrateChip({ nextClaimAt }: { nextClaimAt: string | null }) {
+function CrateChip({ at }: { at: string | null | "need" }) {
   const mounted = useMounted();
   const now = useNow();
-  const left = mounted ? timeLeft(nextClaimAt, now) : 1;
-  const ready = mounted && left === 0;
+  const need = at === "need";
+  const nextClaimAt = need ? null : at;
+  const left = mounted && !need ? timeLeft(nextClaimAt, now) : 1;
+  const ready = mounted && !need && left === 0;
   useEffect(() => {
     if (!mounted) return;
     const base = document.title.replace(/^\(!\) Crate ready · /, "");
@@ -225,15 +228,15 @@ function CrateChip({ nextClaimAt }: { nextClaimAt: string | null }) {
   return (
     <Link href="/hunt" onClick={() => sfx.click()} className={`relative hidden items-center gap-1.5 rounded-full border-[3px] border-black px-3 py-1.5 shadow-[0_3px_0_#000] sm:flex ${ready ? "anim-glow bg-accent text-black" : "bg-black/50 text-muted"}`}>
       <TbBox size={16} strokeWidth={2.4} />
-      <span className="display text-xs tabular-nums">{!mounted ? "…" : ready ? "Ready!" : fmtDuration(left).replace(/ \d+s$/, "")}</span>
+      <span className="display text-xs tabular-nums">{!mounted ? "…" : need ? "Earn more" : ready ? "Ready!" : fmtDuration(left).replace(/ \d+s$/, "")}</span>
     </Link>
   );
 }
 
-function ReadyDot({ nextClaimAt }: { nextClaimAt: string | null }) {
+function ReadyDot({ at }: { at: string | null | "need" }) {
   const mounted = useMounted();
   const now = useNow();
-  if (!mounted || timeLeft(nextClaimAt, now) > 0) return null;
+  if (!mounted || at === "need" || timeLeft(at, now) > 0) return null;
   return <span className="ping-ring absolute -right-0.5 -top-0.5 h-5 w-5 rounded-full border-[3px] border-black bg-[#ff5d4d]" />;
 }
 

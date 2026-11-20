@@ -187,7 +187,7 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
           <div className="h-full bg-accent transition-[width] duration-700" style={{ width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }} />
         </div>
       </div>
-      <h2 className="display ink-text mb-4 text-2xl text-white">This round</h2>
+      <h2 id="round" className="display ink-text mb-4 scroll-mt-32 text-2xl text-white">This round</h2>
       {timed.length > 0 ? (
         <ul className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{timed.map((t, i) => note(t, i))}</ul>
       ) : (
@@ -195,7 +195,7 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
       )}
       {daily.length > 0 && (
         <>
-          <h2 className="display ink-text mb-4 text-2xl text-white">Daily jobs</h2>
+          <h2 id="daily" className="display ink-text mb-4 scroll-mt-32 text-2xl text-white">Daily jobs</h2>
           <ul className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{daily.map((t, i) => note(t, i + 1))}</ul>
         </>
       )}

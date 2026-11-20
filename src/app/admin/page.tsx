@@ -33,7 +33,8 @@ export default async function AdminHome() {
             <Toggle k="claims_enabled" label="Crate claims" value={s.claims_enabled} />
             <Toggle k="trade_enabled" label="Trading" value={s.trade_enabled} />
             <Toggle k="forge_enabled" label="Forge (assembly)" value={s.forge_enabled} />
-            <Toggle k="shop_enabled" label="Bonus crate shop" value={s.shop_enabled} />
+            <Toggle k="shop_enabled" label="Crate shop (buy with $NOTTIES)" value={s.shop_enabled} />
+            <Toggle k="timer_crates" label="Free crate every 2 hours" value={s.timer_crates} />
           </div>
         </div>
         <div className="card p-6">

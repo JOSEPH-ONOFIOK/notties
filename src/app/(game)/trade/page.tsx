@@ -12,7 +12,7 @@ import { currentPlayer } from "@/lib/player";
 
 export const metadata = { title: "Trade" };
 
-export default async function Trade({ searchParams }: { searchParams: Promise<{ to?: string; tab?: string }> }) {
+export default async function Trade({ searchParams }: { searchParams: Promise<{ to?: string; tab?: string; type?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
   const [s, history, offers] = await Promise.all([getSettings(), tradeHistory(p.id, 25), listOffers(p.id)]);
   const tab = sp.tab === "gift" ? "gift" : "swap";
@@ -32,7 +32,7 @@ export default async function Trade({ searchParams }: { searchParams: Promise<{ 
       {tab === "swap" ? (
         <SwapBoard inventory={p.inventory} open={offers.open} mine={offers.mine} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} />
       ) : (
-        <TradeForm inventory={p.inventory} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} initialTo={sp.to} />
+        <TradeForm inventory={p.inventory} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} initialTo={sp.to} initialType={sp.type} />
       )}
 
       <div className="card mt-6 p-6">

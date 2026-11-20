@@ -10,7 +10,7 @@ export default async function MailPage() {
   const mail = await listMail(p.id);
   return (
     <>
-      <PageTitle kicker="Mailbox" title="Your mail" sub="Mission rewards, recruit bonuses and cards people send you all land here. Claim rewards to get your $NOTTIES and free crates." />
+      <PageTitle kicker="Mailbox" title="Your mail" sub="Mission rewards, recruit bonuses and cards people send you all land here. Claim rewards to get your $NOTTIES." />
       <Mailbox initial={mail} suspended={p.accountStatus !== "active"} />
     </>
   );

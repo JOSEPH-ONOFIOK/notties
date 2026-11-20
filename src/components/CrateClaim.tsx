@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TbBolt, TbClover, TbShoppingBag, TbGift } from "react-icons/tb";
 import { FaXTwitter } from "react-icons/fa6";
@@ -34,6 +35,7 @@ export function CrateClaim(p: {
   points: number;
   eventName: string | null;
   freeCrates: number;
+  timerOn: boolean;
 }) {
   const router = useRouter();
   const mounted = useMounted();
@@ -41,7 +43,9 @@ export function CrateClaim(p: {
   const [next, setNext] = useState<string | null>(p.nextClaimAt);
   const [now, setNow] = useState(() => serverNow());
   const [phase, setPhase] = useState<Phase>("idle");
-  const [mode, setMode] = useState<"timer" | "shop" | "free">("timer");
+  const [mode, setMode] = useState<"timer" | "shop" | "free">(p.timerOn ? "timer" : p.freeCrates > 0 ? "free" : "shop");
+  // Where the crate goes back to after a reveal: the timer if it's on, else a free crate, else the shop.
+  const home = (free: number) => (p.timerOn ? "timer" : free > 0 ? "free" : "shop");
   const [taps, setTaps] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -67,9 +71,11 @@ export function CrateClaim(p: {
 
   const left = mounted ? timeLeft(next, now) : next ? Math.max(1, timeLeft(next, now)) : 0;
   const timerReady = mounted && left === 0 && p.enabled && !p.suspended;
-  const ready = mode === "shop" ? !p.suspended : mode === "free" ? !p.suspended && p.enabled && freeLeft > 0 : timerReady;
+  const buyWaitNow = mounted ? timeLeft(nextBuy, now) : 0;
+  const ready = mode === "shop" ? !p.suspended && p.enabled && p.shop.enabled && shopLeft > 0 && buyWaitNow === 0 && p.points >= p.shop.price : mode === "free" ? !p.suspended && p.enabled && freeLeft > 0 : timerReady;
   const cooldownMs = p.cooldownMinutes * 60_000;
-  const charge = ready ? 1 : Math.max(0, Math.min(1, 1 - left / cooldownMs));
+  const buyMs = Math.max(1, p.shop.cooldownMinutes * 60_000);
+  const charge = ready ? 1 : mode === "shop" ? (buyWaitNow > 0 ? Math.max(0, 1 - buyWaitNow / buyMs) : Math.min(1, p.points / Math.max(1, p.shop.price))) : Math.max(0, Math.min(1, 1 - left / cooldownMs));
   const buyWait = mounted ? timeLeft(nextBuy, now) : 0;
   const canBuy = p.shop.enabled && p.enabled && !p.suspended && shopLeft > 0 && buyWait === 0;
   const affordable = p.points >= p.shop.price;
@@ -140,7 +146,7 @@ export function CrateClaim(p: {
       setTaps(0);
       if (/not ready|bought all|need \d+|no free crates|buy your next/i.test(msg)) {
         key.current = null;
-        if (mode !== "timer") setMode("timer");
+        setMode(home(freeLeft));
         const me = await api<{ player: { nextClaimAt: string | null } }>("/api/me").catch(() => null);
         if (me) setNext(me.player.nextClaimAt);
       }
@@ -153,7 +159,7 @@ export function CrateClaim(p: {
     setTaps(0);
     setFlipped(false);
     setResult(null);
-    setMode("timer");
+    setMode(home(freeLeft));
   }
 
   const def = result ? FRAGMENT_BY_TYPE[result.type] : null;
@@ -199,11 +205,11 @@ export function CrateClaim(p: {
             </div>
 
             <div className="mt-2 min-h-[140px]">
-              {(!p.enabled || p.suspended) && mode === "timer" ? (
+              {!p.enabled || p.suspended ? (
                 <div className="display text-3xl">{p.suspended ? "Claims paused" : "Crates locked"}</div>
               ) : ready || phase !== "idle" ? (
                 <>
-                  {mode === "shop" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Bought crate · {p.shop.price} $NOTTIES</div>}
+                  {mode === "shop" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Crate · {p.shop.price} $NOTTIES · you have {p.points.toLocaleString()}</div>}
                   {mode === "free" && phase === "idle" && <div className="display mb-1 text-xs tracking-[0.25em] text-warn">Free crate · {freeLeft} left</div>}
                   <div className="display ink-text text-4xl text-white sm:text-5xl">{phase === "opening" ? "!!!" : taps === 0 ? "Tap to crack!" : taps === 1 ? "Again!" : "One more!"}</div>
                   <div className="mt-3 flex justify-center gap-2" aria-hidden>
@@ -212,11 +218,40 @@ export function CrateClaim(p: {
                     ))}
                   </div>
                   {mode === "timer" && phase === "idle" && freeLeft > 0 && <div className="mt-3 text-sm font-bold text-warn">+ {freeLeft} free crate{freeLeft === 1 ? "" : "s"} waiting after this one</div>}
-                  {mode !== "timer" && phase === "idle" && (
+                  {mode !== "timer" && p.timerOn && phase === "idle" && (
                     <button onClick={() => (sfx.click(), setMode("timer"))} className="mt-3 text-xs text-muted underline">
                       Never mind
                     </button>
                   )}
+                </>
+              ) : mode === "shop" ? (
+                <>
+                  {!p.shop.enabled ? (
+                    <div className="display text-3xl">Crate shop closed</div>
+                  ) : buyWait > 0 ? (
+                    <>
+                      <div className="display text-sm tracking-[0.25em] text-muted">Next crate in</div>
+                      <div className="display goo-text mt-1 text-5xl tabular-nums sm:text-6xl" aria-live="polite">
+                        {fmtDuration(buyWait)}
+                      </div>
+                      <div className="mt-1 text-sm text-muted">One crate an hour. Earn $NOTTIES while you wait.</div>
+                    </>
+                  ) : shopLeft <= 0 ? (
+                    <div className="display text-3xl">That&apos;s all for today</div>
+                  ) : (
+                    <>
+                      <div className="display text-sm tracking-[0.25em] text-muted">A crate costs</div>
+                      <div className="display goo-text mt-1 flex items-center justify-center gap-2 text-5xl sm:text-6xl">
+                        <Coin size={44} /> {p.shop.price}
+                      </div>
+                      <div className="mt-1 text-sm text-muted">
+                        You have {p.points.toLocaleString()} $NOTTIES. You need {(p.shop.price - p.points).toLocaleString()} more.
+                      </div>
+                    </>
+                  )}
+                  <Link href="/tasks" className="btn btn-accent mt-4">
+                    <Coin size={18} /> Earn $NOTTIES
+                  </Link>
                 </>
               ) : (
                 <>

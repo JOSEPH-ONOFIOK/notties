@@ -25,7 +25,7 @@ export default async function TasksAdmin() {
           {title} <span className="text-muted">({list.length})</span>
         </h2>
         {note && <p className="text-sm text-muted">{note}</p>}
-        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+        <div className="mt-3 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           {list.map((t) => (
             <TaskEditor key={t.id} initial={t} rounds={rounds} />
           ))}
@@ -40,7 +40,7 @@ export default async function TasksAdmin() {
         title="Missions"
         sub={`Pick a round when you add a mission. It shows up when the round starts and disappears when it ends, so each day starts fresh at ${rounds.hours[0]}:00 ${rounds.label}. Every mission pays $NOTTIES plus free crates, sent to the player's mailbox.`}
       />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
         <TaskEditor rounds={rounds} />
       </div>
       {group("Live this round", live)}
@@ -57,7 +57,7 @@ export default async function TasksAdmin() {
           <p className="text-sm text-muted">Players can&apos;t see these any more. Clear them to tidy this list.</p>
           <details className="mt-3">
             <summary className="cursor-pointer text-sm text-muted">Show</summary>
-            <div className="mt-3 grid gap-4 lg:grid-cols-2">
+            <div className="mt-3 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
               {expired.map((t) => (
                 <TaskEditor key={t.id} initial={t} rounds={rounds} />
               ))}
@@ -68,7 +68,7 @@ export default async function TasksAdmin() {
       {archived.length > 0 && (
         <details className="mt-8">
           <summary className="display cursor-pointer text-xl text-muted">Archived ({archived.length})</summary>
-          <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <div className="mt-3 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
             {archived.map((t) => (
               <TaskEditor key={t.id} initial={t} rounds={rounds} />
             ))}

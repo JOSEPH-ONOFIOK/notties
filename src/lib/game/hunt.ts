@@ -64,6 +64,7 @@ export async function claimCrate(userId: string, idemKey: string) {
   return withTx(async (q) => {
     const settings = await getSettings(q);
     if (!settings.claims_enabled) throw new GameError("Crates are locked right now. Check back soon.", 503);
+    if (!settings.timer_crates) throw new GameError("Free timer crates are off. Buy a crate with $NOTTIES instead.", 403);
 
     // Replay of the same request (double-tap, retry) returns the original result, no second roll.
     const replay = (await q.query<{ id: string; type: FragmentType; rarity: string; points: number }>("select id, type, rarity, points from crate_claims where idem_key = $1 and user_id = $2", [`timer:${idemKey}`, userId])).rows[0];

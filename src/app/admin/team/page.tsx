@@ -9,7 +9,7 @@ export default async function Team() {
   return (
     <>
       <PageTitle kicker="Admin" title="Team" sub="Viewers can look. Moderators can suspend, clear flags, fix balances and review proofs. Owners can change everything." />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
         <div className="space-y-6">
           {can(me, "owner") && <RoleForm />}
           <div className="card p-5">

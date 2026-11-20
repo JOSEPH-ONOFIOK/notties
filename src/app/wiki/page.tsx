@@ -126,7 +126,7 @@ export default async function Wiki() {
             <ol className="grid gap-3 sm:grid-cols-5">
               {[
                 ["1", "Earn", `Do missions, check in, gift cards, recruit friends. All pay ${POINTS_NAME}.`],
-                ["2", "Open crates", `Spend ${POINTS_NAME} on crates, plus a free one ${every}.`],
+                ["2", "Open crates", s.timer_crates ? `Spend ${POINTS_NAME} on crates, plus a free one ${every}.` : `Your first crate is free. After that, crates cost ${s.crate_price} ${POINTS_NAME}.`],
                 ["3", "Trade", "Swap your doubles for the parts you're missing."],
                 ["4", "Assemble", "All 8 parts? Build your Nottie."],
                 ["5", "Add wallet", "Your guaranteed free mint spot is locked."],
@@ -143,7 +143,7 @@ export default async function Wiki() {
 
           <Chapter id="crates" n={3} title="Crates">
             <p>
-              Two ways to get a crate on the <b>Hunt</b> page: a <b>free one {every}</b>, or <b>buy one for {s.crate_price} {POINTS_NAME}</b> (one per hour). Missions and recruits also send free crates to your mailbox. <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
+              Every new player gets <b>one free crate</b> in their mailbox. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, one per hour{s.timer_crates ? <>, plus a <b>free one {every}</b></> : null}. <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
               <li>The timer runs on my clock, not yours. Changing your phone&apos;s time won&apos;t help. I checked.</li>
@@ -217,10 +217,10 @@ export default async function Wiki() {
 
           <Chapter id="missions" n={7} title="Missions & mailbox">
             <p>
-              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME} <b>and free crates</b>. Fresh missions drop twice a day, at the start of each round, and disappear when the round ends. A timer on the board shows how long is left.
+              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME}. Fresh missions drop twice a day, at the start of each round, and disappear when the round ends. A timer on the board shows how long is left.
             </p>
             <p className="mt-3">
-              Rewards go to your <b>mailbox</b>, the envelope at the top of the screen. A red number means something is waiting. Open it, tap <b>Claim</b>, then open your free crates on the <b>Hunt</b> page. Cards friends send you and finished swaps show up there too.
+              Rewards go to your <b>mailbox</b>, the envelope at the top of the screen. A red number means something is waiting. Open it and tap <b>Claim</b> to get your {POINTS_NAME}, then buy crates on the <b>Hunt</b> page. Cards friends send you and finished swaps show up there too.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5">
               <li>
@@ -241,7 +241,6 @@ export default async function Wiki() {
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {[
-                ["Cracking a free crate", P.crate],
                 ["Daily roll call (climbs with your streak)", P.daily_checkin],
                 ["Daily gift (send a card to someone)", P.daily_gift],
                 ["Your first trade", P.first_trade],
@@ -291,7 +290,7 @@ export default async function Wiki() {
 
           <Chapter id="shop" n={10} title="Buying crates">
             <p>
-              Spend <b>{s.crate_price} {POINTS_NAME}</b> on a crate, once every <b>{s.crate_buy_cooldown_minutes} minutes</b>. It cracks just like a free crate, fills your lucky meter, and doesn&apos;t touch your free-crate timer.
+              Spend <b>{s.crate_price} {POINTS_NAME}</b> on a crate, once every <b>{s.crate_buy_cooldown_minutes} minutes</b>. It cracks like any crate, fills your lucky meter, and doesn&apos;t touch your free-crate timer.
             </p>
           </Chapter>
 
@@ -372,7 +371,7 @@ export default async function Wiki() {
             <div className="space-y-2">
               {[
                 ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
-                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES and free crates. Free crates wait on the Hunt page and have no timer."],
+                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES. Your welcome crate waits on the Hunt page and have no timer."],
                 ["When do new missions drop?", `Twice a day, at ${s.task_rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" and ")} ${s.task_rounds.label}. Each round's missions disappear when the next round starts, so don't leave them for later.`],
                 ["Do I need a wallet to play?", "No. Play first. You only need to link a wallet before the allowlist snapshot so your Nottie can be delivered."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],

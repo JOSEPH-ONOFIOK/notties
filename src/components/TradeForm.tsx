@@ -13,10 +13,10 @@ import { sfx } from "@/lib/sfx";
 
 type Recipient = { id: string; username: string; displayName: string; avatar: string | null; since: string; self: boolean };
 
-export function TradeForm({ inventory, enabled, suspended, initialTo }: { inventory: Record<FragmentType, number>; enabled: boolean; suspended: boolean; initialTo?: string }) {
+export function TradeForm({ inventory, enabled, suspended, initialTo, initialType }: { inventory: Record<FragmentType, number>; enabled: boolean; suspended: boolean; initialTo?: string; initialType?: string }) {
   const router = useRouter();
   const owned = FRAGMENTS.filter((f) => !f.special && inventory[f.type] > 0);
-  const [type, setType] = useState<FragmentType | null>(owned[0]?.type ?? null);
+  const [type, setType] = useState<FragmentType | null>(owned.find((f) => f.type === initialType)?.type ?? owned[0]?.type ?? null);
   const [qty, setQty] = useState(1);
   const [to, setTo] = useState(initialTo ?? "");
   const [recipient, setRecipient] = useState<Recipient | null>(null);

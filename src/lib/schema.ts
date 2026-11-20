@@ -294,7 +294,8 @@ alter table users add column if not exists crates int not null default 0;
 -- false = the address was pasted in, not proven with a signature.
 alter table wallets add column if not exists signed boolean not null default true;
 -- How many crates a mission pays on top of its $NOTTIES.
-alter table tasks add column if not exists crates int not null default 1;
+alter table tasks add column if not exists crates int not null default 0;
+alter table tasks alter column crates set default 0;
 
 create table if not exists mail (
   id bigserial primary key,
@@ -388,8 +389,8 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 2;
-const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes"] as const;
+const ECONOMY_VERSION = 3;
+const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates"] as const;
 
 export async function SEED(q: Q) {
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
@@ -405,6 +406,8 @@ export async function SEED(q: Q) {
     await q.query(`insert into settings (key, value) values ('economy_version', $1::jsonb) on conflict (key) do update set value = excluded.value`, [JSON.stringify(ECONOMY_VERSION)]);
     // Built-in task rewards follow the new economy too.
     await q.query("update tasks set points = 100 where id = 'read_origin' and points = 15");
+    // v3: the welcome crate is the only free one. Missions pay $NOTTIES only.
+    if (ver < 3) await q.query("update tasks set crates = 0");
   }
   for (const t of TASKS) {
     await q.query(

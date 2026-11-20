@@ -93,6 +93,8 @@ export const DEFAULT_SETTINGS = {
   forge_enabled: true,
   trade_enabled: true,
   pawn_enabled: true,
+  // Free timer crate (one every crate_cooldown_minutes). Off: after the welcome crate, crates are bought.
+  timer_crates: false,
   crate_cooldown_minutes: 120,
   referral_qualify_claims: 3, // referee must open this many crates before the referrer is paid
   pity_threshold: 10, // crates without a Rare+ before the next one is guaranteed Rare or better
@@ -115,7 +117,7 @@ export const DEFAULT_SETTINGS = {
   task_rounds: { hours: [9, 21], utc_offset: 1, label: "WAT" },
   // Free crates sent to the mailbox: on sign-up, and to the recruiter when a recruit plays.
   welcome_crates: 1,
-  referral_crates: 1,
+  referral_crates: 0,
   // Optional: a mission a recruit must also finish (e.g. "engage the launch post") before the
   // recruiter is paid. Empty = opening crates is enough.
   referral_task: "",
