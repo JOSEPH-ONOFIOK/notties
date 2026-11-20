@@ -388,16 +388,7 @@ const TASKS = [
     link: "https://x.com/thenottiesworld",
     sort: 4,
   },
-  {
-    id: "comment_post",
-    title: "Comment on the launch post",
-    description: "Drop a comment on our pinned \"Notties Raid is live\" post. Final step before your wallet.",
-    points: 100,
-    kind: "once",
-    verify: "link",
-    link: "https://x.com/thenottiesworld",
-    sort: 4,
-  },
+
   {
     id: "daily_checkin",
     title: "Daily roll call",
@@ -431,7 +422,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 5;
+const ECONOMY_VERSION = 6;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks"] as const;
 
 export async function SEED(q: Q) {
@@ -450,6 +441,8 @@ export async function SEED(q: Q) {
     await q.query("update tasks set points = 100 where id = 'read_origin' and points = 15");
     // v3: the welcome crate is the only free one. Missions pay $NOTTIES only.
     if (ver < 3) await q.query("update tasks set crates = 0");
+    // v6: the "comment on the launch post" mission is gone.
+    if (ver < 6) await q.query("update tasks set active = false where id = 'comment_post'");
   }
   for (const t of TASKS) {
     await q.query(

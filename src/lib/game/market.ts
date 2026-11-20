@@ -31,7 +31,7 @@ export async function buyPart(userId: string, type: FragmentType, qty: number, i
 
 /** Buy crates into the player's crate stash. They're opened on the Hunt page. */
 export async function buyCrates(userId: string, qty: number, idemKey: string) {
-  if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new GameError("Buy 1 to 20 crates at a time");
+  if (qty !== 1) throw new GameError("Crates are bought one at a time");
   if (!/^[a-zA-Z0-9_-]{8,64}$/.test(idemKey)) throw new GameError("Bad request");
   return withTx(async (q) => {
     const settings = await getSettings(q);

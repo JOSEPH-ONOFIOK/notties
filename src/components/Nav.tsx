@@ -23,12 +23,13 @@ const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/dashboard", label: "City", icon: TbMap2 },
   { href: "/hunt", label: "Hunt", icon: TbBox },
   { href: "/trade", label: "Market", icon: TbBuildingStore },
-  { href: "/tasks", label: "Earn", icon: TbCoin },
   { href: "/forge", label: "Forge", icon: TbFlask2 },
+  { href: "/tasks", label: "Missions", icon: TbCoin },
   { href: "/chat", label: "Chat", icon: TbMessages },
   { href: "/profile", label: "Profile", icon: TbUserCircle },
 ];
 const MORE = [
+  { href: "/trade", label: "Market" },
   { href: "/chat", label: "Announcements & chat" },
   { href: "/forge", label: "Vlad's Lab (Forge)" },
   { href: "/showroom", label: "Gallery" },
@@ -74,7 +75,7 @@ export function Nav({ player }: { player: PlayerView }) {
 
           {/* desktop nav */}
           <nav className="ml-1 hidden items-center gap-1 lg:flex">
-            {MAIN.filter((m) => m.href !== "/forge" && m.href !== "/chat").map((m) => {
+            {MAIN.filter((m) => m.href !== "/chat").map((m) => {
               const active = path.startsWith(m.href);
               return (
                 <Link key={m.href} href={m.href} onClick={() => sfx.click()} className={`display flex items-center gap-1.5 rounded-xl border-[3px] px-2.5 py-1.5 text-xs tracking-wider transition xl:px-3 xl:text-sm ${active ? "-translate-y-0.5 border-black bg-accent text-black shadow-[0_4px_0_#000]" : "border-transparent text-muted hover:-translate-y-0.5 hover:border-black hover:bg-raised hover:text-text hover:shadow-[0_4px_0_#000]"}`}>
@@ -180,7 +181,7 @@ export function Nav({ player }: { player: PlayerView }) {
       {/* mobile bottom bar: big raised Hunt button in the middle */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-black bg-[#151910]/95 backdrop-blur lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <ul className="grid grid-cols-5 items-end">
-          {[MAIN[0], MAIN[2], MAIN[1], MAIN[3], MAIN[6]].map((m) => {
+          {[MAIN[0], MAIN[3], MAIN[1], MAIN[4], MAIN[6]].map((m) => {
             const active = path.startsWith(m.href);
             if (m.href === "/hunt")
               return (

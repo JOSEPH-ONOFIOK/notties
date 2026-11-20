@@ -97,9 +97,9 @@ export function MarketShop({ prices, cratePrice, points, inventory, enabled, sus
               </button>
             </>
           ) : (
-            [1, 5, 10].map((n) => (
+            [1].map((n) => (
               <button key={n} onClick={() => (setMsg(null), setCrateConfirm(n))} disabled={!enabled || suspended || points < n * cratePrice} className="btn border-black bg-black !min-h-[40px] text-sm text-accent">
-                Buy {n}
+                Buy 1 crate
               </button>
             ))
           )}
