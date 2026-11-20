@@ -13,6 +13,8 @@ import { FragmentIcon } from "../FragmentIcon";
 import { CopyButton } from "../CopyButton";
 import { Avatar } from "../Nav";
 import { Coin } from "./Coin";
+import type { Activity } from "@/lib/game/profile";
+import { FRAGMENT_BY_TYPE } from "@/lib/game/config";
 
 export type ProfileData = {
   username: string;
@@ -31,12 +33,13 @@ export type ProfileData = {
   referred: boolean;
   mail: number;
   suspended: boolean;
+  history: Activity[];
 };
 
 const NAV: { href: string; label: string; icon: IconType }[] = [
   { href: "/hunt", label: "Hunt", icon: TbBox },
   { href: "/forge", label: "Forge", icon: TbFlask2 },
-  { href: "/trade", label: "Trade", icon: TbArrowsExchange },
+  { href: "/trade", label: "Market", icon: TbArrowsExchange },
   { href: "/tasks", label: "Earn", icon: TbClipboardCheck },
   { href: "/mail", label: "Mailbox", icon: TbMail },
   { href: "/wallet", label: "Wallet", icon: TbWallet },
@@ -129,6 +132,8 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
         </div>
 
         <SendTokens suspended={d.suspended} balance={d.points} />
+
+        <History items={d.history} />
 
         {/* shortcuts */}
         <nav className="card grid grid-cols-2 gap-2 p-3">
@@ -239,6 +244,49 @@ function SendTokens({ suspended, balance }: { suspended: boolean; balance: numbe
       )}
       {n > balance && amount && <div className="mt-2 text-xs font-bold text-error">You only have {balance.toLocaleString()} $NOTTIES.</div>}
       {msg && <div className={`mt-2 text-sm font-bold ${msg.ok ? "text-accent" : "text-error"}`}>{msg.text}</div>}
+    </div>
+  );
+}
+
+function ago(iso: string) {
+  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+/** Transfers, gifts, swaps and Market buys. */
+function History({ items }: { items: Activity[] }) {
+  const name = (t?: string) => (t ? (FRAGMENT_BY_TYPE[t as FragmentType]?.name ?? t) : "");
+  return (
+    <div className="card p-5">
+      <div className="display text-xl">Transfer &amp; trade history</div>
+      {items.length === 0 ? (
+        <p className="mt-2 text-sm text-muted">Nothing yet. $NOTTIES and cards you send or receive, swaps and Market buys show up here.</p>
+      ) : (
+        <ul className="mt-3 divide-y-2 divide-black/60">
+          {items.map((a, i) => {
+            const icon = a.kind === "sent_points" || a.kind === "got_points" ? <Coin size={24} /> : <FragmentIcon type={(a.got ?? a.type) as FragmentType} size={26} />;
+            const line =
+              a.kind === "sent_points" ? <>Sent <b className="text-white">{a.points?.toLocaleString()} $NOTTIES</b> to @{a.other}</>
+              : a.kind === "got_points" ? <>Got <b className="text-accent">{a.points?.toLocaleString()} $NOTTIES</b> from @{a.other}</>
+              : a.kind === "sent_card" ? <>Sent <b className="text-white">{a.qty} × {name(a.type)}</b> to @{a.other}</>
+              : a.kind === "got_card" ? <>Got <b className="text-accent">{a.qty} × {name(a.type)}</b> from @{a.other}</>
+              : a.kind === "swap" ? <>Swapped {a.qty} × {name(a.type)} for <b className="text-accent">{a.gotQty} × {name(a.got)}</b> with @{a.other}</>
+              : <>Bought <b className="text-accent">{name(a.type)}</b> in the Market for {a.points?.toLocaleString()} $NOTTIES</>;
+            return (
+              <li key={i} className="flex items-center gap-3 py-2 text-sm text-muted">
+                <span className="grid w-7 shrink-0 place-items-center">{icon}</span>
+                <span className="min-w-0 flex-1">{line}</span>
+                <span className="shrink-0 text-xs" suppressHydrationWarning>
+                  {ago(a.at)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

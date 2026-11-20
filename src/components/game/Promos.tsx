@@ -14,7 +14,7 @@ export function FreeMintCard({ cta, className = "" }: { cta?: { href: string; la
         </div>
         <p className="mt-4 max-w-sm font-semibold text-black/75">It costs nothing. You only cover gas. Assemble your Nottie before mint and your guaranteed spot is locked in.</p>
         <ul className="mt-5 grid gap-2 text-sm font-bold">
-          {["Collect all 8 parts from crates and trades", "Assemble your Nottie in Vlad's Lab", "Your free, guaranteed mint spot is booked"].map((s, i) => (
+          {["Collect all 7 parts from crates and trades", "Assemble your Nottie in Vlad's Lab", "Your free, guaranteed mint spot is booked"].map((s, i) => (
             <li key={s} className="flex items-center gap-2">
               <span className="display grid h-6 w-6 shrink-0 place-items-center rounded-full border-[3px] border-black bg-black text-xs text-accent">{i + 1}</span>
               {s}

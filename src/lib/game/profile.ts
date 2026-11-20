@@ -59,3 +59,45 @@ export async function applyReferralCode(userId: string, code: string) {
     return { referrer: ref.x_username };
   });
 }
+
+export type Activity = { at: string; kind: "sent_points" | "got_points" | "sent_card" | "got_card" | "swap" | "market"; other: string | null; points?: number; type?: string; qty?: number; got?: string; gotQty?: number };
+
+/** Transfers, gifts, swaps and Market buys for the profile, newest first. */
+export async function activityFor(userId: string, limit = 40): Promise<Activity[]> {
+  const { query } = await import("../db");
+  const [pts, cards, swaps] = await Promise.all([
+    query<{ at: string; reason: string; delta: string; ref_id: string | null; other: string | null }>(
+      `select p.created_at as at, p.reason, p.delta::text, p.ref_id, u.x_username as other
+         from point_transactions p left join users u on p.reason in ('send_out','send_in') and u.id::text = p.ref_id
+        where p.user_id = $1 and p.reason in ('send_out','send_in','market') order by p.id desc limit $2`,
+      [userId, limit],
+    ),
+    query<{ at: string; type: string; qty: number; out: boolean; other: string }>(
+      `select t.created_at as at, t.type, t.qty, (t.sender_id = $1) as out, case when t.sender_id = $1 then r.x_username else s.x_username end as other
+         from trades t join users s on s.id = t.sender_id join users r on r.id = t.recipient_id
+        where t.sender_id = $1 or t.recipient_id = $1 order by t.id desc limit $2`,
+      [userId, limit],
+    ),
+    query<{ at: string; maker: boolean; give_type: string; give_qty: number; want_type: string; want_qty: number; other: string }>(
+      `select o.closed_at as at, (o.maker_id = $1) as maker, o.give_type, o.give_qty, o.want_type, o.want_qty,
+              case when o.maker_id = $1 then t.x_username else m.x_username end as other
+         from trade_offers o join users m on m.id = o.maker_id join users t on t.id = o.taker_id
+        where o.status = 'filled' and (o.maker_id = $1 or o.taker_id = $1) order by o.closed_at desc limit $2`,
+      [userId, limit],
+    ),
+  ]);
+  const out: Activity[] = [
+    ...pts.rows.map((r): Activity =>
+      r.reason === "market"
+        ? { at: r.at, kind: "market", other: null, points: -Number(r.delta), type: r.ref_id ?? undefined }
+        : { at: r.at, kind: r.reason === "send_out" ? "sent_points" : "got_points", other: r.other, points: Math.abs(Number(r.delta)) },
+    ),
+    ...cards.rows.map((r): Activity => ({ at: r.at, kind: r.out ? "sent_card" : "got_card", other: r.other, type: r.type, qty: Number(r.qty) })),
+    // For a swap, "type" is what you gave and "got" is what you received.
+    ...swaps.rows.map((r): Activity => (r.maker ? { at: r.at, kind: "swap", other: r.other, type: r.give_type, qty: r.give_qty, got: r.want_type, gotQty: r.want_qty } : { at: r.at, kind: "swap", other: r.other, type: r.want_type, qty: r.want_qty, got: r.give_type, gotQty: r.give_qty })),
+  ];
+  return out
+    .map((a) => ({ ...a, at: new Date(a.at).toISOString() }))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+    .slice(0, limit);
+}

@@ -11,7 +11,7 @@ const dm = DM_Sans({ subsets: ["latin"], variable: "--font-dm", display: "swap" 
 const site = new URL(process.env.NEXT_PUBLIC_SITE_URL || BRAND.app);
 
 const description =
-  "Vlad's lab is leaking. Raid crates, collect 8 parts, trade with other troublemakers and assemble your Nottie to lock a guaranteed spot in the free mint. 5,760 coming through the portal.";
+  "Vlad's lab is leaking. Raid crates, collect 7 parts, trade with other troublemakers and assemble your Nottie to lock a guaranteed spot in the free mint. 5,760 coming through the portal.";
 
 export const metadata: Metadata = {
   metadataBase: site,
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "The Notties",
     title: "The Lab · The Notties",
-    description: "Free mint. Raid crates, finish missions twice a day, collect 8 parts and assemble your Nottie.",
+    description: "Free mint. Raid crates, earn $NOTTIES from missions, collect 7 parts and assemble your Nottie.",
   },
   twitter: {
     card: "summary_large_image",
     site: BRAND.xHandle,
     creator: BRAND.xHandle,
     title: "The Lab · The Notties",
-    description: "Free mint. Raid crates, finish missions twice a day, collect 8 parts and assemble your Nottie.",
+    description: "Free mint. Raid crates, earn $NOTTIES from missions, collect 7 parts and assemble your Nottie.",
   },
   other: { "main-site": BRAND.site },
 };

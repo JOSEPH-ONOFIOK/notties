@@ -269,9 +269,11 @@ export async function exportEligibility() {
   ).rows;
 }
 
-/** Switch off every timed mission whose round is over, so the admin list only shows what matters. */
+/** Switch off every mission whose late window has closed, so the admin list only shows what matters. */
 export async function archiveExpiredTasks(admin: string) {
-  const { rows } = await query<{ id: string }>("update tasks set active = false where active and ends_at is not null and ends_at < now() returning id");
+  const { getSettings } = await import("./core");
+  const hours = (await getSettings()).late_window_hours;
+  const { rows } = await query<{ id: string }>("update tasks set active = false where active and ends_at is not null and ends_at + make_interval(hours => $1::int) < now() returning id", [hours]);
   bust("book:");
   await audit(admin, "archive_expired_tasks", undefined, { count: rows.length });
   return { archived: rows.length };

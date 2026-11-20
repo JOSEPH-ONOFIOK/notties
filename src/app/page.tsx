@@ -18,9 +18,9 @@ export const dynamic = "force-dynamic";
 
 const LOOP = [
   { n: "01", t: "Earn $NOTTIES", icon: TbBackpack, d: "Do missions, check in daily, gift cards and invite friends. Every one pays $NOTTIES, the in-game token." },
-  { n: "02", t: "Open crates", icon: TbBox, d: "Your first crate is free. After that, spend $NOTTIES on crates, one an hour. Each one drops a random part." },
+  { n: "02", t: "Open crates", icon: TbBox, d: "Your first crate is free. After that, spend $NOTTIES on crates any time, or buy parts in the Market. Each crate drops a random part." },
   { n: "03", t: "Trade", icon: TbArrowsExchange, d: "You'll get doubles. Swap them with other players for the parts you're missing. The Body and Hand & Head are the hardest to find." },
-  { n: "04", t: "Assemble", icon: TbFlask2, d: "Collect all eight parts, build your Nottie, add your wallet. Your guaranteed free mint spot is locked." },
+  { n: "04", t: "Assemble", icon: TbFlask2, d: "Collect all seven parts, build your Nottie, add your wallet. Your guaranteed free mint spot is locked." },
 ];
 
 export default async function Landing({ searchParams }: { searchParams: Promise<{ x?: string; ref?: string }> }) {
@@ -80,7 +80,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             Vlad&apos;s lab <span className="goo-text">is leaking.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base text-text/90 sm:text-lg">
-            Earn <b className="text-accent">$NOTTIES</b> from missions, spend them on crates, trade your doubles and collect all eight parts. Finish the set and your guaranteed spot in the <b className="text-accent">free mint</b> is locked.
+            Earn <b className="text-accent">$NOTTIES</b> from missions, spend them on crates, trade your doubles and collect all seven parts. Finish the set and your guaranteed spot in the <b className="text-accent">free mint</b> is locked.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href={login} className="btn btn-accent anim-glow text-base">
@@ -107,7 +107,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
               <span key={i} className="flex gap-10">
                 <span>Free mint</span>
                 <span>Hunt · Collect · Trade · Assemble</span>
-                <span>Fresh missions every 12 hours</span>
+                <span>Earn $NOTTIES · Buy crates · Trade</span>
                 <span>5,760 coming through the portal</span>
                 <span>Come cause trouble with us</span>
                 <span>Earn {POINTS_NAME}</span>
@@ -143,7 +143,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.3em] text-accent">The recipe</div>
-            <h2 className="display mt-2 text-4xl sm:text-5xl">Eight fragments. One Nottie.</h2>
+            <h2 className="display mt-2 text-4xl sm:text-5xl">Seven parts. One Nottie.</h2>
             <p className="mt-3 max-w-lg text-muted">Every crate drops exactly one. Rarity decides how long you&apos;ll be hunting, and duplicates are for trading.</p>
             <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
               {PARTS.map((f) => (
@@ -182,9 +182,9 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_1fr]">
           <FreeMintCard cta={{ href: login, label: "Lock my free spot" }} />
           <div className="card relative overflow-hidden p-6 sm:p-8">
-            <div className="display inline-block -rotate-2 rounded-md border-[3px] border-black bg-warn px-2 py-0.5 text-xs tracking-[0.2em] text-black">Twice a day</div>
+            <div className="display inline-block -rotate-2 rounded-md border-[3px] border-black bg-warn px-2 py-0.5 text-xs tracking-[0.2em] text-black">Earn $NOTTIES</div>
             <h3 className="display mt-4 text-4xl leading-[0.9] sm:text-5xl">Missions pay $NOTTIES.</h3>
-            <p className="mt-3 max-w-md text-sm text-muted">Fresh missions drop at 9am and 9pm. Every one you finish sends $NOTTIES to your mailbox. Spend them on crates, collect your parts, and trade for the rest.</p>
+            <p className="mt-3 max-w-md text-sm text-muted">New missions drop all the time. Do them before the timer runs out for the full reward. Every one sends $NOTTIES to your mailbox. Spend them on crates, collect your parts, and trade for the rest.</p>
             <ul className="mt-5 grid gap-2 text-sm font-bold">
               {["Earn $NOTTIES from your missions", "Spend them on crates to unlock parts", "Collect the full set (crates + trading), then add your wallet"].map((t, i) => (
                 <li key={t} className="flex items-center gap-2">

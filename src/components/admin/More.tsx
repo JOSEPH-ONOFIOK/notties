@@ -339,7 +339,7 @@ export function RemoveRole({ username }: { username: string }) {
   );
 }
 
-export function TextSetting({ k, label, value, hint, parse }: { k: string; label: string; value: string; hint?: string; parse: "numbers" | "mint" | "text" }) {
+export function TextSetting({ k, label, value, hint, parse }: { k: string; label: string; value: string; hint?: string; parse: "numbers" | "mint" | "text" | "list" }) {
   const { act, busy, Msg } = useAct();
   const [v, setV] = useState(value);
   return (
@@ -352,7 +352,7 @@ export function TextSetting({ k, label, value, hint, parse }: { k: string; label
           className="btn btn-ghost text-sm"
           disabled={busy}
           onClick={() => {
-            const value = parse === "numbers" ? v.split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0) : v.trim();
+            const value = parse === "numbers" ? v.split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0) : parse === "list" ? v.split(/[,\s]+/).filter(Boolean) : v.trim();
             act({ action: "setting", key: k, value });
           }}
         >
@@ -377,43 +377,6 @@ export function MintSetting({ value }: { value: { date: string; chain: string; p
       </div>
       <div className="mt-2 flex items-center gap-3">
         <button className="btn btn-ghost text-sm" disabled={busy} onClick={() => act({ action: "setting", key: "mint", value: { ...m, price: "Free" } })}>
-          Save
-        </button>
-        <Msg />
-      </div>
-    </div>
-  );
-}
-
-export function RoundsSetting({ value }: { value: { hours: number[]; utc_offset: number; label: string } }) {
-  const { act, busy, Msg } = useAct();
-  const [hours, setHours] = useState(value.hours.join(", "));
-  const [off, setOff] = useState(String(value.utc_offset));
-  const [label, setLabel] = useState(value.label);
-  return (
-    <div className="rounded-xl border-[3px] border-black bg-raised/40 p-4">
-      <label className="block text-sm font-bold">Mission rounds</label>
-      <div className="text-xs text-muted">The hours fresh missions drop (24h clock, in your time zone). &quot;9, 21&quot; = 9am and 9pm, two 12-hour rounds a day. UTC offset 1 = West Africa Time.</div>
-      <div className="mt-2 grid gap-2 sm:grid-cols-3">
-        <label className="text-xs">
-          <span className="text-muted">drop hours</span>
-          <input value={hours} onChange={(e) => setHours(e.target.value)} placeholder="9, 21" />
-        </label>
-        <label className="text-xs">
-          <span className="text-muted">UTC offset</span>
-          <input type="number" value={off} onChange={(e) => setOff(e.target.value)} />
-        </label>
-        <label className="text-xs">
-          <span className="text-muted">time zone name</span>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="WAT" />
-        </label>
-      </div>
-      <div className="mt-2 flex items-center gap-3">
-        <button
-          className="btn btn-ghost text-sm"
-          disabled={busy}
-          onClick={() => act({ action: "setting", key: "task_rounds", value: { hours: hours.split(/[,\s]+/).filter(Boolean).map(Number), utc_offset: Number(off), label } })}
-        >
           Save
         </button>
         <Msg />

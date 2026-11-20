@@ -1,7 +1,6 @@
 import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
 import { bust, cached } from "../cache";
-import { cleanRounds, type RoundCfg } from "./rounds";
 import { GameError, one, query, withTx, type Q } from "../db";
 import { DEFAULT_SETTINGS, FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType, type PlayerStatus, type Settings } from "./config";
 import type { XUser } from "../session";
@@ -27,13 +26,18 @@ async function loadSettings(q?: Q): Promise<Settings> {
   s.pawn_prices = known(DEFAULT_SETTINGS.pawn_prices, s.pawn_prices);
   s.recipe = known(DEFAULT_SETTINGS.recipe, s.recipe);
   // Vlad's Book is never part of the recipe, whatever an older saved recipe says.
-  s.recipe = { ...(s.recipe as object), book: 0 };
+  s.recipe = { ...(s.recipe as object), book: 0, shadow: 0 };
   // The mint is free, always.
   s.mint = { ...DEFAULT_SETTINGS.mint, ...(s.mint as object), price: "Free" };
   s.book_cap = Math.max(0, Number(s.book_cap) || 0);
   // The token used to be called TROUBLE; rename the event saved under the old name.
   s.recurring_events = (s.recurring_events as Settings["recurring_events"]).map((e) => (e.name === "Double Trouble Hour" ? { ...e, name: "Double $NOTTIES Hour" } : e));
-  s.task_rounds = cleanRounds(s.task_rounds as Partial<RoundCfg>);
+  s.market_prices = known(DEFAULT_SETTINGS.market_prices, s.market_prices);
+  s.market_prices = { ...(s.market_prices as object), book: 0, shadow: 0 };
+  s.drop_weights = { ...(s.drop_weights as object), shadow: 0 };
+  s.wallet_tasks = (Array.isArray(s.wallet_tasks) ? (s.wallet_tasks as unknown[]) : []).map(String).map((x) => x.trim()).filter(Boolean);
+  s.late_reward_pct = Math.max(0, Math.min(100, Number(s.late_reward_pct ?? 50)));
+  s.late_window_hours = Math.max(0, Number(s.late_window_hours ?? 24));
   s.referral_task = String(s.referral_task ?? "").trim().slice(0, 64);
   s.welcome_crates = Math.max(0, Number(s.welcome_crates) || 0);
   s.referral_crates = Math.max(0, Number(s.referral_crates) || 0);
@@ -101,7 +105,7 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
     const settings = await getSettings(q);
     if (settings.welcome_crates > 0) {
       const { sendMail } = await import("./mail");
-      await sendMail(q, user.id, { kind: "welcome", title: "Welcome to Robinhood City", body: "Vlad's lab is leaking parts. Here's a free crate to get you started. Collect all 8 parts and build your Nottie.", crates: settings.welcome_crates, idem: `welcome:${user.id}` });
+      await sendMail(q, user.id, { kind: "welcome", title: "Welcome to Robinhood City", body: "Vlad's lab is leaking parts. Here's a free crate to get you started. Collect all 7 parts and build your Nottie.", crates: settings.welcome_crates, idem: `welcome:${user.id}` });
     }
 
     if (refCode) {

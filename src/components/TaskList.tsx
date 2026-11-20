@@ -25,16 +25,17 @@ export type TaskItem = {
   proof_hint: string | null;
   crates: number;
   ends_at: string | null;
+  late?: boolean;
+  fullPoints?: number;
+  closes_at?: string | null;
 };
-
-export type RoundInfo = { end: string; nextLabel: string; tz: string };
 
 export type StreakInfo = { streak: number; checkedInToday: boolean; ladder: number[] };
 
 const TILT = ["-rotate-[1.5deg]", "rotate-[1deg]", "-rotate-[0.5deg]", "rotate-[1.5deg]", "rotate-[0.5deg]", "-rotate-1"];
 const TAPE = ["rgba(205,255,0,.6)", "rgba(138,215,255,.6)", "rgba(255,179,71,.65)", "rgba(215,156,255,.6)"];
 
-export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[]; suspended: boolean; streak: StreakInfo; round: RoundInfo }) {
+export function TaskList({ tasks, suspended, streak, latePct }: { tasks: TaskItem[]; suspended: boolean; streak: StreakInfo; latePct: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<Record<string, string>>({});
@@ -89,10 +90,10 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
   const isDone = (t: TaskItem) => t.completed || !!justDone[t.id];
   // Timed missions belong to the current round; the rest are permanent. Finished permanent
   // missions fold away so the board only shows what's left to do.
-  const timed = tasks.filter((t) => t.ends_at && t.kind === "once");
+  const timed = tasks.filter((t) => t.ends_at && t.kind === "once" && !t.completed).sort((a, b) => Date.parse(a.ends_at!) - Date.parse(b.ends_at!));
   const daily = tasks.filter((t) => t.kind === "daily");
   const once = tasks.filter((t) => !t.ends_at && t.kind === "once" && !t.completed);
-  const finished = tasks.filter((t) => !t.ends_at && t.kind === "once" && t.completed);
+  const finished = tasks.filter((t) => t.kind === "once" && t.completed);
   const doneCount = tasks.filter(isDone).length;
   const [showDone, setShowDone] = useState(false);
 
@@ -105,7 +106,7 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
         <span className="tape" style={{ background: TAPE[i % TAPE.length] }} />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="display text-[10px] tracking-[0.25em] text-black/50">{t.kind === "daily" ? "Daily job" : t.ends_at ? "This round" : "Mission"}</div>
+            <div className="display text-[10px] tracking-[0.25em] text-black/50">{t.kind === "daily" ? "Daily job" : t.ends_at ? "Timed mission" : "Mission"}</div>
             <div className="display mt-0.5 text-xl leading-tight">{t.title}</div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
@@ -122,6 +123,20 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
           </div>
         </div>
         <p className="mt-2 flex-1 text-sm text-black/70">{t.description}</p>
+        {t.ends_at && !done && (
+          <div className={`mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border-2 border-black px-2 py-1 text-xs font-bold ${t.late ? "bg-[#ffd8cc] text-[#8a2a12]" : "bg-black text-accent"}`}>
+            <TbClock size={14} />
+            {t.late ? (
+              <>
+                Late: {latePct}% reward (was {t.fullPoints}). Closes in <Countdown until={t.closes_at ?? null} readyText="now" plain className="inline" />
+              </>
+            ) : (
+              <>
+                Full reward for <Countdown until={t.ends_at} readyText="0s" plain className="inline" />
+              </>
+            )}
+          </div>
+        )}
         {t.id === "daily_checkin" && <StreakStrip s={streak} />}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -178,7 +193,6 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
 
   return (
     <div className="card relative overflow-hidden p-4 sm:p-8" style={{ background: "#3b2a19", backgroundImage: "radial-gradient(rgba(0,0,0,.25) 1.5px, transparent 2px), radial-gradient(rgba(255,255,255,.04) 1px, transparent 1.5px)", backgroundSize: "14px 14px, 9px 9px" }}>
-      <RoundBanner round={round} />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="display rounded-md border-[3px] border-black bg-paper px-3 py-1 text-paper-ink shadow-[0_4px_0_#000]">
           {doneCount}/{tasks.length} missions done
@@ -187,11 +201,12 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
           <div className="h-full bg-accent transition-[width] duration-700" style={{ width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }} />
         </div>
       </div>
-      <h2 id="round" className="display ink-text mb-4 scroll-mt-32 text-2xl text-white">This round</h2>
+      <h2 id="round" className="display ink-text mb-1 scroll-mt-32 text-2xl text-white">Timed missions</h2>
+      <p className="mb-4 text-sm text-white/70">Do them before the timer runs out for the full reward. Late ones pay {latePct}%.</p>
       {timed.length > 0 ? (
         <ul className="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{timed.map((t, i) => note(t, i))}</ul>
       ) : (
-        <p className="mb-10 rounded-xl border-[3px] border-black bg-black/40 p-4 text-sm text-white/80">No round missions right now. Fresh ones drop at {round.nextLabel} {round.tz}.</p>
+        <p className="mb-10 rounded-xl border-[3px] border-black bg-black/40 p-4 text-sm text-white/80">No timed missions right now. New ones drop here, so check back often.</p>
       )}
       {daily.length > 0 && (
         <>
@@ -213,29 +228,6 @@ export function TaskList({ tasks, suspended, streak, round }: { tasks: TaskItem[
           {showDone && <ul className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{finished.map((t, i) => note(t, i + 3))}</ul>}
         </>
       )}
-    </div>
-  );
-}
-
-/** Countdown to the end of the current round. When it hits zero the page refreshes into the new round. */
-function RoundBanner({ round }: { round: RoundInfo }) {
-  const router = useRouter();
-  useEffect(() => {
-    const ms = Date.parse(round.end) - serverNow();
-    if (ms <= 0 || ms > 24 * 3600_000) return;
-    const t = setTimeout(() => router.refresh(), ms + 1500);
-    return () => clearTimeout(t);
-  }, [round.end, router]);
-  return (
-    <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border-[3px] border-black bg-black/50 p-3 text-white shadow-[0_4px_0_#000]">
-      <span className="flex items-center gap-2">
-        <TbClock size={20} className="text-accent" />
-        <span className="display text-xs tracking-widest text-white/70">Round ends in</span>
-        <Countdown until={round.end} readyText="Refreshing…" className="display text-xl text-accent" plain />
-      </span>
-      <span className="text-xs text-white/70">
-        New missions every 12 hours. Next drop: <b className="text-white">{round.nextLabel} {round.tz}</b>
-      </span>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { upcomingRounds, type RoundCfg } from "@/lib/game/rounds";
 import { api } from "@/lib/client";
 import type { Settings } from "@/lib/game/config";
 
@@ -167,15 +166,31 @@ const toLocal = (v?: string | null) => (v ? new Date(new Date(v).getTime() - new
 /** Built-in missions whose $NOTTIES come from Economy → rewards, not the mission's own field. */
 const BUILTIN_REWARD = ["onboarding", "follow_x", "link_wallet", "daily_checkin", "daily_gift", "first_trade"];
 
-export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: RoundCfg }) {
+const DURATIONS: [string, number][] = [
+  ["6 hours", 6],
+  ["12 hours", 12],
+  ["24 hours", 24],
+  ["48 hours", 48],
+  ["3 days", 72],
+  ["7 days", 168],
+];
+
+export function TaskEditor({ initial, latePct, lateHours }: { initial?: TaskDraft; latePct: number; lateHours: number }) {
   const router = useRouter();
-  const options = upcomingRounds(rounds, 6);
-  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 100, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 0, starts_at: options[0].start, ends_at: options[0].end });
-  const [t, setT] = useState<TaskDraft>(initial ?? blank());
-  const roundIdx = options.findIndex((r) => r.start === (t.starts_at ? new Date(t.starts_at).toISOString() : null) && r.end === (t.ends_at ? new Date(t.ends_at).toISOString() : null));
-  const pickRound = (v: string) => {
-    if (v === "none") setT((x) => ({ ...x, starts_at: null, ends_at: null }));
-    else if (v !== "custom") setT((x) => ({ ...x, starts_at: options[Number(v)].start, ends_at: options[Number(v)].end }));
+  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 100, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 0, starts_at: null, ends_at: null });
+  const [t, setT] = useState<TaskDraft>(initial ?? { ...blank(), ends_at: "+24" });
+  // New missions: the deadline is a duration from when you press Add ("+24" = 24 hours). Saved ones show their date.
+  const dur = typeof t.ends_at === "string" && t.ends_at.startsWith("+") ? t.ends_at : !t.ends_at ? "none" : "custom";
+  const pickDuration = (v: string) => {
+    if (v === "none") setT((x) => ({ ...x, ends_at: null }));
+    else if (v.startsWith("+")) setT((x) => ({ ...x, ends_at: v }));
+  };
+  const resolved = (d: TaskDraft): TaskDraft => {
+    if (typeof d.ends_at === "string" && d.ends_at.startsWith("+")) {
+      const start = d.starts_at && Date.parse(d.starts_at) > Date.now() ? Date.parse(d.starts_at) : Date.now();
+      return { ...d, starts_at: d.starts_at ?? new Date(start).toISOString(), ends_at: new Date(start + Number(d.ends_at.slice(1)) * 3600_000).toISOString() };
+    }
+    return d;
   };
   const [state, setState] = useState<string | null>(null);
   const set = (k: keyof TaskDraft, v: unknown) => setT((x) => ({ ...x, [k]: v }));
@@ -184,15 +199,16 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
       <div className="display text-xl">{initial ? `Edit · ${initial.id}` : "New mission"}</div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
         <label className="text-xs sm:col-span-2">
-          <span className="text-muted">round (fresh missions drop at {rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" & ")} {rounds.label}; they disappear when the round ends)</span>
-          <select value={!t.starts_at && !t.ends_at ? "none" : roundIdx >= 0 ? String(roundIdx) : "custom"} onChange={(e) => pickRound(e.target.value)}>
-            {options.map((r, i) => (
-              <option key={r.start} value={i}>
-                {i === 0 ? "This round" : "Round"} · {r.label} {rounds.label}
+          <span className="text-muted">deadline: full reward until then, {latePct}% for {lateHours}h after, then it disappears</span>
+          <select value={dur} onChange={(e) => pickDuration(e.target.value)}>
+            {DURATIONS.map(([label, h]) => (
+              <option key={h} value={`+${h}`}>
+                {initial ? "Reset to " : ""}
+                {label} from {initial ? "now" : "posting"}
               </option>
             ))}
-            <option value="none">Always on (no round)</option>
-            {roundIdx < 0 && (t.starts_at || t.ends_at) && <option value="custom">Custom dates (below)</option>}
+            <option value="none">No deadline (always on)</option>
+            {dur === "custom" && <option value="custom">Ends {t.ends_at ? new Date(t.ends_at).toLocaleString() : ""} (dates below)</option>}
           </select>
         </label>
         {initial && (
@@ -251,12 +267,12 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
           <input value={t.link ?? ""} onChange={(e) => set("link", e.target.value || null)} />
         </label>
         <label className="text-xs">
-          <span className="text-muted">starts (optional)</span>
+          <span className="text-muted">starts (optional, default now)</span>
           <input type="datetime-local" value={toLocal(t.starts_at)} onChange={(e) => set("starts_at", e.target.value ? new Date(e.target.value).toISOString() : null)} />
         </label>
         <label className="text-xs">
-          <span className="text-muted">ends (optional)</span>
-          <input type="datetime-local" value={toLocal(t.ends_at)} onChange={(e) => set("ends_at", e.target.value ? new Date(e.target.value).toISOString() : null)} />
+          <span className="text-muted">or an exact deadline</span>
+          <input type="datetime-local" value={dur === "custom" ? toLocal(t.ends_at) : ""} onChange={(e) => set("ends_at", e.target.value ? new Date(e.target.value).toISOString() : null)} />
         </label>
         {t.verify === "manual" && (
           <label className="text-xs sm:col-span-2">
@@ -274,10 +290,10 @@ export function TaskEditor({ initial, rounds }: { initial?: TaskDraft; rounds: R
           onClick={async () => {
             setState("saving");
             try {
-              await api("/api/admin", { action: "task", task: t });
+              await api("/api/admin", { action: "task", task: resolved(t) });
               setState("saved");
               // A new mission form clears for the next one, keeping the same round.
-              if (!initial) setT((x) => ({ ...blank(), starts_at: x.starts_at, ends_at: x.ends_at }));
+              if (!initial) setT((x) => ({ ...blank(), ends_at: typeof x.ends_at === "string" && x.ends_at.startsWith("+") ? x.ends_at : "+24" }));
               router.refresh();
             } catch (e) {
               setState(e instanceof Error ? e.message : "failed");

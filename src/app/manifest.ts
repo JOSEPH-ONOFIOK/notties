@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "The Notties: The Lab",
     short_name: "The Lab",
-    description: "Raid crates, collect 8 parts, assemble your Nottie and lock your spot in the free mint.",
+    description: "Raid crates, collect 7 parts, assemble your Nottie and lock your spot in the free mint.",
     start_url: "/",
     display: "standalone",
     background_color: "#090a07",

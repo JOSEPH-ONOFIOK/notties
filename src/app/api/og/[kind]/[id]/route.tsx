@@ -79,7 +79,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
             <span style={{ fontSize: 34, color: "#b3baa3" }}>@{p.username} just cracked</span>
             <span style={{ fontSize: 92, lineHeight: 0.95, color: c, marginTop: 10 }}>{({ legendary: "A LEGENDARY", epic: "AN EPIC", rare: "A RARE", uncommon: "AN UNCOMMON", common: "A COMMON" } as const)[p.rarity]}</span>
             <span style={{ fontSize: 92, lineHeight: 0.95 }}>{def.name.toUpperCase()}</span>
-            <span style={{ fontSize: 30, color: "#b3baa3", marginTop: 26 }}>Come raid Vlad&apos;s lab. Collect 8 parts, build a Nottie.</span>
+            <span style={{ fontSize: 30, color: "#b3baa3", marginTop: 26 }}>Come raid Vlad&apos;s lab. Collect 7 parts, build a Nottie.</span>
           </div>
         </Frame>
       ),

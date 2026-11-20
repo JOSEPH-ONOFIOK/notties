@@ -12,12 +12,12 @@ export default async function Forge() {
   const s = await getSettings();
   return (
     <>
-      <PageTitle kicker="Forge" title="Vlad's Lab" sub="Collect all 8 parts and watch your Nottie come together. Fire up the machine once and your GTD spot is locked." right={<StatusPill status={p.status} />} />
+      <PageTitle kicker="Forge" title="Vlad's Lab" sub="Collect all 7 parts and watch your Nottie come together. Fire up the machine once and your GTD spot is locked." right={<StatusPill status={p.status} />} />
       <ForgeBench playerId={p.id} slots={p.progress.slots} pct={p.progress.pct} complete={p.progress.complete} enabled={s.forge_enabled} suspended={p.accountStatus !== "active"} forgedAt={p.forgedAt} seed={p.nottieSeed} username={p.username} wallet={p.wallet} forgePoints={s.points.forge} />
       {!p.forgedAt && (
         <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
-          <Tip t="Missing something?" d="Trade spares with other players." href="/trade" />
-          <Tip t="Too many of one thing?" d="Swap your duplicates on the Black Market." href="/trade" />
+          <Tip t="Missing something?" d="Buy it in the Market, or swap with other players." href="/trade" />
+          <Tip t="Too many of one thing?" d="Swap your duplicates with other players." href="/trade?tab=swap" />
           <Tip t="Where does my Nottie go?" d="Link your mint wallet before the snapshot." href="/wallet" />
         </div>
       )}

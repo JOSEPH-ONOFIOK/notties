@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, idem } from "@/lib/client";
-import { FRAGMENTS, FRAGMENT_BY_TYPE, type FragmentType } from "@/lib/game/config";
+import { FRAGMENTS, FRAGMENT_BY_TYPE, PARTS, type FragmentType } from "@/lib/game/config";
 import { FragmentIcon } from "./FragmentIcon";
 import { Avatar } from "./Nav";
 import { TbCheck } from "react-icons/tb";
@@ -15,7 +15,7 @@ type Recipient = { id: string; username: string; displayName: string; avatar: st
 
 export function TradeForm({ inventory, enabled, suspended, initialTo, initialType }: { inventory: Record<FragmentType, number>; enabled: boolean; suspended: boolean; initialTo?: string; initialType?: string }) {
   const router = useRouter();
-  const owned = FRAGMENTS.filter((f) => !f.special && inventory[f.type] > 0);
+  const owned = PARTS.filter((f) => inventory[f.type] > 0);
   const [type, setType] = useState<FragmentType | null>(owned.find((f) => f.type === initialType)?.type ?? owned[0]?.type ?? null);
   const [qty, setQty] = useState(1);
   const [to, setTo] = useState(initialTo ?? "");

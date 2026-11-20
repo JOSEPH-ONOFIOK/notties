@@ -6,11 +6,11 @@ import { Coin } from "./Coin";
 /** Every way to earn $NOTTIES, with what it pays and a button to go do it. */
 export function EarnStrip({ points, streakTop, referral, forge, cratePrice, compact = false }: { points: { daily_checkin: number; daily_gift: number }; streakTop: number; referral: number; forge: number; cratePrice: number; compact?: boolean }) {
   const ways: { icon: IconType; title: string; pays: string; body: string; href: string; cta: string }[] = [
-    { icon: TbClipboardCheck, title: "Missions", pays: "100 each", body: "Like, repost, comment, follow. Fresh ones at 9am & 9pm.", href: "/tasks#round", cta: "Do missions" },
+    { icon: TbClipboardCheck, title: "Missions", pays: "100 each", body: "Like, repost, comment, follow. Beat the timer for full pay.", href: "/tasks#round", cta: "Do missions" },
     { icon: TbCalendarCheck, title: "Daily check-in", pays: `${points.daily_checkin}–${streakTop}`, body: "Show up every day. Your streak makes it bigger.", href: "/tasks#daily", cta: "Check in" },
     { icon: TbGift, title: "Daily gift", pays: String(points.daily_gift), body: "Send a spare card to another player today.", href: "/trade?tab=gift", cta: "Gift a card" },
     { icon: TbUsers, title: "Invite friends", pays: `${referral} each`, body: "When a friend joins with your link and plays.", href: "/profile", cta: "Get my link" },
-    { icon: TbFlask2, title: "Build your Nottie", pays: String(forge), body: "Collect all 8 parts and assemble.", href: "/forge", cta: "To the lab" },
+    { icon: TbFlask2, title: "Build your Nottie", pays: String(forge), body: "Collect all 7 parts and assemble.", href: "/forge", cta: "To the lab" },
   ];
   return (
     <section className="card card-lime relative overflow-hidden p-4 text-black sm:p-6">

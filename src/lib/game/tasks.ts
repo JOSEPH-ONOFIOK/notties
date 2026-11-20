@@ -24,6 +24,12 @@ export interface TaskRow {
 }
 
 const ONCE_DAY = "1970-01-01";
+
+/** What a mission pays after its deadline (late_reward_pct of the full reward). */
+export const latePoints = (points: number, settings: Settings) => Math.round((Number(points) * settings.late_reward_pct) / 100);
+
+/** SQL: the mission is open (started, and not past deadline + late window). $LATE = late window in hours. */
+const OPEN = (p: string) => `and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at + make_interval(hours => ${p}::int) > now())`;
 const todayUtc = () => new Date().toISOString().slice(0, 10);
 
 export async function listTasks(userId: string) {
@@ -33,13 +39,20 @@ export async function listTasks(userId: string) {
   const done = (await query<{ task_id: string; day: string; created_at: string }>("select task_id, day::text as day, created_at from task_completions where user_id = $1", [userId])).rows;
   const clicks = (await query<{ task_id: string; clicked_at: string }>("select task_id, clicked_at from task_clicks where user_id = $1", [userId])).rows;
   const subs = (await query<{ task_id: string; status: string }>("select task_id, status from task_submissions where user_id = $1", [userId])).rows;
+  // The wallet mission only appears once the Nottie is built (wallets open last).
+  const forged = (await query("select 1 from forge_completions where user_id = $1", [userId])).rows.length > 0;
   const today = todayUtc();
+  const lateMs = settings.late_window_hours * 3600_000;
   return tasks
-    .filter((t) => (!t.starts_at || new Date(t.starts_at) <= new Date()) && (!t.ends_at || new Date(t.ends_at) >= new Date()))
+    .filter((t) => forged || t.verify !== "wallet")
+    .filter((t) => (!t.starts_at || new Date(t.starts_at) <= new Date()) && (!t.ends_at || Date.parse(t.ends_at) + lateMs > Date.now()))
     .map((t) => {
+      // Past the deadline: still claimable for a while, at a reduced reward.
+      const lateFlag = !!t.ends_at && Date.parse(t.ends_at) <= Date.now();
+      const closes = t.ends_at ? new Date(Date.parse(t.ends_at) + lateMs).toISOString() : null;
       const completed = done.some((d) => d.task_id === t.id && (t.kind === "once" || d.day === today));
       const clicked = clicks.find((c) => c.task_id === t.id)?.clicked_at ?? null;
-      return { ...t, completed, clicked, submission: subs.find((x) => x.task_id === t.id)?.status ?? null };
+      return { ...t, points: lateFlag ? latePoints(t.points, settings) : t.points, fullPoints: t.points, late: lateFlag, closes_at: closes, completed, clicked, submission: subs.find((x) => x.task_id === t.id)?.status ?? null };
     });
 }
 
@@ -49,7 +62,7 @@ export async function clickTask(userId: string, taskId: string) {
 }
 
 /** Internal: award a task inside an existing transaction (used by wallet linking, trades, etc.). */
-export async function completeTask(q: Q, userId: string, taskId: string, settings: Settings) {
+export async function completeTask(q: Q, userId: string, taskId: string, settings: Settings, at = new Date()) {
   const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active", [taskId])).rows[0];
   if (!t) throw new GameError("Task not available");
   const day = t.kind === "daily" ? todayUtc() : ONCE_DAY;
@@ -66,12 +79,15 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
     await q.query("update users set streak = $2, best_streak = greatest(best_streak, $2), last_checkin = $3 where id = $1", [userId, streak, utcDay()]);
     if (streak === 7 || streak === 30 || streak === 100) await pushFeed(q, userId, "streak", { days: streak });
   }
+  // Done after the deadline? Half pay (late_reward_pct).
+  const late = !!t.ends_at && at.getTime() >= Date.parse(t.ends_at);
+  if (late) pts = latePoints(pts, settings);
   // The reward goes to the mailbox: $NOTTIES (boosted now if an event is live) plus free crates.
   pts = await boostedPoints(q, pts, `task:${taskId}`);
   const crates = Math.max(0, Number(t.crates) || 0);
   await sendMail(q, userId, {
     kind: "reward",
-    title: `Mission done: ${t.title}`,
+    title: `Mission done${late ? " (late, half reward)" : ""}: ${t.title}`,
     body: crates ? "Claim it to add the crates to your Hunt page." : null,
     points: pts,
     crates,
@@ -93,8 +109,8 @@ export async function claimTask(userId: string, taskId: string) {
   return withTx(async (q) => {
     const settings = await getSettings(q);
     await requireActive(q, userId);
-    const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now())", [taskId])).rows[0];
-    if (!t) throw new GameError("That mission has ended. Fresh ones drop every round.");
+    const t = (await q.query<TaskRow>(`select * from tasks where id = $1 and active ${OPEN("$2")}`, [taskId, settings.late_window_hours])).rows[0];
+    if (!t) throw new GameError("That mission has closed. Check the Earn page for new ones.");
 
     if (t.verify === "link") {
       const c = (await q.query<{ clicked_at: string }>("select clicked_at from task_clicks where user_id = $1 and task_id = $2", [userId, taskId])).rows[0];
@@ -126,7 +142,7 @@ export async function submitTask(userId: string, taskId: string, proof: string) 
   if (p.length < 4) throw new GameError("Add a link or a short note as proof");
   return withTx(async (q) => {
     await requireActive(q, userId);
-    const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active and verify = 'manual' and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now())", [taskId])).rows[0];
+    const t = (await q.query<TaskRow>(`select * from tasks where id = $1 and active and verify = 'manual' ${OPEN("$2")}`, [taskId, (await getSettings(q)).late_window_hours])).rows[0];
     if (!t) throw new GameError("Task not available");
     const done = await q.query("select 1 from task_completions where user_id = $1 and task_id = $2", [userId, taskId]);
     if (done.rows.length) throw new GameError("Already completed");
@@ -143,10 +159,11 @@ export async function submitTask(userId: string, taskId: string, proof: string) 
 
 export async function reviewSubmission(admin: string, id: string, approve: boolean) {
   return withTx(async (q) => {
-    const s = (await q.query<{ user_id: string; task_id: string; status: string }>("select user_id, task_id, status from task_submissions where id = $1 for update", [id])).rows[0];
+    const s = (await q.query<{ user_id: string; task_id: string; status: string; created_at: string }>("select user_id, task_id, status, created_at from task_submissions where id = $1 for update", [id])).rows[0];
     if (!s || s.status !== "pending") throw new GameError("Nothing to review");
     await q.query("update task_submissions set status = $2, reviewed_by = $3, reviewed_at = now() where id = $1", [id, approve ? "approved" : "rejected", admin]);
-    if (approve) await completeTask(q, s.user_id, s.task_id, await getSettings(q));
+    // Judged by when they submitted, so a slow review doesn't cost them the full reward.
+    if (approve) await completeTask(q, s.user_id, s.task_id, await getSettings(q), new Date(s.created_at));
     else {
       const t = (await q.query<{ title: string }>("select title from tasks where id = $1", [s.task_id])).rows[0];
       await sendMail(q, s.user_id, { kind: "review", title: `Not approved: ${t?.title ?? s.task_id}`, body: "The team couldn't verify your proof. Fix it and submit again on the Mission Board.", idem: `review:${id}:${Date.now()}` });

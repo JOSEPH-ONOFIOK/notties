@@ -357,6 +357,26 @@ const TASKS = [
     sort: 4,
   },
   {
+    id: "like_post",
+    title: "Like the launch post",
+    description: "Like our pinned \"Notties Raid is live\" post on X. Final step before your wallet.",
+    points: 100,
+    kind: "once",
+    verify: "link",
+    link: "https://x.com/thenottiesworld",
+    sort: 4,
+  },
+  {
+    id: "comment_post",
+    title: "Comment on the launch post",
+    description: "Drop a comment on our pinned \"Notties Raid is live\" post. Final step before your wallet.",
+    points: 100,
+    kind: "once",
+    verify: "link",
+    link: "https://x.com/thenottiesworld",
+    sort: 4,
+  },
+  {
     id: "daily_checkin",
     title: "Daily roll call",
     description: "Show up once a day. Vlad counts heads at midnight UTC.",
@@ -389,8 +409,8 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 3;
-const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates"] as const;
+const ECONOMY_VERSION = 4;
+const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices"] as const;
 
 export async function SEED(q: Q) {
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {

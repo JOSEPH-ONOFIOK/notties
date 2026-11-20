@@ -40,7 +40,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
       : !p.onboarded
         ? { title: "Report for trouble", body: "Claim your onboarding bounty on the Mission Board. Easy $NOTTIES.", href: "/tasks", cta: "Open missions" }
         : p.forgedAt && !p.wallet
-          ? { title: "Link a getaway wallet", body: "Your Nottie is assembled. Tell us where to deliver it before the snapshot.", href: "/wallet", cta: "Link wallet" }
+          ? { title: "Final step: your wallet", body: "Your Nottie is built. Follow, like and comment on our launch post, then submit your wallet to lock your free mint.", href: "/wallet", cta: "Finish up" }
           : p.forgedAt
             ? { title: "Recruit the crew", body: `You're one of us. Bring friends: each recruit who plays pays you ${settings.points.referral} $NOTTIES.`, href: "/referrals", cta: "Get your link" }
             : p.progress.complete
@@ -48,7 +48,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
               : {
                   title: `Find ${missing.length} more part${missing.length === 1 ? "" : "s"}`,
                   body: missing.length <= 3 ? `Still missing: ${missing.map((m) => FRAGMENT_BY_TYPE[m].name).join(", ")}. Hunt or trade for them.` : "Keep cracking crates. Trade spares on the Black Market.",
-                  href: missing.length <= 2 ? "/trade" : "/hunt",
+                  href: missing.length <= 2 ? "/trade?tab=swap" : "/hunt",
                   cta: missing.length <= 2 ? "Find a trade" : "Go hunt",
                   icons: missing,
                 };
@@ -60,7 +60,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
           <Image src="/brand/logo.png" alt="" width={48} height={50} className="anim-float" />
           <div>
             <div className="display text-xl text-black">Welcome to Robinhood City, @{p.username}!</div>
-            <div className="text-sm font-semibold text-black/70">Vlad&apos;s lab is leaking crates. Grab one, collect all 8 parts, and build your Nottie.</div>
+            <div className="text-sm font-semibold text-black/70">Vlad&apos;s lab is leaking crates. Grab one, collect all 7 parts, and build your Nottie.</div>
           </div>
         </div>
       )}
@@ -145,7 +145,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={p.crateAt === "need" ? `Crate: ${settings.crate_price} $NOTTIES` : <Countdown until={p.crateAt} readyText="READY!" className="display text-sm" plain />} hot={p.crateAt === null} big />
         <Spot href="/forge" img="/notties/221.webp" name="Vlad's Lab" tag="Forge" pos="center 30%" badge={p.forgedAt ? "Done" : `${p.progress.pct}%`} hot={p.progress.complete && !p.forgedAt} />
         <Spot href="/tasks" img="/characters/Hood.webp" name="Earn $NOTTIES" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
-        <Spot href="/trade" img="/notties/86.webp" name="Black Market" pos="center 30%" tag="Trade" badge="Swap spares" />
+        <Spot href="/trade" img="/notties/86.webp" name="The Market" pos="center 30%" tag="Shop & swap" badge="Buy parts" />
         <Spot href="/inventory" img="/notties/6.webp" name="Your Stash" tag="Cards" pos="center 30%" badge={`${spares} spare${spares === 1 ? "" : "s"}`} />
         <Spot href="/leaderboard" img="/characters/Dild.webp" name="Most Wanted" tag="Ranks" pos="center 30%" badge="Wanted" />
         <Spot href="/referrals" img="/characters/Woody.webp" name="Recruit Office" pos="center 30%" tag="Invite" badge={`${p.referralsVerified} recruits`} />

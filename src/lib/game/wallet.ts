@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { getAddress, isAddress, verifyMessage } from "viem";
-import { GameError, one, query, withTx } from "../db";
+import { GameError, one, query, withTx, type Q } from "../db";
 import { getSettings, logRisk, requireActive } from "./core";
 import { completeTask } from "./tasks";
 
@@ -39,6 +39,7 @@ export async function submitWallet(userId: string, address: string) {
   return withTx(async (q) => {
     const settings = await getSettings(q);
     await requireActive(q, userId);
+    await requireWalletOpen(q, userId);
     const owner = (await q.query<{ user_id: string }>("select user_id from wallets where address = $1", [addr])).rows[0];
     if (owner && owner.user_id !== userId) {
       await logRisk(q, userId, "wallet_reuse", { address: addr, other_user: owner.user_id, signed: false }, 2);
@@ -58,6 +59,7 @@ export async function linkWallet(userId: string, address: string, signature: `0x
   return withTx(async (q) => {
     const settings = await getSettings(q);
     const u = await requireActive(q, userId);
+    await requireWalletOpen(q, userId);
     const n = (await q.query<{ nonce: string; created_at: string }>("select nonce, created_at from wallet_nonces where user_id = $1", [userId])).rows[0];
     if (!n || Date.now() - new Date(n.created_at).getTime() > 10 * 60_000) throw new GameError("Nonce expired. Try again.");
 
@@ -95,4 +97,30 @@ export async function setPrimary(userId: string, address: string) {
     await q.query("update wallets set is_primary = false where user_id = $1", [userId]);
     await q.query("update wallets set is_primary = true where user_id = $1 and address = $2", [userId, addr]);
   });
+}
+
+/**
+ * Wallets open last: a player must have built their Nottie AND finished the wallet missions
+ * (settings.wallet_tasks, e.g. follow + like + comment). Inactive missions don't count against them.
+ */
+export async function walletGate(userId: string, q?: Q) {
+  const run = q ? q.query.bind(q) : query;
+  const settings = await getSettings(q);
+  const forged = (await run("select 1 from forge_completions where user_id = $1", [userId])).rows.length > 0;
+  const ids = settings.wallet_tasks;
+  const tasks = ids.length
+    ? (await run<{ id: string; title: string; link: string | null; done: boolean }>(
+        `select t.id, t.title, t.link, exists (select 1 from task_completions c where c.user_id = $1 and c.task_id = t.id) as done
+           from tasks t where t.active and t.id = any($2::text[]) order by t.sort, t.id`,
+        [userId, ids],
+      )).rows
+    : [];
+  return { forged, tasks, open: forged && tasks.every((t) => t.done) };
+}
+
+async function requireWalletOpen(q: Q, userId: string) {
+  const g = await walletGate(userId, q);
+  if (!g.forged) throw new GameError("Build your Nottie first. Wallets open once it's assembled.");
+  const left = g.tasks.filter((t) => !t.done);
+  if (left.length) throw new GameError(`Finish these missions first: ${left.map((t) => t.title).join(", ")}`);
 }

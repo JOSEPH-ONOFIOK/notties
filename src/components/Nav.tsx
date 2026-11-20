@@ -13,7 +13,7 @@ import { Coin } from "./game/Coin";
 import { CountUp } from "./game/CountUp";
 import { SoundToggle } from "./game/SoundToggle";
 import { useMounted } from "./useMounted";
-import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX, TbCoin } from "react-icons/tb";
+import { TbArrowsExchange, TbBox, TbClipboardCheck, TbFlame, TbFlask2, TbMap2, TbMenu2, TbPhoto, TbPlayerPlayFilled, TbLogout, TbExternalLink, TbMail, TbX, TbCoin, TbBuildingStore, TbUserCircle } from "react-icons/tb";
 import { BRAND, FACTIONS } from "@/lib/game/config";
 import type { IconType } from "react-icons";
 import { replayIntro } from "./game/IntroStory";
@@ -21,13 +21,14 @@ import { replayIntro } from "./game/IntroStory";
 const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/dashboard", label: "City", icon: TbMap2 },
   { href: "/hunt", label: "Hunt", icon: TbBox },
-  { href: "/forge", label: "Forge", icon: TbFlask2 },
-  { href: "/trade", label: "Trade", icon: TbArrowsExchange },
+  { href: "/trade", label: "Market", icon: TbBuildingStore },
   { href: "/tasks", label: "Earn", icon: TbCoin },
-  { href: "/showroom", label: "Gallery", icon: TbPhoto },
+  { href: "/forge", label: "Forge", icon: TbFlask2 },
+  { href: "/profile", label: "Profile", icon: TbUserCircle },
 ];
 const MORE = [
-  { href: "/profile", label: "Profile" },
+  { href: "/forge", label: "Vlad's Lab (Forge)" },
+  { href: "/showroom", label: "Gallery" },
   { href: "/mail", label: "Mailbox" },
   { href: "/inventory", label: "Stash" },
   { href: "/leaderboard", label: "Most Wanted" },
@@ -174,7 +175,7 @@ export function Nav({ player }: { player: PlayerView }) {
       {/* mobile bottom bar: big raised Hunt button in the middle */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-black bg-[#151910]/95 backdrop-blur lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <ul className="grid grid-cols-5 items-end">
-          {[MAIN[0], MAIN[2], MAIN[1], MAIN[3], MAIN[4]].map((m) => {
+          {[MAIN[0], MAIN[2], MAIN[1], MAIN[3], MAIN[5]].map((m) => {
             const active = path.startsWith(m.href);
             if (m.href === "/hunt")
               return (

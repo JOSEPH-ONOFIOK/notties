@@ -2,7 +2,7 @@ import { RARITY_COLOR, type FragmentType, FRAGMENT_BY_TYPE } from "@/lib/game/co
 import { DEFAULT_LOOK } from "@/lib/game/look";
 
 /**
- * The picture for a fragment. The eight parts use the real collection art (public/traits);
+ * The picture for a fragment. The parts use the real collection art (public/traits);
  * Vlad's Book has no art in the collection, so it stays a drawn icon. Plain markup, so it works in
  * server and client components. Inside an OG image pass `srcMap` (art path → PNG data URI), since satori can't read WebP.
  */

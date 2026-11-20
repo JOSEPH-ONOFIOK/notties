@@ -14,7 +14,8 @@ export function NottieFigure({ have, size = 260, charged = false, seed, classNam
   return (
     <div role="img" aria-label="Your Nottie, partly assembled" className={className} style={{ position: "relative", display: "flex", width: size, height: size, borderRadius: size * 0.08, overflow: "hidden", border: "3px solid #000", background: "#1d2116" }}>
       {LAYER_ORDER.map((layer) => {
-        const on = !!have[layer];
+        // The shadow is built into every Nottie, so it always shows.
+        const on = layer === "shadow" || !!have[layer];
         // A missing background just leaves the dark lab wall showing.
         if (layer === "background" && !on) return null;
         return (

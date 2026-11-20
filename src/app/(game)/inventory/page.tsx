@@ -20,14 +20,14 @@ export default async function Inventory() {
   ]);
   const found = PARTS.filter((f) => p.inventory[f.type] > 0).length;
   // Vlad's Book only shows once you actually hold one.
-  const cards = FRAGMENTS.filter((f) => !f.special || p.inventory[f.type] > 0);
+  const cards = PARTS;
   const spares = PARTS.map((f) => ({ f, n: Math.max(0, p.inventory[f.type] - (s.recipe[f.type] ?? 1)) })).filter((x) => x.n > 0);
   const missing = PARTS.filter((f) => p.inventory[f.type] === 0);
 
   return (
     <>
-      <PageTitle kicker="Stash" title="Card collection" sub={`${found}/8 fragment types found · ${p.fragments} cards total.`} right={<Points n={p.points} size="lg" />} />
-      <ProgressBar pct={Math.round((found / 8) * 100)} tall className="mb-8" />
+      <PageTitle kicker="Stash" title="Card collection" sub={`${found}/${PARTS.length} parts found (the shadow comes free with every Nottie) · ${p.fragments} cards total.`} right={<Points n={p.points} size="lg" />} />
+      <ProgressBar pct={Math.round((found / PARTS.length) * 100)} tall className="mb-8" />
 
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {cards.map((f) => {
@@ -65,7 +65,7 @@ export default async function Inventory() {
             </p>
           )}
           <div className="mt-5 flex flex-wrap gap-2">
-            <Link href="/trade" className="btn btn-accent">
+            <Link href="/trade?tab=swap" className="btn btn-accent">
               <TbArrowsExchange size={18} /> Post a swap
             </Link>
             <Link href="/trade?tab=gift" className="btn btn-ghost">

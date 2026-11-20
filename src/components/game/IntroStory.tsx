@@ -186,16 +186,16 @@ export function IntroStory({ playerId, username, cooldownMinutes, cratePrice, ti
                 </div>
               }
               kicker="Step 2 · Collect"
-              title="Find all 8 parts."
+              title="Find all 7 parts."
               body={
                 <>
-                  A background, a shadow, shoes, an outfit, a mouth, eyes, something for the hands or head, and the rarest of all, the <b>Body</b>. The Body and the Hand &amp; Head are the hardest to find. Doubles? <b>Trade</b> them with other players for what you&apos;re missing.
+                  A background, shoes, an outfit, a mouth, eyes, something for the hands or head, and the rarest of all, the <b>Body</b>. The Body and the Hand &amp; Head are the hardest to find. Doubles? <b>Trade</b> them with other players for what you&apos;re missing.
                 </>
               }
             />
           )}
           {step === 3 && (
-            <Panel art={<AssemblingNottie />} kicker="Step 3 · Assemble" title="Build your Nottie." body={<>Got all 8? Take them to <b>my lab</b> and fire up the machine. Out comes a Nottie, and you become <b>One of Us</b>, which <b>locks your guaranteed mint spot</b>. One per account. No take-backs.</>} />
+            <Panel art={<AssemblingNottie />} kicker="Step 3 · Assemble" title="Build your Nottie." body={<>Got all 7? Take them to <b>my lab</b> and fire up the machine. Out comes a Nottie, and you become <b>One of Us</b>, which <b>locks your guaranteed mint spot</b>. One per account. No take-backs.</>} />
           )}
           {step === 4 && (
             <Panel

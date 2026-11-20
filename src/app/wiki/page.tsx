@@ -14,13 +14,13 @@ import { guestMode } from "@/lib/guest";
 import { getXUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Field Guide", description: "How to play The Notties: crack crates, collect 8 parts, build your Nottie, lock your GTD spot." };
+export const metadata = { title: "Field Guide", description: "How to play The Notties: crack crates, collect 7 parts, build your Nottie, lock your GTD spot." };
 
 const CHAPTERS = [
   ["story", "The story so far"],
   ["quick", "The 30-second version"],
   ["crates", "Crates"],
-  ["cards", "The 8 parts"],
+  ["cards", "The 7 parts"],
   ["lab", "Vlad's Lab"],
   ["trade", "Black Market & swaps"],
   ["missions", "Missions & mailbox"],
@@ -128,7 +128,7 @@ export default async function Wiki() {
                 ["1", "Earn", `Do missions, check in, gift cards, recruit friends. All pay ${POINTS_NAME}.`],
                 ["2", "Open crates", s.timer_crates ? `Spend ${POINTS_NAME} on crates, plus a free one ${every}.` : `Your first crate is free. After that, crates cost ${s.crate_price} ${POINTS_NAME}.`],
                 ["3", "Trade", "Swap your doubles for the parts you're missing."],
-                ["4", "Assemble", "All 8 parts? Build your Nottie."],
+                ["4", "Assemble", "All 7 parts? Build your Nottie."],
                 ["5", "Add wallet", "Your guaranteed free mint spot is locked."],
               ].map(([n, t, d]) => (
                 <li key={n} className="card p-4">
@@ -143,7 +143,7 @@ export default async function Wiki() {
 
           <Chapter id="crates" n={3} title="Crates">
             <p>
-              Every new player gets <b>one free crate</b> in their mailbox. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, one per hour{s.timer_crates ? <>, plus a <b>free one {every}</b></> : null}. <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
+              Every new player gets <b>one free crate</b> in their mailbox. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, any time{s.crate_buy_cooldown_minutes ? ` (one every ${s.crate_buy_cooldown_minutes} min)` : ""}. You can also buy any part outright in the <b>Market</b>; rare ones cost a lot.{s.timer_crates ? <> There&apos;s also a <b>free one {every}</b>.</> : null} <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
               <li>The timer runs on my clock, not yours. Changing your phone&apos;s time won&apos;t help. I checked.</li>
@@ -161,7 +161,7 @@ export default async function Wiki() {
             </ul>
           </Chapter>
 
-          <Chapter id="cards" n={4} title="The 8 parts">
+          <Chapter id="cards" n={4} title="The 7 parts">
             <p>Every part is a collectible card. The frame colour tells you how rare it is.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {(["common", "uncommon", "rare", "epic", "legendary"] as const).map((r) => (
@@ -183,7 +183,7 @@ export default async function Wiki() {
           <Chapter id="lab" n={5} title="Vlad's Lab (the Forge)">
             <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
               <div>
-                <p>Open <b>Forge</b> and you&apos;ll see your Nottie standing on my lab pad. Every part you own shows up on it in full colour; missing parts are dark shadows. When all 8 are lit:</p>
+                <p>Open <b>Forge</b> and you&apos;ll see your Nottie standing on my lab pad. Every part you own shows up on it in full colour; missing parts are dark shadows. When all 7 are lit:</p>
                 <ol className="mt-3 list-decimal space-y-1 pl-5">
                   <li>
                     Hit <b>Assemble!</b> and confirm.
@@ -203,10 +203,10 @@ export default async function Wiki() {
           </Chapter>
 
           <Chapter id="trade" n={6} title="Black Market (swaps & gifts)">
-            <p>Got three shadows and no shoes? Somebody out there has the opposite problem. Open <b>Trade</b> and you&apos;ve got two options:</p>
+            <p>Got three backgrounds and no shoes? Somebody out there has the opposite problem. Open <b>Trade</b> and you&apos;ve got two options:</p>
             <ul className="mt-3 space-y-2">
               <li>
-                <b>Swap board.</b> Post an offer like &quot;my 1 Shadow for 1 Shoes&quot;. Your card is held safely until someone with Shoes takes the deal, then both sides swap at the same instant. Nobody can run off with your card. Cancel any time to get it back. You can even reserve an offer for one friend.
+                <b>Swap board.</b> Post an offer like &quot;my 1 Background for 1 Shoes&quot;. Your card is held safely until someone with Shoes takes the deal, then both sides swap at the same instant. Nobody can run off with your card. Cancel any time to get it back. You can even reserve an offer for one friend.
               </li>
               <li>
                 <b>Gift a card.</b> Send a card straight to someone by X username or player code. It&apos;s instant and there&apos;s no undo, so double-check the name.
@@ -217,7 +217,7 @@ export default async function Wiki() {
 
           <Chapter id="missions" n={7} title="Missions & mailbox">
             <p>
-              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME}. Fresh missions drop twice a day, at the start of each round, and disappear when the round ends. A timer on the board shows how long is left.
+              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME}. Timed missions have a countdown: finish before it ends for the full reward. After that they pay {s.late_reward_pct}% for a while, then disappear.
             </p>
             <p className="mt-3">
               Rewards go to your <b>mailbox</b>, the envelope at the top of the screen. A red number means something is waiting. Open it and tap <b>Claim</b> to get your {POINTS_NAME}, then buy crates on the <b>Hunt</b> page. Cards friends send you and finished swaps show up there too.
@@ -290,7 +290,7 @@ export default async function Wiki() {
 
           <Chapter id="shop" n={10} title="Buying crates">
             <p>
-              Spend <b>{s.crate_price} {POINTS_NAME}</b> on a crate, once every <b>{s.crate_buy_cooldown_minutes} minutes</b>. It cracks like any crate, fills your lucky meter, and doesn&apos;t touch your free-crate timer.
+              Spend <b>{s.crate_price} {POINTS_NAME}</b> on a crate{s.crate_buy_cooldown_minutes ? <>, once every <b>{s.crate_buy_cooldown_minutes} minutes</b></> : <>, as often as you like</>}. It cracks like any crate, fills your lucky meter, and doesn&apos;t touch your free-crate timer.
             </p>
           </Chapter>
 
@@ -372,8 +372,8 @@ export default async function Wiki() {
               {[
                 ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
                 ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES. Your welcome crate waits on the Hunt page and have no timer."],
-                ["When do new missions drop?", `Twice a day, at ${s.task_rounds.hours.map((h) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`).join(" and ")} ${s.task_rounds.label}. Each round's missions disappear when the next round starts, so don't leave them for later.`],
-                ["Do I need a wallet to play?", "No. Play first. You only need to link a wallet before the allowlist snapshot so your Nottie can be delivered."],
+                ["What if I miss a mission's timer?", `You can still do it for a while, but it pays ${s.late_reward_pct}% (100 becomes ${s.late_reward_pct}). Then it disappears. New missions drop often, so check the Earn page.`],
+                ["Do I need a wallet to play?", "No. Play first. Your wallet is the last step: once your Nottie is built, follow, like and comment on our launch post, then submit your wallet to lock your free mint."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],
                 ["I'm stuck on one part. Help?", "Trade for it on the Black Market, or keep hunting. Every crate is a fresh roll."],
                 ["Is the Nottie in the preview the one I'll get?", "It's a stand-in. Real traits stay sealed until the collection reveals."],

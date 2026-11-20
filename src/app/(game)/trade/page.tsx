@@ -9,18 +9,20 @@ import { listOffers } from "@/lib/game/offers";
 import { SwapBoard } from "@/components/SwapBoard";
 import Link from "next/link";
 import { currentPlayer } from "@/lib/player";
+import { MarketShop } from "@/components/game/MarketShop";
 
-export const metadata = { title: "Trade" };
+export const metadata = { title: "Market" };
 
 export default async function Trade({ searchParams }: { searchParams: Promise<{ to?: string; tab?: string; type?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
   const [s, history, offers] = await Promise.all([getSettings(), tradeHistory(p.id, 25), listOffers(p.id)]);
-  const tab = sp.tab === "gift" ? "gift" : "swap";
+  const tab = sp.tab === "gift" ? "gift" : sp.tab === "swap" ? "swap" : "shop";
   return (
     <>
-      <PageTitle kicker="Trade" title="Black Market" sub="Got three shadows and no shoes? Post a swap and someone with shoes takes it, or just gift a card to a friend." />
-      <div className="mb-5 flex gap-2">
+      <PageTitle kicker="Market" title="The Market" sub="Buy crates and parts with $NOTTIES, swap your doubles with other players, or gift a card to a friend." />
+      <div className="mb-5 flex flex-wrap gap-2">
         {[
+          ["shop", "Shop"],
           ["swap", `Swap board${offers.open.length ? ` (${offers.open.length})` : ""}`],
           ["gift", "Gift a card"],
         ].map(([k, label]) => (
@@ -29,7 +31,9 @@ export default async function Trade({ searchParams }: { searchParams: Promise<{ 
           </Link>
         ))}
       </div>
-      {tab === "swap" ? (
+      {tab === "shop" ? (
+        <MarketShop prices={s.market_prices} cratePrice={s.crate_price} points={p.points} inventory={p.inventory} enabled={s.market_enabled} suspended={p.accountStatus !== "active"} />
+      ) : tab === "swap" ? (
         <SwapBoard inventory={p.inventory} open={offers.open} mine={offers.mine} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} />
       ) : (
         <TradeForm inventory={p.inventory} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} initialTo={sp.to} initialType={sp.type} />

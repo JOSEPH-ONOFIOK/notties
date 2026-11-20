@@ -11,12 +11,15 @@ export default async function TasksAdmin() {
   const [tasks, settings] = await Promise.all([listAllTasks() as unknown as Promise<T[]>, getSettings()]);
   const now = nowMs();
   const at = (v: string | null) => (v ? Date.parse(v) : null);
-  const live = tasks.filter((t) => t.active && t.ends_at && (at(t.starts_at) ?? 0) <= now && at(t.ends_at)! > now);
-  const scheduled = tasks.filter((t) => t.active && at(t.starts_at) !== null && at(t.starts_at)! > now);
-  const always = tasks.filter((t) => t.active && !t.ends_at && !(at(t.starts_at) && at(t.starts_at)! > now));
-  const expired = tasks.filter((t) => t.active && t.ends_at && at(t.ends_at)! <= now);
+  const lateMs = settings.late_window_hours * 3600_000;
+  const started = (t: T) => (at(t.starts_at) ?? 0) <= now;
+  const live = tasks.filter((t) => t.active && t.ends_at && started(t) && at(t.ends_at)! > now);
+  const late = tasks.filter((t) => t.active && t.ends_at && at(t.ends_at)! <= now && at(t.ends_at)! + lateMs > now);
+  const scheduled = tasks.filter((t) => t.active && !started(t));
+  const always = tasks.filter((t) => t.active && !t.ends_at && started(t));
+  const expired = tasks.filter((t) => t.active && t.ends_at && at(t.ends_at)! + lateMs <= now);
   const archived = tasks.filter((t) => !t.active);
-  const rounds = settings.task_rounds;
+  const ed = { latePct: settings.late_reward_pct, lateHours: settings.late_window_hours };
 
   const group = (title: string, list: T[], note?: string) =>
     list.length > 0 && (
@@ -27,7 +30,7 @@ export default async function TasksAdmin() {
         {note && <p className="text-sm text-muted">{note}</p>}
         <div className="mt-3 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           {list.map((t) => (
-            <TaskEditor key={t.id} initial={t} rounds={rounds} />
+            <TaskEditor key={t.id} initial={t} {...ed} />
           ))}
         </div>
       </section>
@@ -38,12 +41,13 @@ export default async function TasksAdmin() {
       <PageTitle
         kicker="Admin"
         title="Missions"
-        sub={`Pick a round when you add a mission. It shows up when the round starts and disappears when it ends, so each day starts fresh at ${rounds.hours[0]}:00 ${rounds.label}. Every mission pays $NOTTIES plus free crates, sent to the player's mailbox.`}
+        sub={`Give each mission a deadline. Before it, players get the full reward. After it, they get ${settings.late_reward_pct}% for ${settings.late_window_hours} more hours, then the mission disappears. Rewards go to the player's mailbox.`}
       />
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
-        <TaskEditor rounds={rounds} />
+        <TaskEditor {...ed} />
       </div>
-      {group("Live this round", live)}
+      {group("Live (full reward)", live)}
+      {group(`Past deadline (${settings.late_reward_pct}% reward)`, late, `Still claimable until ${settings.late_window_hours}h after the deadline.`)}
       {group("Scheduled", scheduled, "Will appear when their round starts.")}
       {group("Always on", always, "No round. Built-in ids (onboarding, follow_x, link_wallet, daily_checkin) take their $NOTTIES from Economy.")}
       {expired.length > 0 && (
@@ -59,7 +63,7 @@ export default async function TasksAdmin() {
             <summary className="cursor-pointer text-sm text-muted">Show</summary>
             <div className="mt-3 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
               {expired.map((t) => (
-                <TaskEditor key={t.id} initial={t} rounds={rounds} />
+                <TaskEditor key={t.id} initial={t} {...ed} />
               ))}
             </div>
           </details>
@@ -70,7 +74,7 @@ export default async function TasksAdmin() {
           <summary className="display cursor-pointer text-xl text-muted">Archived ({archived.length})</summary>
           <div className="mt-3 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
             {archived.map((t) => (
-              <TaskEditor key={t.id} initial={t} rounds={rounds} />
+              <TaskEditor key={t.id} initial={t} {...ed} />
             ))}
           </div>
         </details>

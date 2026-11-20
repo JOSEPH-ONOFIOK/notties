@@ -1,7 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import { GameError, query, withTx, type Q } from "../db";
-import { FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType, type Settings } from "./config";
+import { FRAGMENT_BY_TYPE, FRAGMENT_TYPES, isPart, type FragmentType, type Settings } from "./config";
 import { addFragment, addPoints, getSettings, logRisk, requireActive, type UserRow } from "./core";
 import { activeEffects } from "./events";
 import { pushFeed } from "./feed";
@@ -26,7 +26,7 @@ export function rollFragment(weights: Record<FragmentType, number>): FragmentTyp
 /** Effective drop weights right now: base weights × active event multipliers. */
 export function effectiveWeights(settings: Settings, drop: Record<FragmentType, number>) {
   // Special items (Vlad's Book) never come out of a crate, whatever the admin weights say.
-  return Object.fromEntries(FRAGMENT_TYPES.map((t) => [t, FRAGMENT_BY_TYPE[t].special ? 0 : (Number(settings.drop_weights[t]) || 0) * (drop[t] ?? 1)])) as Record<FragmentType, number>;
+  return Object.fromEntries(FRAGMENT_TYPES.map((t) => [t, !isPart(t) ? 0 : (Number(settings.drop_weights[t]) || 0) * (drop[t] ?? 1)])) as Record<FragmentType, number>;
 }
 
 /** Roll + record one crate for a locked user row. Shared by the timer crate and the shop crate. */
@@ -102,7 +102,7 @@ export async function shopStatus(userId: string, settings: Settings) {
   return { price: Number(settings.crate_price) || 0, left: Math.max(0, (Number(settings.crate_buys_per_day) || 0) - bought), enabled: !!settings.shop_enabled, cooldownMinutes: Math.max(0, Number(settings.crate_buy_cooldown_minutes) || 0), nextBuyAt: next > Date.now() ? new Date(next).toISOString() : null };
 }
 
-/** Spend $NOTTIES on a crate. Doesn't touch the free timer; one per hour (crate_buy_cooldown_minutes) and capped per UTC day. */
+/** Spend $NOTTIES on a crate. Doesn't touch the free timer; optional cooldown (crate_buy_cooldown_minutes) and a daily cap. */
 export async function buyCrate(userId: string, idemKey: string) {
   if (!/^[a-zA-Z0-9_-]{8,64}$/.test(idemKey)) throw new GameError("Bad request");
   return withTx(async (q) => {

@@ -39,11 +39,13 @@ export interface FragmentDef {
   blurb: string;
   /** Not a crate part: no drops, not in the recipe. */
   special?: boolean;
+  /** Built into every Nottie (the shadow fits every character), so it isn't collected or traded. */
+  fixed?: boolean;
 }
 
 export const FRAGMENTS: FragmentDef[] = [
   { type: "background", name: "Background", rarity: "common", weight: 24, pawn: 10, blurb: "The wall behind you. Grey, yellow, or that green that hurts to look at." },
-  { type: "shadow", name: "Shadow", rarity: "common", weight: 22, pawn: 10, blurb: "Every Nottie came through the portal with one. Some came with the wrong one." },
+  { type: "shadow", name: "Shadow", rarity: "common", weight: 0, pawn: 10, fixed: true, blurb: "Every Nottie came through the portal with one. Some came with the wrong one." },
   { type: "shoes", name: "Shoes", rarity: "uncommon", weight: 16, pawn: 10, blurb: "Sneakers, slippers or Timbs. Built for running from Vlad. Doubles as running toward snacks." },
   { type: "mouth", name: "Mouth", rarity: "uncommon", weight: 14, pawn: 15, blurb: "Smile, sulk, tongue out or vampire teeth. Decides your whole personality." },
   { type: "outfit", name: "Outfit", rarity: "uncommon", weight: 12, pawn: 15, blurb: "Jackets, capes, prison stripes, pampers. One pocket. Always something in it that isn't yours." },
@@ -55,14 +57,16 @@ export const FRAGMENTS: FragmentDef[] = [
 
 export const FRAGMENT_BY_TYPE = Object.fromEntries(FRAGMENTS.map((f) => [f.type, f])) as Record<FragmentType, FragmentDef>;
 export const FRAGMENT_TYPES = FRAGMENTS.map((f) => f.type);
-/** The eight parts you collect from crates to assemble (everything but Vlad's Book). */
-export const PARTS = FRAGMENTS.filter((f) => !f.special);
+/** The seven parts you collect from crates to assemble (not Vlad's Book, not the built-in shadow). */
+export const PARTS = FRAGMENTS.filter((f) => !f.special && !f.fixed);
+/** True for parts players actually collect, trade and buy (not Vlad's Book, not the built-in shadow). */
+export const isPart = (t: string) => PARTS.some((f) => f.type === t);
 export const PART_TYPES = PARTS.map((f) => f.type);
 
 /** One of each part assembles a Nottie. Vlad's Book is not required. */
 export const DEFAULT_RECIPE: Record<FragmentType, number> = {
   background: 1,
-  shadow: 1,
+  shadow: 0, // built into every Nottie
   shoes: 1,
   mouth: 1,
   outfit: 1,
@@ -99,8 +103,8 @@ export const DEFAULT_SETTINGS = {
   referral_qualify_claims: 3, // referee must open this many crates before the referrer is paid
   pity_threshold: 10, // crates without a Rare+ before the next one is guaranteed Rare or better
   crate_price: 500, // $NOTTIES for a crate from the shop
-  crate_buys_per_day: 24, // cap per UTC day
-  crate_buy_cooldown_minutes: 60, // one bought crate per hour
+  crate_buys_per_day: 1000, // cap per UTC day (effectively none)
+  crate_buy_cooldown_minutes: 0, // 0 = buy crates any time
   shop_enabled: true,
   streak_bonus: [50, 60, 70, 80, 90, 100, 150], // daily roll call reward by streak day (repeats the last)
   // Recurring events run on the server's UTC clock, so every player sees the same thing at once.
@@ -112,9 +116,15 @@ export const DEFAULT_SETTINGS = {
   mint: { date: "", chain: "", price: "Free" },
   // Vlad's Book: max copies ever given out. 0 = no limit (anyone who earns it gets one).
   book_cap: 0,
-  // Missions run in rounds: fresh ones drop at these local hours, each round lasting until the next.
-  // utc_offset 1 = West Africa Time. Old rounds disappear on their own.
-  task_rounds: { hours: [9, 21], utc_offset: 1, label: "WAT" },
+  // Missions with a deadline pay in full until it, then late_reward_pct of the reward for
+  // late_window_hours more, then disappear.
+  // Missions a player must finish (after building their Nottie) before they can submit a wallet.
+  wallet_tasks: ["follow_x", "like_post", "comment_post"] as string[],
+  late_reward_pct: 50,
+  late_window_hours: 24,
+  // Marketplace: buy parts directly with $NOTTIES. Rare parts cost a lot on purpose.
+  market_enabled: true,
+  market_prices: { background: 1500, shadow: 0, shoes: 2000, mouth: 2500, outfit: 3000, eyes: 5000, gear: 12000, body: 25000, book: 0 } as Record<FragmentType, number>,
   // Free crates sent to the mailbox: on sign-up, and to the recruiter when a recruit plays.
   welcome_crates: 1,
   referral_crates: 0,
