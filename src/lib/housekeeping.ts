@@ -27,5 +27,7 @@ export function maybeHousekeep() {
       "delete from rate_limits",
     ];
     for (const sql of jobs) await query(sql).catch(() => {});
+    // Recruits who already qualify but whose recruiter was never paid.
+    await (await import("./game/referrals")).settlePendingReferrals().catch(() => {});
   })();
 }

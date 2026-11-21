@@ -42,7 +42,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         : p.forgedAt && !p.wallet
           ? { title: "Final step: your wallet", body: "Your Nottie is built. Follow, like and comment on our launch post, then submit your wallet to lock your free mint.", href: "/wallet", cta: "Finish up" }
           : p.forgedAt
-            ? { title: "Recruit the crew", body: `You're one of us. Bring friends: each recruit who plays pays you ${settings.points.referral} $NOTTIES.`, href: "/referrals", cta: "Get your link" }
+            ? { title: "Recruit the crew", body: `You're one of us. Bring friends: each recruit who joins and likes our tweet pays you ${settings.points.referral} $NOTTIES.`, href: "/referrals", cta: "Get your link" }
             : p.progress.complete
               ? { title: "Assemble your Nottie!", body: "Every part is on the bench. Fire up Vlad's machine.", href: "/forge", cta: "To the lab" }
               : {

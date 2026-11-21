@@ -22,6 +22,8 @@ export default async function Players({ searchParams }: { searchParams: Promise<
               <th className="p-3">Joined</th>
               <th className="p-3">Points</th>
               <th className="p-3">Crates</th>
+              <th className="p-3">Recruits</th>
+              <th className="p-3">Referred by</th>
               <th className="p-3">Wallet</th>
               <th className="p-3">Flags</th>
               <th className="p-3">Status</th>
@@ -41,6 +43,17 @@ export default async function Players({ searchParams }: { searchParams: Promise<
                 <td className="p-3 text-muted">{fmtDate(u.created_at)}</td>
                 <td className="p-3 tabular-nums">{Number(u.points).toLocaleString()}</td>
                 <td className="p-3 tabular-nums">{u.claims}</td>
+                <td className="p-3 tabular-nums" title="paid / total">
+                  {u.recruits ? (
+                    <>
+                      <b className="text-accent">{u.recruits_paid}</b>
+                      <span className="text-muted"> / {u.recruits}</span>
+                    </>
+                  ) : (
+                    <span className="text-muted">0</span>
+                  )}
+                </td>
+                <td className="p-3 text-xs">{u.referrer ? `@${u.referrer}` : <span className="text-muted">—</span>}</td>
                 <td className="p-3 font-mono text-xs">{u.wallet ? `${u.wallet.slice(0, 6)}…${u.wallet.slice(-4)}` : "—"}</td>
                 <td className="p-3">{u.risk > 0 ? <span className="text-warn">{u.risk}</span> : <span className="text-muted">0</span>}</td>
                 <td className="p-3">{u.status}</td>
@@ -51,7 +64,7 @@ export default async function Players({ searchParams }: { searchParams: Promise<
             ))}
             {rows.length === 0 && (
               <tr>
-                <td className="p-6 text-muted" colSpan={8}>
+                <td className="p-6 text-muted" colSpan={10}>
                   No players match.
                 </td>
               </tr>

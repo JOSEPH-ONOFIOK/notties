@@ -184,9 +184,12 @@ export async function audit(admin: string, action: string, target?: string, deta
 export async function searchPlayers(qstr: string, limit = 30) {
   const like = `%${qstr.trim().replace(/^@/, "").toLowerCase()}%`;
   return (
-    await query<UserRow & { forged: boolean; wallet: string | null; risk: number }>(
+    await query<UserRow & { forged: boolean; wallet: string | null; risk: number; recruits: number; recruits_paid: number; referrer: string | null }>(
       `select u.*, (f.id is not null) as forged, w.address as wallet,
-              (select count(*)::int from risk_events r where r.user_id = u.id and not r.resolved) as risk
+              (select count(*)::int from risk_events r where r.user_id = u.id and not r.resolved) as risk,
+              (select count(*)::int from referrals r where r.referrer_id = u.id) as recruits,
+              (select count(*)::int from referrals r where r.referrer_id = u.id and r.status = 'verified') as recruits_paid,
+              (select x_username from users ru where ru.id = u.referred_by) as referrer
          from users u left join forge_completions f on f.user_id = u.id
          left join wallets w on w.user_id = u.id and w.is_primary
         where $1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2

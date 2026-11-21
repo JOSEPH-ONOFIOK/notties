@@ -16,7 +16,7 @@ export default async function Referrals() {
 
   return (
     <>
-      <PageTitle kicker="Referrals" title="Recruit troublemakers" sub={`${s.points.referral} ${POINTS_NAME} per verified recruit. It counts once your recruit has cracked ${s.referral_qualify_claims} crates, so a click alone doesn't.`} />
+      <PageTitle kicker="Referrals" title="Recruit troublemakers" sub={`${s.points.referral} ${POINTS_NAME} per recruit, sent to your mailbox once they join with your link and like our launch tweet. A click alone doesn't count.`} />
 
       <div className="card p-6">
         <div className="text-xs font-bold uppercase tracking-[0.25em] text-accent">Your link</div>
@@ -34,8 +34,8 @@ export default async function Referrals() {
 
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Recruited" value={r.total} />
-        <Stat label="Verified" value={r.verified} accent />
-        <Stat label="Pending" value={r.pending} hint="still hunting" />
+        <Stat label="Paid" value={r.verified} accent />
+        <Stat label="Waiting" value={r.pending} hint="haven't liked the tweet yet" />
         <Stat label={`${POINTS_NAME} earned`} value={r.points.toLocaleString()} />
       </div>
 
@@ -48,7 +48,7 @@ export default async function Referrals() {
             {r.recent.map((x, i) => (
               <li key={i} className="flex items-center gap-3 py-2">
                 <span className="font-bold">@{x.username}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${x.status === "verified" ? "bg-accent-soft text-accent" : x.status === "pending" ? "bg-raised text-muted" : "bg-[#2e0f0c] text-error"}`}>{x.status}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${x.status === "verified" ? "bg-accent-soft text-accent" : x.status === "pending" ? "bg-raised text-muted" : "bg-[#2e0f0c] text-error"}`}>{x.status === "verified" ? "paid" : x.status === "pending" ? "waiting" : x.status}</span>
                 <span className="ml-auto text-xs text-muted">{fmtDate(x.created_at)}</span>
               </li>
             ))}

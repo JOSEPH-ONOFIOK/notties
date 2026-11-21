@@ -30,6 +30,7 @@ export type ProfileData = {
   refLink: string;
   refCode: string;
   recruits: number;
+  recruitsPending: number;
   referred: boolean;
   mail: number;
   suspended: boolean;
@@ -123,7 +124,12 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
         {/* referral */}
         <div className="card p-5">
           <div className="display text-xl">Referral</div>
-          <p className="mt-1 text-sm text-muted">Invite friends. When they join and play, you earn $NOTTIES. {d.recruits > 0 && <b className="text-white">{d.recruits} recruited so far.</b>}</p>
+          <p className="mt-1 text-sm text-muted">Invite friends. You earn $NOTTIES once they join and like our launch tweet.{" "}
+            {(d.recruits > 0 || d.recruitsPending > 0) && (
+              <b className="text-white">
+                {d.recruits} paid{d.recruitsPending ? `, ${d.recruitsPending} waiting for them to like the tweet` : ""}.
+              </b>
+            )}</p>
           <div className="mt-3 rounded-xl border-2 border-black bg-black/40 p-3">
             <div className="break-all font-mono text-xs text-accent">{d.refLink}</div>
             <div className="mt-1 text-[10px] uppercase tracking-widest text-muted">Your link · code {d.refCode}</div>

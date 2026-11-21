@@ -247,7 +247,7 @@ export default async function Wiki() {
                 ["Onboarding mission", P.onboarding],
                 ["Following on X", P.follow_x],
                 ["Linking a wallet", P.link_wallet],
-                ["A recruit who plays", P.referral],
+                ["A recruit who joins and likes the tweet", P.referral],
                 ["Assembling your Nottie", P.forge],
               ].map(([k, v]) => (
                 <li key={k as string} className="flex items-center justify-between rounded-xl border-[3px] border-black bg-raised px-3 py-2">
@@ -340,7 +340,7 @@ export default async function Wiki() {
 
           <Chapter id="recruit" n={13} title="Recruiting">
             <p>
-              Your <b>Recruit Office</b> has a personal link. When someone joins through it and actually plays (cracks <b>{s.referral_qualify_claims} crates</b>), you get <b>+{P.referral} {POINTS_NAME}</b>. Signing up and leaving doesn&apos;t count.
+              Your <b>Recruit Office</b> has a personal link. When someone joins through it and likes our launch tweet (the &quot;Like this tweet&quot; mission), you get <b>+{P.referral} {POINTS_NAME}</b> in your mailbox. Friends who signed up without your link can enter your code on their Profile page. Signing up and leaving doesn&apos;t count.
             </p>
             <p className="mt-2 text-muted">Recruiting yourself, or a pile of fake accounts, gets them rejected and you flagged. I can tell.</p>
           </Chapter>

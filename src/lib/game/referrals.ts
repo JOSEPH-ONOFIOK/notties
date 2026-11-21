@@ -8,7 +8,7 @@ import { boostedPoints, sendMail } from "./mail";
  * crates. Opening a link, or signing up and leaving, earns the referrer nothing.
  */
 export async function checkReferralProgress(q: Q, refereeId: string, claimsNow: number, settings: Settings) {
-  const need = Math.max(1, Number(settings.referral_qualify_claims) || 3);
+  const need = Math.max(0, Number(settings.referral_qualify_claims ?? 0));
   if (claimsNow < need) return;
   // If a recruit mission is set (e.g. "engage the launch post"), they must have finished it too.
   const mission = String(settings.referral_task ?? "").trim();
@@ -56,4 +56,19 @@ export async function referralSummary(userId: string) {
     points: Number(points.rows[0]?.s ?? 0),
     recent,
   };
+}
+
+/**
+ * Pay any recruiter whose recruit already qualifies but was never paid (e.g. after the rules
+ * changed). Runs from housekeeping; each one is its own small transaction.
+ */
+export async function settlePendingReferrals(limit = 200) {
+  const { withTx } = await import("../db");
+  const { getSettings } = await import("./core");
+  const settings = await getSettings();
+  const { rows } = await query<{ referee_id: string; claims: number }>(
+    "select r.referee_id, u.claims from referrals r join users u on u.id = r.referee_id where r.status = 'pending' and u.status = 'active' order by r.id limit $1",
+    [limit],
+  );
+  for (const r of rows) await withTx((q) => checkReferralProgress(q, r.referee_id, Number(r.claims), settings)).catch(() => {});
 }

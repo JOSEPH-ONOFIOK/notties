@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS = {
   // Free timer crate (one every crate_cooldown_minutes). Off: after the welcome crate, crates are bought.
   timer_crates: false,
   crate_cooldown_minutes: 120,
-  referral_qualify_claims: 3, // referee must open this many crates before the referrer is paid
+  referral_qualify_claims: 0, // crates the recruit must open before the recruiter is paid (0 = none)
   pity_threshold: 10, // crates without a Rare+ before the next one is guaranteed Rare or better
   crate_price: 500, // $NOTTIES for a crate from the shop
   crate_buys_per_day: 1000, // cap per UTC day (effectively none)
@@ -130,7 +130,7 @@ export const DEFAULT_SETTINGS = {
   referral_crates: 0,
   // Optional: a mission a recruit must also finish (e.g. "engage the launch post") before the
   // recruiter is paid. Empty = opening crates is enough.
-  referral_task: "",
+  referral_task: "like_post",
   drop_weights: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.weight])) as Record<FragmentType, number>,
   pawn_prices: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.pawn])) as Record<FragmentType, number>,
   recipe: DEFAULT_RECIPE,
