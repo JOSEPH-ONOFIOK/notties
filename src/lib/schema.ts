@@ -438,7 +438,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 9;
+const ECONOMY_VERSION = 10;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
 
 export async function SEED(q: Q) {
@@ -479,6 +479,20 @@ export async function SEED(q: Q) {
     if (ver < 6) await q.query("update tasks set active = false where id = 'comment_post'");
     // v9: missions pay 150 instead of 100.
     if (ver < 9) await q.query("update tasks set points = 150 where points = 100");
+    // v10: missions for the second tweet (like, retweet, quote with a ready-made line).
+    if (ver < 10) {
+      const add = [
+        ["like_post2", "Like the new tweet", "Like our latest post on X.", "https://x.com/thenottiesworld/status/2124186158343086332", 5],
+        ["rt_post2", "Retweet the new tweet", "Retweet our latest post on X.", "https://x.com/thenottiesworld/status/2124186158343086332", 5],
+        ["quote_post2", "Quote the new tweet", "Quote our latest post with the ready-made line (or your own).", "https://x.com/intent/post?text=Vlad%27s+lab+is+leaking+%F0%9F%91%80+Collecting+parts%2C+trading+my+doubles+and+locking+a+free+mint+spot+with+%40thenottiesworld.+Come+cause+trouble+%F0%9F%9F%A2&url=https%3A%2F%2Fx.com%2Fthenottiesworld%2Fstatus%2F2124186158343086332", 5],
+      ];
+      for (const [id, title, description, link, sort] of add) {
+        await q.query(
+          "insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ($1,$2,$3,150,'once','link',$4,$5,true) on conflict (id) do nothing",
+          [id, title, description, link, sort],
+        );
+      }
+    }
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
     if (ver < 7) {
       await q.query("update tasks set title = 'Follow Notties' where id = 'follow_x'");
