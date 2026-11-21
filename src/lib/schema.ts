@@ -370,22 +370,22 @@ const TASKS = [
   },
   {
     id: "like_post",
-    title: "Like the launch post",
+    title: "Like this tweet",
     description: "Like our pinned \"Notties Raid is live\" post on X. Final step before your wallet.",
     points: 100,
     kind: "once",
     verify: "link",
-    link: "https://x.com/thenottiesworld",
+    link: "https://x.com/thenottiesworld/status/2122676459995087292",
     sort: 4,
   },
   {
     id: "rt_post",
-    title: "Retweet the launch post",
+    title: "Retweet this tweet",
     description: "Repost our pinned \"Notties Raid is live\" post on X. Final step before your wallet.",
     points: 100,
     kind: "once",
     verify: "link",
-    link: "https://x.com/thenottiesworld",
+    link: "https://x.com/thenottiesworld/status/2122676459995087292",
     sort: 4,
   },
 
@@ -422,13 +422,30 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 6;
+const ECONOMY_VERSION = 7;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks"] as const;
 
 export async function SEED(q: Q) {
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
     await q.query(`insert into settings (key, value) values ($1, $2::jsonb) on conflict (key) do nothing`, [key, JSON.stringify(value)]);
   }
+  // One-time launch reset (2026-11-21): delete every player except @thenottiesworld so the game
+  // starts clean. Guarded by a settings flag so it runs exactly once.
+  const reset = (await q.query("select 1 from settings where key = 'reset_users_v1'")).rows.length > 0;
+  if (!reset) {
+    const gone = "(select id from users where lower(x_username) <> 'thenottiesworld')";
+    const jobs = [
+      `update users set referred_by = null where referred_by in ${gone}`,
+      `delete from referrals where referrer_id in ${gone} or referee_id in ${gone}`,
+      `delete from trade_offers where maker_id in ${gone} or taker_id in ${gone} or target_id in ${gone}`,
+      `delete from trades where sender_id in ${gone} or recipient_id in ${gone}`,
+      ...["feed", "chat_messages", "mail", "task_submissions", "task_completions", "task_clicks", "forge_completions", "mint_eligibility", "pawn_sales", "risk_events", "point_transactions", "fragment_ledger", "crate_claims", "inventory", "wallets", "wallet_nonces"].map((t) => `delete from ${t} where user_id in ${gone}`),
+      `delete from users where id in ${gone}`,
+    ];
+    for (const sql of jobs) await q.query(sql);
+    await q.query("insert into settings (key, value) values ('reset_users_v1', 'true'::jsonb) on conflict (key) do nothing");
+  }
+
   // v2 economy ($NOTTIES): bigger rewards, crates bought hourly, rarer Body and Hand & Head.
   // Applied once to existing databases; admin edits after that are kept.
   const ver = Number((await q.query<{ value: unknown }>("select value from settings where key = 'economy_version'")).rows[0]?.value ?? 1);
@@ -443,6 +460,17 @@ export async function SEED(q: Q) {
     if (ver < 3) await q.query("update tasks set crates = 0");
     // v6: the "comment on the launch post" mission is gone.
     if (ver < 6) await q.query("update tasks set active = false where id = 'comment_post'");
+    // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
+    if (ver < 7) {
+      await q.query("update tasks set title = 'Follow Notties' where id = 'follow_x'");
+      await q.query("update tasks set title = 'Like this tweet', description = 'Like our \"Notties Raid is live\" tweet on X.', link = $1 where id = 'like_post'", ["https://x.com/thenottiesworld/status/2122676459995087292"]);
+      await q.query("update tasks set title = 'Retweet this tweet', description = 'Retweet our \"Notties Raid is live\" tweet on X.', link = $1 where id = 'rt_post'", ["https://x.com/thenottiesworld/status/2122676459995087292"]);
+      await q.query(
+        `insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('comment_post', 'Comment on this tweet', 'Drop a comment on our \"Notties Raid is live\" tweet on X.', 100, 'once', 'link', $1, 4, true)
+         on conflict (id) do update set title = excluded.title, description = excluded.description, link = excluded.link, active = true`,
+        ["https://x.com/thenottiesworld/status/2122676459995087292"],
+      );
+    }
   }
   for (const t of TASKS) {
     await q.query(
