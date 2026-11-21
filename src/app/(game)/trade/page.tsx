@@ -10,16 +10,17 @@ import { SwapBoard } from "@/components/SwapBoard";
 import Link from "next/link";
 import { currentPlayer } from "@/lib/player";
 import { MarketShop } from "@/components/game/MarketShop";
+import { listMarket } from "@/lib/game/p2p";
 
 export const metadata = { title: "Market" };
 
 export default async function Trade({ searchParams }: { searchParams: Promise<{ to?: string; tab?: string; type?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
-  const [s, history, offers] = await Promise.all([getSettings(), tradeHistory(p.id, 25), listOffers(p.id)]);
+  const [s, history, offers, listings] = await Promise.all([getSettings(), tradeHistory(p.id, 25), listOffers(p.id), listMarket(p.id)]);
   const tab = sp.tab === "gift" ? "gift" : sp.tab === "swap" ? "swap" : "shop";
   return (
     <>
-      <PageTitle kicker="Market" title="The Market" sub="Buy crates and parts with $NOTTIES, swap your doubles with other players, or gift a card to a friend." />
+      <PageTitle kicker="Market" title="The Market" sub="Buy crates, buy and sell parts with other players, swap your doubles, or gift a card to a friend." />
       <div className="mb-5 flex flex-wrap gap-2">
         {[
           ["shop", "Shop"],
@@ -32,7 +33,7 @@ export default async function Trade({ searchParams }: { searchParams: Promise<{ 
         ))}
       </div>
       {tab === "shop" ? (
-        <MarketShop prices={s.market_prices} cratePrice={s.crate_price} points={p.points} inventory={p.inventory} enabled={s.market_enabled} suspended={p.accountStatus !== "active"} crates={p.crates} />
+        <MarketShop cratePrice={s.crate_price} points={p.points} inventory={p.inventory} enabled={s.market_enabled} suspended={p.accountStatus !== "active"} crates={p.crates} listings={listings} />
       ) : tab === "swap" ? (
         <SwapBoard inventory={p.inventory} open={offers.open} mine={offers.mine} enabled={s.trade_enabled} suspended={p.accountStatus !== "active"} />
       ) : (

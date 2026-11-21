@@ -145,7 +145,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         <Spot href="/hunt" img="/brand/hero-img-night-v2.webp" name="Crate Drop" tag="Hunt" className="col-span-2 row-span-2" pos="center 55%" badge={p.crates > 0 ? `${p.crates} crate${p.crates === 1 ? "" : "s"} to open` : p.crateAt === "need" ? "0 crates" : <Countdown until={p.crateAt} readyText="READY!" className="display text-sm" plain />} hot={p.crateAt === null} big />
         <Spot href="/forge" img="/notties/221.webp" name="Vlad's Lab" tag="Forge" pos="center 30%" badge={p.forgedAt ? "Done" : `${p.progress.pct}%`} hot={p.progress.complete && !p.forgedAt} />
         <Spot href="/tasks" img="/characters/Hood.webp" name="Earn $NOTTIES" tag="Missions" pos="center 30%" badge={openMissions ? `${openMissions} to do` : "All done"} hot={openMissions > 0} />
-        <Spot href="/trade" img="/notties/86.webp" name="The Market" pos="center 30%" tag="Shop & swap" badge="Buy parts" />
+        <Spot href="/trade" img="/notties/86.webp" name="The Market" pos="center 30%" tag="Buy & sell" badge="Player market" />
         <Spot href="/inventory" img="/notties/6.webp" name="Your Stash" tag="Cards" pos="center 30%" badge={`${spares} spare${spares === 1 ? "" : "s"}`} />
         <Spot href="/leaderboard" img="/characters/Dild.webp" name="Most Wanted" tag="Ranks" pos="center 30%" badge="Wanted" />
         <Spot href="/referrals" img="/characters/Woody.webp" name="Recruit Office" pos="center 30%" tag="Invite" badge={`${p.referralsVerified} recruits`} />

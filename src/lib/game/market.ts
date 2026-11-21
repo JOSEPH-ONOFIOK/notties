@@ -4,7 +4,7 @@ import { FRAGMENT_BY_TYPE, isPart, type FragmentType } from "./config";
 import { addFragment, addPoints, getSettings, requireActive } from "./core";
 
 /**
- * The Marketplace: buy any part outright with $NOTTIES at the admin-set price (settings.market_prices).
+ * House sales. Parts are no longer sold by the house (players trade them in p2p.ts); buyPart is unused.
  * Rare parts are priced high on purpose, so trading stays the cheaper way to finish a set.
  */
 export async function buyPart(userId: string, type: FragmentType, qty: number, idemKey: string) {

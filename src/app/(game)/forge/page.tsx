@@ -17,7 +17,7 @@ export default async function Forge() {
       <ForgeBench playerId={p.id} slots={p.progress.slots} pct={p.progress.pct} complete={p.progress.complete} enabled={s.forge_enabled} suspended={p.accountStatus !== "active"} forgedAt={p.forgedAt} seed={p.nottieSeed} username={p.username} wallet={p.wallet} forgePoints={s.points.forge} gate={gate.tasks} />
       {!p.forgedAt && (
         <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
-          <Tip t="Missing something?" d="Buy it in the Market, or swap with other players." href="/trade" />
+          <Tip t="Missing something?" d="Buy it from another player in the Market, or swap." href="/trade" />
           <Tip t="Too many of one thing?" d="Swap your duplicates with other players." href="/trade?tab=swap" />
           <Tip t="Where does my Nottie go?" d="Link your mint wallet before the snapshot." href="/wallet" />
         </div>

@@ -30,7 +30,6 @@ export default async function Economy() {
       </div>
       <div className="mt-4 grid gap-4">
         <MapField k="drop_weights" label="Crate drop weights" value={s.drop_weights} labels={labels} hint="Relative weights; percentages are computed from the total. Set 0 to stop a fragment dropping." />
-        <MapField k="market_prices" label={`Marketplace prices (${POINTS_NAME})`} value={Object.fromEntries(Object.entries(s.market_prices).filter(([k]) => k !== "book"))} labels={labels} hint="What each part costs to buy outright. 0 = not for sale." />
         <MapField k="recipe" label="Forge recipe" value={s.recipe} labels={labels} hint="How many of each fragment one Nottie needs. Changing this after launch changes everyone's progress. Announce it first." />
         <MapField
           k="points"

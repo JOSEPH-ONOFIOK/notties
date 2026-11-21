@@ -325,6 +325,22 @@ create table if not exists chat_messages (
   created_at timestamptz not null default now()
 );
 create index if not exists chat_channel_idx on chat_messages (channel, id desc);
+
+-- Player-to-player market: "sell" = a card listed for $NOTTIES (card held in escrow);
+-- "buy" = a $NOTTIES offer for a card (the $NOTTIES held in escrow).
+create table if not exists market_listings (
+  id bigserial primary key,
+  kind text not null,
+  user_id bigint not null references users(id),
+  type text not null,
+  price int not null check (price > 0),
+  status text not null default 'open',
+  taker_id bigint references users(id),
+  idem_key text unique,
+  created_at timestamptz not null default now(),
+  closed_at timestamptz
+);
+create index if not exists market_open_idx on market_listings (status, kind, type, price);
 `;
 
 const TASKS = [
@@ -439,6 +455,7 @@ export async function SEED(q: Q) {
       `delete from referrals where referrer_id in ${gone} or referee_id in ${gone}`,
       `delete from trade_offers where maker_id in ${gone} or taker_id in ${gone} or target_id in ${gone}`,
       `delete from trades where sender_id in ${gone} or recipient_id in ${gone}`,
+      `delete from market_listings where user_id in ${gone} or taker_id in ${gone}`,
       ...["feed", "chat_messages", "mail", "task_submissions", "task_completions", "task_clicks", "forge_completions", "mint_eligibility", "pawn_sales", "risk_events", "point_transactions", "fragment_ledger", "crate_claims", "inventory", "wallets", "wallet_nonces"].map((t) => `delete from ${t} where user_id in ${gone}`),
       `delete from users where id in ${gone}`,
     ];

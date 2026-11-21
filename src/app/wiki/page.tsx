@@ -143,7 +143,7 @@ export default async function Wiki() {
 
           <Chapter id="crates" n={3} title="Crates">
             <p>
-              Every new player gets <b>one free crate</b> in their mailbox. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, any time{s.crate_buy_cooldown_minutes ? ` (one every ${s.crate_buy_cooldown_minutes} min)` : ""}. You can also buy any part outright in the <b>Market</b>; rare ones cost a lot.{s.timer_crates ? <> There&apos;s also a <b>free one {every}</b>.</> : null} <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
+              Every new player gets <b>one free crate</b> in their mailbox. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, any time{s.crate_buy_cooldown_minutes ? ` (one every ${s.crate_buy_cooldown_minutes} min)` : ""}. Need a specific part? Buy it from another player in the <b>Market</b>, or post an offer like &quot;2,000 $NOTTIES for a Body&quot;.{s.timer_crates ? <> There&apos;s also a <b>free one {every}</b>.</> : null} <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
               <li>The timer runs on my clock, not yours. Changing your phone&apos;s time won&apos;t help. I checked.</li>

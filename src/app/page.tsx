@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 const LOOP = [
   { n: "01", t: "Earn $NOTTIES", icon: TbBackpack, d: "Do missions, check in daily, gift cards and invite friends. Every one pays $NOTTIES, the in-game token." },
-  { n: "02", t: "Open crates", icon: TbBox, d: "Your first crate is free. After that, spend $NOTTIES on crates any time, or buy parts in the Market. Each crate drops a random part." },
+  { n: "02", t: "Open crates", icon: TbBox, d: "Your first crate is free. After that, spend $NOTTIES on crates any time, or buy and sell parts with other players in the Market. Each crate drops a random part." },
   { n: "03", t: "Trade", icon: TbArrowsExchange, d: "You'll get doubles. Swap them with other players for the parts you're missing. The Body and Hand & Head are the hardest to find." },
   { n: "04", t: "Assemble", icon: TbFlask2, d: "Collect all seven parts, build your Nottie, add your wallet. Your guaranteed free mint spot is locked." },
 ];
