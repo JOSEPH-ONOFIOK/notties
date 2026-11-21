@@ -69,19 +69,23 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
               </div>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-xl border-[3px] border-black bg-black/40 p-3 text-center">
-              <div className="display flex items-center justify-center gap-1.5 text-2xl text-accent">
-                <Coin size={22} /> {d.points.toLocaleString()}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-xl border-[3px] border-black bg-black/40 p-2 text-center sm:p-3">
+              <div className="display flex items-center justify-center gap-1 text-xl text-accent sm:text-2xl">
+                <Coin size={20} /> {d.points.toLocaleString()}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted">$NOTTIES</div>
             </div>
-            <div className="rounded-xl border-[3px] border-black bg-black/40 p-3 text-center">
-              <div className="display text-2xl">{d.fragments}</div>
+            <div className="rounded-xl border-[3px] border-black bg-black/40 p-2 text-center sm:p-3">
+              <div className="display text-xl sm:text-2xl">{d.fragments}</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted">
                 Fragments · {d.have}/{d.need} set
               </div>
             </div>
+            <a href="#referrals" className="rounded-xl border-[3px] border-black bg-black/40 p-2 text-center sm:p-3 transition hover:-translate-y-0.5">
+              <div className="display text-xl sm:text-2xl">{d.recruitList.length}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted">Referrals · {d.recruits} paid</div>
+            </a>
           </div>
           <Link href="/tasks" className="btn btn-accent mt-3 w-full">
             <Coin size={18} /> Earn more $NOTTIES
@@ -125,7 +129,7 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
       <div className="space-y-4">
         {/* referral */}
         <div className="card p-5">
-          <div className="display text-xl">Referral</div>
+          <div id="referrals" className="display scroll-mt-32 text-xl">Referral</div>
           <p className="mt-1 text-sm text-muted">Invite friends. You earn $NOTTIES once they join and like our launch tweet.{" "}
             {(d.recruits > 0 || d.recruitsPending > 0) && (
               <b className="text-white">
