@@ -23,6 +23,17 @@ function ago(iso: string) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+/** Where a letter's button takes you (letters with no reward to claim). */
+function goTo(m: Mail): { href: string; label: string } | null {
+  if (/mission|task/i.test(m.title)) return { href: "/tasks#round", label: "Go to missions" };
+  if (m.kind === "referral") return { href: "/profile#referrals", label: "See referrals" };
+  if (m.kind === "gift" && m.part) return { href: "/inventory", label: "Open stash" };
+  if (m.kind === "gift") return { href: "/profile", label: "See balance" };
+  if (m.kind === "swap") return { href: "/inventory", label: "Open stash" };
+  if (m.kind === "review") return { href: "/tasks", label: "Go to missions" };
+  return null;
+}
+
 export function Mailbox({ initial, suspended }: { initial: Mail[]; suspended: boolean }) {
   const router = useRouter();
   const [mail, setMail] = useState(initial);
@@ -150,6 +161,11 @@ export function Mailbox({ initial, suspended }: { initial: Mail[]; suspended: bo
                       {busy === m.id ? "…" : "Claim"}
                     </button>
                   ))}
+                {!reward && goTo(m) && (
+                  <Link href={goTo(m)!.href} onClick={() => sfx.click()} className="btn btn-accent ml-[60px] w-[calc(100%-60px)] shrink-0 self-center !min-h-[42px] !px-4 text-sm sm:ml-0 sm:w-auto">
+                    {goTo(m)!.label}
+                  </Link>
+                )}
               </li>
             );
           })}
