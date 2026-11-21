@@ -177,7 +177,7 @@ const DURATIONS: [string, number][] = [
 
 export function TaskEditor({ initial, latePct, lateHours }: { initial?: TaskDraft; latePct: number; lateHours: number }) {
   const router = useRouter();
-  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 100, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 0, starts_at: null, ends_at: null });
+  const blank = (): TaskDraft => ({ id: "", title: "", description: "", points: 150, kind: "once", verify: "link", link: "", sort: 10, active: true, crates: 0, starts_at: null, ends_at: null });
   const [t, setT] = useState<TaskDraft>(initial ?? { ...blank(), ends_at: "+24" });
   // New missions: the deadline is a duration from when you press Add ("+24" = 24 hours). Saved ones show their date.
   const dur = typeof t.ends_at === "string" && t.ends_at.startsWith("+") ? t.ends_at : !t.ends_at ? "none" : "custom";

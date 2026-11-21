@@ -388,7 +388,7 @@ const TASKS = [
     id: "like_post",
     title: "Like this tweet",
     description: "Like our pinned \"Notties Raid is live\" post on X. Final step before your wallet.",
-    points: 100,
+    points: 150,
     kind: "once",
     verify: "link",
     link: "https://x.com/thenottiesworld/status/2122676459995087292",
@@ -398,7 +398,7 @@ const TASKS = [
     id: "rt_post",
     title: "Retweet this tweet",
     description: "Repost our pinned \"Notties Raid is live\" post on X. Final step before your wallet.",
-    points: 100,
+    points: 150,
     kind: "once",
     verify: "link",
     link: "https://x.com/thenottiesworld/status/2122676459995087292",
@@ -438,7 +438,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 8;
+const ECONOMY_VERSION = 9;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
 
 export async function SEED(q: Q) {
@@ -477,13 +477,15 @@ export async function SEED(q: Q) {
     if (ver < 3) await q.query("update tasks set crates = 0");
     // v6: the "comment on the launch post" mission is gone.
     if (ver < 6) await q.query("update tasks set active = false where id = 'comment_post'");
+    // v9: missions pay 150 instead of 100.
+    if (ver < 9) await q.query("update tasks set points = 150 where points = 100");
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
     if (ver < 7) {
       await q.query("update tasks set title = 'Follow Notties' where id = 'follow_x'");
       await q.query("update tasks set title = 'Like this tweet', description = 'Like our \"Notties Raid is live\" tweet on X.', link = $1 where id = 'like_post'", ["https://x.com/thenottiesworld/status/2122676459995087292"]);
       await q.query("update tasks set title = 'Retweet this tweet', description = 'Retweet our \"Notties Raid is live\" tweet on X.', link = $1 where id = 'rt_post'", ["https://x.com/thenottiesworld/status/2122676459995087292"]);
       await q.query(
-        `insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('comment_post', 'Comment on this tweet', 'Drop a comment on our \"Notties Raid is live\" tweet on X.', 100, 'once', 'link', $1, 4, true)
+        `insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('comment_post', 'Comment on this tweet', 'Drop a comment on our \"Notties Raid is live\" tweet on X.', 150, 'once', 'link', $1, 4, true)
          on conflict (id) do update set title = excluded.title, description = excluded.description, link = excluded.link, active = true`,
         ["https://x.com/thenottiesworld/status/2122676459995087292"],
       );

@@ -136,9 +136,9 @@ export const DEFAULT_SETTINGS = {
   recipe: DEFAULT_RECIPE,
   points: {
     crate: 10,
-    onboarding: 100,
-    follow_x: 100,
-    link_wallet: 100,
+    onboarding: 150,
+    follow_x: 150,
+    link_wallet: 150,
     daily_checkin: 50,
     daily_gift: 50,
     referral: 150,
