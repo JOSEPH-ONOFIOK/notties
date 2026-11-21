@@ -438,7 +438,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 10;
+const ECONOMY_VERSION = 11;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
 
 export async function SEED(q: Q) {
@@ -492,6 +492,14 @@ export async function SEED(q: Q) {
           [id, title, description, link, sort],
         );
       }
+    }
+    // v11: the new tweet's missions are timed (24h for full reward), plus a comment mission.
+    if (ver < 11) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('comment_post2', 'Comment on the new tweet', 'Drop a comment on our latest post on X.', 150, 'once', 'link', $1, 5, true) on conflict (id) do nothing",
+        ["https://x.com/thenottiesworld/status/2124186158343086332"],
+      );
+      await q.query("update tasks set starts_at = now(), ends_at = now() + interval '24 hours', active = true where id in ('like_post2', 'rt_post2', 'quote_post2', 'comment_post2')");
     }
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
     if (ver < 7) {
