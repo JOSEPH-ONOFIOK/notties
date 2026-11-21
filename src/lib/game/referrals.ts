@@ -1,7 +1,8 @@
 import "server-only";
 import { query, type Q } from "../db";
 import type { Settings } from "./config";
-import { boostedPoints, sendMail } from "./mail";
+import { sendMail } from "./mail";
+import { addPoints } from "./core";
 
 /**
  * A referral pays out only after the new player has actually played: opened `referral_qualify_claims`
@@ -27,13 +28,13 @@ export async function checkReferralProgress(q: Q, refereeId: string, claimsNow: 
   await q.query("update referrals set status = 'verified', verified_at = now() where id = $1", [ref.id]);
   // The recruiter's bonus ($NOTTIES + free crates) arrives in their mailbox.
   const who = (await q.query<{ x_username: string }>("select x_username from users where id = $1", [refereeId])).rows[0]?.x_username ?? "a recruit";
+  // The bonus goes straight onto the recruiter's balance; the letter is just a heads-up.
+  const pts = await addPoints(q, ref.referrer_id, Number(settings.points.referral) || 0, "referral", refereeId, `referral:${ref.id}`);
+  if (settings.referral_crates > 0) await q.query("update users set crates = crates + $2 where id = $1", [ref.referrer_id, settings.referral_crates]);
   await sendMail(q, ref.referrer_id, {
     kind: "referral",
-    title: `@${who} joined your crew`,
-    body: "They cracked their first crates, so your recruit bonus is in.",
-    points: await boostedPoints(q, Number(settings.points.referral) || 0, "referral"),
-    crates: settings.referral_crates,
-    reason: "referral",
+    title: `@${who} joined your crew: +${pts.toLocaleString()} $NOTTIES`,
+    body: "Your recruit bonus is already in your balance.",
     idem: `referral:${ref.id}`,
   });
 }

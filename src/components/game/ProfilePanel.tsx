@@ -31,6 +31,8 @@ export type ProfileData = {
   refCode: string;
   recruits: number;
   recruitsPending: number;
+  recruitList: { username: string; status: string; at: string }[];
+  recruitPoints: number;
   referred: boolean;
   mail: number;
   suspended: boolean;
@@ -135,6 +137,29 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
             <div className="mt-1 text-[10px] uppercase tracking-widest text-muted">Your link · code {d.refCode}</div>
           </div>
           <CopyButton text={d.refLink} label="Copy link" className="btn btn-accent mt-3 w-full" />
+          <div className="mt-4">
+            <div className="flex items-baseline justify-between">
+              <span className="display text-sm">People you referred ({d.recruitList.length})</span>
+              {d.recruitPoints > 0 && (
+                <span className="display flex items-center gap-1 text-xs text-accent">
+                  <Coin size={13} /> +{d.recruitPoints.toLocaleString()} earned
+                </span>
+              )}
+            </div>
+            {d.recruitList.length === 0 ? (
+              <p className="mt-1 text-xs text-muted">No one yet. Share your link to start earning.</p>
+            ) : (
+              <ul className="mt-2 max-h-56 divide-y-2 divide-black/60 overflow-y-auto rounded-xl border-2 border-black bg-black/30">
+                {d.recruitList.map((r) => (
+                  <li key={r.username} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                    <span className="truncate">@{r.username}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${r.status === "verified" ? "bg-accent text-black" : "bg-raised text-muted"}`}>{r.status === "verified" ? "paid" : r.status === "pending" ? "waiting" : r.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {d.recruitsPending > 0 && <p className="mt-1 text-xs text-muted">&quot;Waiting&quot; means they haven&apos;t liked our launch tweet yet. You get paid the moment they do.</p>}
+          </div>
           {!d.referred && <ReferralCode suspended={d.suspended} />}
         </div>
 

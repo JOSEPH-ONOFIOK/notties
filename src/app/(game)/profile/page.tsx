@@ -32,6 +32,8 @@ export default async function Profile() {
           refCode: p.refCode,
           recruits: p.referralsVerified,
           recruitsPending: refs.pending,
+          recruitList: refs.recent.map((x) => ({ username: x.username, status: x.status, at: new Date(x.created_at).toISOString() })),
+          recruitPoints: refs.points,
           referred: p.referred,
           mail: p.mail,
           suspended: p.accountStatus !== "active",
