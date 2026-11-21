@@ -289,6 +289,7 @@ export async function listAllTasks() {
 
 export async function upsertTask(admin: string, t: { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean; crates?: number }) {
   const when = (v?: string | null) => (v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null);
+  const isNew = (await query("select 1 from tasks where id = $1", [t.id])).rows.length === 0;
   await query(
     `insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at, proof_hint, gives_book, crates) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      on conflict (id) do update set title = excluded.title, description = excluded.description, points = excluded.points, kind = excluded.kind, verify = excluded.verify, link = excluded.link, sort = excluded.sort, active = excluded.active, starts_at = excluded.starts_at, ends_at = excluded.ends_at, proof_hint = excluded.proof_hint, gives_book = excluded.gives_book, crates = excluded.crates`,
@@ -297,6 +298,12 @@ export async function upsertTask(admin: string, t: { id: string; title: string; 
   bust("book:");
   bust("tasks");
   await audit(admin, "upsert_task", t.id, t);
+  // A brand-new live mission: tell every registered player.
+  if (isNew && t.active) {
+    const { broadcastMail } = await import("./mail");
+    const timed = !!when(t.ends_at);
+    await broadcastMail(null, `task:${t.id}`, timed ? "A new timed mission is live" : "New mission is up", timed ? `"${t.title}" is live now. Complete it quick to earn $NOTTIES before the timer runs out.` : `"${t.title}" is live now. Complete it to earn $NOTTIES.`);
+  }
   // Players who already did this task and assembled get their book right away.
   if (t.gives_book) {
     const { backfillBooks } = await import("./book");

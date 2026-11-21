@@ -438,7 +438,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 11;
+const ECONOMY_VERSION = 12;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
 
 export async function SEED(q: Q) {
@@ -500,6 +500,15 @@ export async function SEED(q: Q) {
         ["https://x.com/thenottiesworld/status/2124186158343086332"],
       );
       await q.query("update tasks set starts_at = now(), ends_at = now() + interval '24 hours', active = true where id in ('like_post2', 'rt_post2', 'quote_post2', 'comment_post2')");
+    }
+    // v12: those missions run 8 hours, and every registered player gets a letter about them.
+    if (ver < 12) {
+      await q.query("update tasks set ends_at = coalesce(starts_at, now()) + interval '8 hours' where id in ('like_post2', 'rt_post2', 'quote_post2', 'comment_post2')");
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', 'A new timed mission is live', 'Like, retweet, quote and comment on our new post. Complete them quick to earn $NOTTIES before the timer runs out.', now(), 'bc:post2:' || id
+           from users where status = 'active' on conflict (idem_key) do nothing`,
+      );
     }
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
     if (ver < 7) {

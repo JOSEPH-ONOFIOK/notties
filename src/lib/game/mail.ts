@@ -68,3 +68,16 @@ export async function claimMail(userId: string, id?: string) {
     return { points, crates, letters: rows.length };
   });
 }
+
+/**
+ * A letter to every registered (active) player at once, e.g. "a new timed mission is live".
+ * One SQL statement; `key` makes it safe to call twice (each player gets it once).
+ */
+export async function broadcastMail(q: Q | null, key: string, title: string, body: string) {
+  const sql = `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+               select id, 'system', $1, $2, now(), $3 || ':' || id from users where status = 'active'
+               on conflict (idem_key) do nothing`;
+  const params = [title.slice(0, 140), body.slice(0, 500), `bc:${key}`];
+  if (q) await q.query(sql, params);
+  else await query(sql, params);
+}
