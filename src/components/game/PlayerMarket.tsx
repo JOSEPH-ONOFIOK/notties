@@ -134,13 +134,13 @@ export function PlayerMarket({ listings, inventory, points, enabled, suspended }
           <h3 className="display mb-2 text-lg">
             For sale <span className="text-muted">({sale.length})</span>
           </h3>
-          {sale.length ? <ul className="card divide-y-2 divide-black/60 overflow-hidden p-0">{sale.map(row)}</ul> : <p className="card p-4 text-sm text-muted">Nothing listed yet. Be the first to sell a spare.</p>}
+          {sale.length ? <ul className="card max-h-[360px] divide-y-2 divide-black/60 overflow-y-auto overscroll-contain p-0 sm:max-h-[440px]">{sale.map(row)}</ul> : <p className="card p-4 text-sm text-muted">Nothing listed yet. Be the first to sell a spare.</p>}
         </section>
         <section>
           <h3 className="display mb-2 text-lg">
             Wanted <span className="text-muted">({wanted.length})</span>
           </h3>
-          {wanted.length ? <ul className="card divide-y-2 divide-black/60 overflow-hidden p-0">{wanted.map(row)}</ul> : <p className="card p-4 text-sm text-muted">No offers yet. Post one for the part you need.</p>}
+          {wanted.length ? <ul className="card max-h-[360px] divide-y-2 divide-black/60 overflow-y-auto overscroll-contain p-0 sm:max-h-[440px]">{wanted.map(row)}</ul> : <p className="card p-4 text-sm text-muted">No offers yet. Post one for the part you need.</p>}
         </section>
       </div>
     </div>
