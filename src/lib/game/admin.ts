@@ -181,7 +181,7 @@ export async function audit(admin: string, action: string, target?: string, deta
   await query("insert into admin_actions (admin, action, target, detail) values ($1,$2,$3,$4)", [admin, action, target ?? null, JSON.stringify(detail ?? {})]);
 }
 
-export async function searchPlayers(qstr: string, limit = 30) {
+export async function searchPlayers(qstr: string, limit = 30, offset = 0) {
   const like = `%${qstr.trim().replace(/^@/, "").toLowerCase()}%`;
   return (
     await query<UserRow & { forged: boolean; wallet: string | null; risk: number; recruits: number; recruits_paid: number; referrer: string | null }>(
@@ -193,10 +193,17 @@ export async function searchPlayers(qstr: string, limit = 30) {
          from users u left join forge_completions f on f.user_id = u.id
          left join wallets w on w.user_id = u.id and w.is_primary
         where $1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2
-        order by u.id desc limit $3`,
-      [like, qstr.trim(), limit],
+        order by u.id desc limit $3 offset $4`,
+      [like, qstr.trim(), limit, offset],
     )
   ).rows;
+}
+
+/** How many players match a search (for paging the admin list). */
+export async function countPlayers(qstr: string) {
+  const like = `%${qstr.trim().replace(/^@/, "").toLowerCase()}%`;
+  const { rows } = await query<{ n: number }>("select count(*)::int as n from users u where $1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2", [like, qstr.trim()]);
+  return rows[0]?.n ?? 0;
 }
 
 export async function playerDetail(id: string) {

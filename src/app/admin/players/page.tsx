@@ -1,19 +1,42 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Nav";
 import { PageTitle, fmtDate } from "@/components/ui";
-import { searchPlayers } from "@/lib/game/admin";
+import { countPlayers, searchPlayers } from "@/lib/game/admin";
 import { StatusButton } from "@/components/admin/Controls";
 
-export default async function Players({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q = "" } = await searchParams;
-  const rows = await searchPlayers(q, 50);
+const PER_PAGE = 100;
+
+export default async function Players({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const { q = "", page: pg = "1" } = await searchParams;
+  const page = Math.max(1, Number(pg) || 1);
+  const [rows, total] = await Promise.all([searchPlayers(q, PER_PAGE, (page - 1) * PER_PAGE), countPlayers(q)]);
+  const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const href = (n: number) => `/admin/players?${new URLSearchParams({ ...(q ? { q } : {}), page: String(n) })}`;
+  const pager = pages > 1 && (
+    <div className="my-3 flex flex-wrap items-center gap-2 text-sm">
+      {page > 1 ? (
+        <Link href={href(page - 1)} className="btn btn-ghost !min-h-[36px] !px-3 text-xs">
+          ← Previous
+        </Link>
+      ) : null}
+      <span className="text-muted">
+        Page {page} of {pages}
+      </span>
+      {page < pages ? (
+        <Link href={href(page + 1)} className="btn btn-ghost !min-h-[36px] !px-3 text-xs">
+          Next →
+        </Link>
+      ) : null}
+    </div>
+  );
   return (
     <>
-      <PageTitle kicker="Admin" title="Players" />
+      <PageTitle kicker="Admin" title="Players" sub={`${total.toLocaleString()} player${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}. Showing ${rows.length ? (page - 1) * PER_PAGE + 1 : 0}–${(page - 1) * PER_PAGE + rows.length}.`} right={<a href="/api/admin?export=players" className="btn btn-ghost text-sm">Download all (CSV)</a>} />
       <form className="mb-4 flex gap-2">
         <input name="q" defaultValue={q} placeholder="x username, player code or x id" className="max-w-md" />
         <button className="btn btn-ghost">Search</button>
       </form>
+      {pager}
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-muted">
@@ -72,6 +95,7 @@ export default async function Players({ searchParams }: { searchParams: Promise<
           </tbody>
         </table>
       </div>
+      {pager}
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
 import { addAllowlist, adjustPlayer, adminIdentity, audit, can, exportEligibility, freezeSnapshot, removeAllowlist, resolveRisk, setAdminRole, setUserStatus, snapshotEntries, upsertTask, type Admin, type Role, archiveExpiredTasks } from "@/lib/game/admin";
 import { setSetting } from "@/lib/game/core";
 import { createEvent, deleteEvent } from "@/lib/game/events";
@@ -24,6 +25,18 @@ export async function GET(req: Request) {
     const rows = await snapshotEntries(id);
     await audit(admin.name, "export_snapshot", id, { rows: rows.length });
     return csv(`notties-snapshot-${id}.csv`, ["wallet,phase,allocation,sources", ...rows.map((r) => `${r.address},${r.phase},${r.allocation},${r.sources}`)].join("\n"));
+  }
+  if (what === "players") {
+    // Every player with their wallet, balance, progress and referrals (handy for checking lists).
+    const { rows } = await query<{ x_username: string; ref_code: string; status: string; points: string; claims: number; wallet: string | null; forged: boolean; recruits: number; referrer: string | null; created_at: string }>(
+      `select u.x_username, u.ref_code, u.status, u.points::text, u.claims, w.address as wallet, (f.id is not null) as forged,
+              (select count(*)::int from referrals r where r.referrer_id = u.id and r.status = 'verified') as recruits,
+              (select x_username from users ru where ru.id = u.referred_by) as referrer, u.created_at
+         from users u left join wallets w on w.user_id = u.id and w.is_primary left join forge_completions f on f.user_id = u.id
+        order by u.id`,
+    );
+    await audit(admin.name, "export_players", undefined, { rows: rows.length });
+    return csv(`notties-players-${new Date().toISOString().slice(0, 10)}.csv`, ["x_username,ref_code,status,notties,crates_opened,wallet,forged,recruits_paid,referred_by,joined", ...rows.map((r) => [r.x_username, r.ref_code, r.status, r.points, r.claims, r.wallet ?? "", r.forged ? "yes" : "no", r.recruits, r.referrer ?? "", new Date(r.created_at).toISOString()].join(","))].join("\n"));
   }
   return NextResponse.json({ ok: true, admin });
 }
