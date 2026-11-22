@@ -438,7 +438,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 12;
+const ECONOMY_VERSION = 13;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
 
 export async function SEED(q: Q) {
@@ -507,6 +507,25 @@ export async function SEED(q: Q) {
       await q.query(
         `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
          select id, 'system', 'A new timed mission is live', 'Like, retweet, quote and comment on our new post. Complete them quick to earn $NOTTIES before the timer runs out.', now(), 'bc:post2:' || id
+           from users where status = 'active' on conflict (idem_key) do nothing`,
+      );
+    }
+    // v13: third post (GTD free mint), timed 8h, and everyone gets a letter.
+    if (ver < 13) {
+      const add = [
+        ["like_post3", "Like the free mint post", "Like our \"NOTTIES GTD FREE MINT\" post on X."],
+        ["rt_post3", "Retweet the free mint post", "Retweet our \"NOTTIES GTD FREE MINT\" post on X."],
+        ["comment_post3", "Drop your wallet on the free mint post", "Reply to our \"NOTTIES GTD FREE MINT\" post with your wallet address."],
+      ];
+      for (const [id, title, description] of add) {
+        await q.query(
+          "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,150,'once','link',$4,5,true, now(), now() + interval '8 hours') on conflict (id) do nothing",
+          [id, title, description, "https://x.com/thenottiesworld/status/2124504031427166217"],
+        );
+      }
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', 'A new timed mission is live', 'Like, retweet and drop your wallet on our new free mint post. Complete them quick to earn $NOTTIES before the timer runs out.', now(), 'bc:post3:' || id
            from users where status = 'active' on conflict (idem_key) do nothing`,
       );
     }
