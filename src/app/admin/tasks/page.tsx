@@ -11,13 +11,12 @@ export default async function TasksAdmin() {
   const [tasks, settings] = await Promise.all([listAllTasks() as unknown as Promise<T[]>, getSettings()]);
   const now = nowMs();
   const at = (v: string | null) => (v ? Date.parse(v) : null);
-  const lateMs = settings.late_window_hours * 3600_000;
   const started = (t: T) => (at(t.starts_at) ?? 0) <= now;
   const live = tasks.filter((t) => t.active && t.ends_at && started(t) && at(t.ends_at)! > now);
-  const late = tasks.filter((t) => t.active && t.ends_at && at(t.ends_at)! <= now && at(t.ends_at)! + lateMs > now);
   const scheduled = tasks.filter((t) => t.active && !started(t));
-  const always = tasks.filter((t) => t.active && !t.ends_at && started(t));
-  const expired = tasks.filter((t) => t.active && t.ends_at && at(t.ends_at)! + lateMs <= now);
+  // A timed mission whose timer ended is a normal mission now.
+  const always = tasks.filter((t) => t.active && started(t) && (!t.ends_at || at(t.ends_at)! <= now));
+  const expired: T[] = [];
   const archived = tasks.filter((t) => !t.active);
   const ed = { latePct: settings.late_reward_pct, lateHours: settings.late_window_hours };
 
@@ -41,15 +40,14 @@ export default async function TasksAdmin() {
       <PageTitle
         kicker="Admin"
         title="Missions"
-        sub={`Give each mission a deadline. Before it, players get the full reward. After it, they get ${settings.late_reward_pct}% for ${settings.late_window_hours} more hours, then the mission disappears. Rewards go to the player's mailbox.`}
+        sub="Give a mission a timer to show it under Timed missions. When the timer ends it moves down to the regular missions at full reward. Untick active to remove a mission. Rewards go to the player's mailbox."
       />
       <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
         <TaskEditor {...ed} />
       </div>
       {group("Live (full reward)", live)}
-      {group(`Past deadline (${settings.late_reward_pct}% reward)`, late, `Still claimable until ${settings.late_window_hours}h after the deadline.`)}
       {group("Scheduled", scheduled, "Will appear when their round starts.")}
-      {group("Always on", always, "No round. Built-in ids (onboarding, follow_x, link_wallet, daily_checkin) take their $NOTTIES from Economy.")}
+      {group("Regular missions", always, "No timer (or the timer ended). Built-in ids (onboarding, follow_x, link_wallet, daily_checkin) take their $NOTTIES from Economy.")}
       {expired.length > 0 && (
         <section className="mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">

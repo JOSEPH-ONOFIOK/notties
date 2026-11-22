@@ -17,8 +17,6 @@ export default async function Economy() {
         <NumberField k="crate_buy_cooldown_minutes" label="Minutes between bought crates" value={s.crate_buy_cooldown_minutes} hint="60 = a player can buy one crate per hour." min={0} />
         <NumberField k="crate_buys_per_day" label="Bought crates per day (max)" value={s.crate_buys_per_day} hint="Per player, resets at midnight UTC. 0 turns buying off." min={0} />
         <TextSetting k="streak_bonus" label="Roll call streak rewards" value={(s.streak_bonus ?? []).join(", ")} hint="$NOTTIES for day 1, 2, 3… of a streak. After the last number it keeps paying that." parse="numbers" />
-        <NumberField k="late_reward_pct" label="Late mission reward (%)" value={s.late_reward_pct} hint="What a mission pays after its deadline. 50 = half (100 becomes 50)." min={0} />
-        <NumberField k="late_window_hours" label="Late window (hours)" value={s.late_window_hours} hint="How long a mission stays up after its deadline at the late reward. Then it disappears." min={0} />
         <NumberField k="welcome_crates" label="Welcome gift (free crates)" value={s.welcome_crates} hint="Sent to every new player's mailbox when they sign up. 0 = none." min={0} />
         <NumberField k="referral_crates" label="Recruit bonus (free crates)" value={s.referral_crates} hint="Sent to the recruiter's mailbox, with the $NOTTIES bonus, when a recruit plays." min={0} />
         <NumberField k="referral_qualify_claims" label="Referral: crates the recruit must open" value={s.referral_qualify_claims} hint="0 = no crate requirement. The recruiter is paid once the recruit has opened this many crates AND finished the recruit mission below." min={0} />

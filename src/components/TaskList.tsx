@@ -198,7 +198,7 @@ export function TaskList({ tasks, suspended, streak, latePct }: { tasks: TaskIte
           <div className="h-full bg-accent transition-[width] duration-700" style={{ width: `${tasks.length ? (doneCount / tasks.length) * 100 : 0}%` }} />
         </div>
       </div>
-      {section("round", "Timed missions", timed, `Beat the timer for the full reward. Late ones pay ${latePct}%.`, "No timed missions right now. New ones drop here, so check back often.")}
+      {section("round", "Timed missions", timed, "Grab them before the timer ends. After that they move down to the regular missions.", "No timed missions right now. New ones drop here, so check back often.")}
       {daily.length > 0 && section("daily", "Daily", daily)}
       {once.length > 0 && section(undefined, "Missions", once)}
       {finished.length > 0 && (

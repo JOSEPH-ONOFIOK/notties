@@ -130,10 +130,10 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
         {/* referral */}
         <div className="card p-5">
           <div id="referrals" className="display scroll-mt-32 text-xl">Referral</div>
-          <p className="mt-1 text-sm text-muted">Invite friends. You earn $NOTTIES once they join and like our launch tweet.{" "}
+          <p className="mt-1 text-sm text-muted">Invite friends. You earn $NOTTIES once they join and like our free mint post.{" "}
             {(d.recruits > 0 || d.recruitsPending > 0) && (
               <b className="text-white">
-                {d.recruits} paid{d.recruitsPending ? `, ${d.recruitsPending} waiting for them to like the tweet` : ""}.
+                {d.recruits} paid{d.recruitsPending ? `, ${d.recruitsPending} waiting for them to like the free mint post` : ""}.
               </b>
             )}</p>
           <div className="mt-3 rounded-xl border-2 border-black bg-black/40 p-3">
@@ -162,7 +162,7 @@ export function ProfilePanel({ d }: { d: ProfileData }) {
                 ))}
               </ul>
             )}
-            {d.recruitsPending > 0 && <p className="mt-1 text-xs text-muted">&quot;Waiting&quot; means they haven&apos;t liked our launch tweet yet. You get paid the moment they do.</p>}
+            {d.recruitsPending > 0 && <p className="mt-1 text-xs text-muted">&quot;Waiting&quot; means they haven&apos;t liked our free mint post yet. You get paid the moment they do.</p>}
           </div>
           {!d.referred && <ReferralCode suspended={d.suspended} />}
         </div>

@@ -217,7 +217,7 @@ export default async function Wiki() {
 
           <Chapter id="missions" n={7} title="Missions & mailbox">
             <p>
-              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME}. Timed missions have a countdown: finish before it ends for the full reward. After that they pay {s.late_reward_pct}% for a while, then disappear.
+              Jobs are pinned up on the <b>Mission Board</b>. Each one pays {POINTS_NAME}. Timed missions have a countdown: finish before it ends for the full reward. After that they move down to the regular missions.
             </p>
             <p className="mt-3">
               Rewards go to your <b>mailbox</b>, the envelope at the top of the screen. A red number means something is waiting. Open it and tap <b>Claim</b> to get your {POINTS_NAME}, then buy crates on the <b>Hunt</b> page. Cards friends send you and finished swaps show up there too.
@@ -247,7 +247,7 @@ export default async function Wiki() {
                 ["Onboarding mission", P.onboarding],
                 ["Following on X", P.follow_x],
                 ["Linking a wallet", P.link_wallet],
-                ["A recruit who joins and likes the tweet", P.referral],
+                ["A recruit who joins and likes the free mint post", P.referral],
                 ["Assembling your Nottie", P.forge],
               ].map(([k, v]) => (
                 <li key={k as string} className="flex items-center justify-between rounded-xl border-[3px] border-black bg-raised px-3 py-2">
@@ -340,7 +340,7 @@ export default async function Wiki() {
 
           <Chapter id="recruit" n={13} title="Recruiting">
             <p>
-              Your <b>Recruit Office</b> has a personal link. When someone joins through it and likes our launch tweet (the &quot;Like this tweet&quot; mission), you get <b>+{P.referral} {POINTS_NAME}</b> in your mailbox. Friends who signed up without your link can enter your code on their Profile page. Signing up and leaving doesn&apos;t count.
+              Your <b>Recruit Office</b> has a personal link. When someone joins through it and likes our free mint post (the &quot;Like the free mint post&quot; mission), you get <b>+{P.referral} {POINTS_NAME}</b> in your mailbox. Friends who signed up without your link can enter your code on their Profile page. Signing up and leaving doesn&apos;t count.
             </p>
             <p className="mt-2 text-muted">Recruiting yourself, or a pile of fake accounts, gets them rejected and you flagged. I can tell.</p>
           </Chapter>
@@ -372,7 +372,7 @@ export default async function Wiki() {
               {[
                 ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
                 ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES. Your welcome crate waits on the Hunt page and have no timer."],
-                ["What if I miss a mission's timer?", `You can still do it for a while, but it pays ${s.late_reward_pct}% (100 becomes ${s.late_reward_pct}). Then it disappears. New missions drop often, so check the Earn page.`],
+                ["What if I miss a mission's timer?", "No problem. When the timer ends, the mission moves down to the regular missions and still pays the full reward."],
                 ["Do I need a wallet to play?", "No. Play first. Your wallet is the last step: once your Nottie is built, follow, like and comment on our launch post, then submit your wallet to lock your free mint."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],
                 ["I'm stuck on one part. Help?", "Trade for it on the Black Market, or keep hunting. Every crate is a fresh roll."],

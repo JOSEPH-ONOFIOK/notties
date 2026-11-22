@@ -29,8 +29,11 @@ const ONCE_DAY = "1970-01-01";
 /** What a mission pays after its deadline (late_reward_pct of the full reward). */
 export const latePoints = (points: number, settings: Settings) => Math.round((Number(points) * settings.late_reward_pct) / 100);
 
-/** SQL: the mission is open (started, and not past deadline + late window). $LATE = late window in hours. */
-const OPEN = (p: string) => `and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at + make_interval(hours => ${p}::int) > now())`;
+/**
+ * SQL: the mission is open once it has started. A timed mission whose timer ran out stays
+ * claimable as a normal mission, so the deadline doesn't close it. (The parameter is unused.)
+ */
+const OPEN = (p: string) => `and (starts_at is null or starts_at <= now()) and ${p}::int >= 0`;
 const todayUtc = () => new Date().toISOString().slice(0, 10);
 
 export async function listTasks(userId: string) {
@@ -44,17 +47,15 @@ export async function listTasks(userId: string) {
   // The wallet mission only appears once the Nottie is built (wallets open last).
   const forged = (await query("select 1 from forge_completions where user_id = $1", [userId])).rows.length > 0;
   const today = todayUtc();
-  const lateMs = settings.late_window_hours * 3600_000;
   return tasks
     .filter((t) => forged || t.verify !== "wallet")
-    .filter((t) => (!t.starts_at || new Date(t.starts_at) <= new Date()) && (!t.ends_at || Date.parse(t.ends_at) + lateMs > Date.now()))
+    .filter((t) => !t.starts_at || new Date(t.starts_at) <= new Date())
     .map((t) => {
-      // Past the deadline: still claimable for a while, at a reduced reward.
-      const lateFlag = !!t.ends_at && Date.parse(t.ends_at) <= Date.now();
-      const closes = t.ends_at ? new Date(Date.parse(t.ends_at) + lateMs).toISOString() : null;
+      // When a timed mission's timer runs out it simply becomes a normal mission (full reward).
+      const expired = !!t.ends_at && Date.parse(t.ends_at) <= Date.now();
       const completed = done.some((d) => d.task_id === t.id && (t.kind === "once" || d.day === today));
       const clicked = clicks.find((c) => c.task_id === t.id)?.clicked_at ?? null;
-      return { ...t, points: lateFlag ? latePoints(t.points, settings) : t.points, fullPoints: t.points, late: lateFlag, closes_at: closes, completed, clicked, submission: subs.find((x) => x.task_id === t.id)?.status ?? null };
+      return { ...t, ends_at: expired ? null : t.ends_at, late: false, completed, clicked, submission: subs.find((x) => x.task_id === t.id)?.status ?? null };
     });
 }
 
@@ -81,9 +82,9 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
     await q.query("update users set streak = $2, best_streak = greatest(best_streak, $2), last_checkin = $3 where id = $1", [userId, streak, utcDay()]);
     if (streak === 7 || streak === 30 || streak === 100) await pushFeed(q, userId, "streak", { days: streak });
   }
-  // Done after the deadline? Half pay (late_reward_pct).
-  const late = !!t.ends_at && at.getTime() >= Date.parse(t.ends_at);
-  if (late) pts = latePoints(pts, settings);
+  // No late penalty: after its timer a mission is just a normal mission at full reward.
+  const late = false;
+  void at;
   // The reward goes to the mailbox: $NOTTIES (boosted now if an event is live) plus free crates.
   pts = await boostedPoints(q, pts, `task:${taskId}`);
   const crates = Math.max(0, Number(t.crates) || 0);

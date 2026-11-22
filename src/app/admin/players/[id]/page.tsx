@@ -69,7 +69,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           )}
         </Section>
         <Section title={`Referrals made (${d.referrals.filter((r) => r.status === "verified").length} paid / ${d.referrals.length})`}>
-          {d.referrals.length === 0 ? <Muted>None</Muted> : d.referrals.map((r, i) => <Row key={i} l={`@${r.x_username}`} r={r.status === "verified" ? "paid" : r.status === "pending" ? "waiting (hasn't liked the tweet)" : String(r.status)} t={fmtDateTime(r.created_at as string)} />)}
+          {d.referrals.length === 0 ? <Muted>None</Muted> : d.referrals.map((r, i) => <Row key={i} l={`@${r.x_username}`} r={r.status === "verified" ? "paid" : r.status === "pending" ? "waiting (hasn't liked the free mint post)" : String(r.status)} t={fmtDateTime(r.created_at as string)} />)}
         </Section>
         <Section title="Trades">
           {d.trades.length === 0 ? (

@@ -9,7 +9,7 @@ export function EarnStrip({ points, streakTop, referral, forge, cratePrice, comp
     { icon: TbClipboardCheck, title: "Missions", pays: "150 each", body: "Like, repost, comment, follow. Beat the timer for full pay.", href: "/tasks#round", cta: "Do missions" },
     { icon: TbCalendarCheck, title: "Daily check-in", pays: `${points.daily_checkin}–${streakTop}`, body: "Show up every day. Your streak makes it bigger.", href: "/tasks#daily", cta: "Check in" },
     { icon: TbGift, title: "Daily gift", pays: String(points.daily_gift), body: "Send a spare card to another player today.", href: "/trade?tab=gift", cta: "Gift a card" },
-    { icon: TbUsers, title: "Invite friends", pays: `${referral} each`, body: "When a friend joins with your link and likes our tweet.", href: "/profile", cta: "Get my link" },
+    { icon: TbUsers, title: "Invite friends", pays: `${referral} each`, body: "When a friend joins with your link and likes our free mint post.", href: "/profile", cta: "Get my link" },
     { icon: TbFlask2, title: "Build your Nottie", pays: String(forge), body: "Collect all 7 parts and assemble.", href: "/forge", cta: "To the lab" },
   ];
   return (

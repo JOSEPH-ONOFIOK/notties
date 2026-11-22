@@ -16,7 +16,7 @@ export default async function Referrals() {
 
   return (
     <>
-      <PageTitle kicker="Referrals" title="Recruit troublemakers" sub={`${s.points.referral} ${POINTS_NAME} per recruit, sent to your mailbox once they join with your link and like our launch tweet. A click alone doesn't count.`} />
+      <PageTitle kicker="Referrals" title="Recruit troublemakers" sub={`${s.points.referral} ${POINTS_NAME} per recruit, sent to your mailbox once they join with your link and like our free mint post. A click alone doesn't count.`} />
 
       <div className="card p-6">
         <div className="text-xs font-bold uppercase tracking-[0.25em] text-accent">Your link</div>
@@ -35,7 +35,7 @@ export default async function Referrals() {
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Recruited" value={r.total} />
         <Stat label="Paid" value={r.verified} accent />
-        <Stat label="Waiting" value={r.pending} hint="haven't liked the tweet yet" />
+        <Stat label="Waiting" value={r.pending} hint="haven't liked the free mint post yet" />
         <Stat label={`${POINTS_NAME} earned`} value={r.points.toLocaleString()} />
       </div>
 

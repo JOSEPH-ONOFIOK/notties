@@ -199,7 +199,7 @@ export function TaskEditor({ initial, latePct, lateHours }: { initial?: TaskDraf
       <div className="display text-xl">{initial ? `Edit · ${initial.id}` : "New mission"}</div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
         <label className="text-xs sm:col-span-2">
-          <span className="text-muted">deadline: full reward until then, {latePct}% for {lateHours}h after, then it disappears</span>
+          <span className="text-muted">timer: shows under Timed missions until then, then moves to regular missions (full reward)</span>
           <select value={dur} onChange={(e) => pickDuration(e.target.value)}>
             {DURATIONS.map(([label, h]) => (
               <option key={h} value={`+${h}`}>

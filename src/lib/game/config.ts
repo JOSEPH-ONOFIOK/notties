@@ -119,7 +119,7 @@ export const DEFAULT_SETTINGS = {
   // Missions with a deadline pay in full until it, then late_reward_pct of the reward for
   // late_window_hours more, then disappear.
   // Missions a player must finish (after building their Nottie) before they can submit a wallet.
-  wallet_tasks: ["follow_x", "like_post", "rt_post"] as string[],
+  wallet_tasks: ["follow_x", "like_post3", "rt_post3"] as string[],
   late_reward_pct: 50,
   late_window_hours: 24,
   // Marketplace: buy parts directly with $NOTTIES. Rare parts cost a lot on purpose.
@@ -130,7 +130,7 @@ export const DEFAULT_SETTINGS = {
   referral_crates: 0,
   // Optional: a mission a recruit must also finish (e.g. "engage the launch post") before the
   // recruiter is paid. Empty = opening crates is enough.
-  referral_task: "like_post",
+  referral_task: "like_post3",
   drop_weights: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.weight])) as Record<FragmentType, number>,
   pawn_prices: Object.fromEntries(FRAGMENTS.map((f) => [f.type, f.pawn])) as Record<FragmentType, number>,
   recipe: DEFAULT_RECIPE,

@@ -438,7 +438,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 13;
+const ECONOMY_VERSION = 15;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
 
 export async function SEED(q: Q) {
@@ -528,6 +528,26 @@ export async function SEED(q: Q) {
          select id, 'system', 'A new timed mission is live', 'Like, retweet and drop your wallet on our new free mint post. Complete them quick to earn $NOTTIES before the timer runs out.', now(), 'bc:post3:' || id
            from users where status = 'active' on conflict (idem_key) do nothing`,
       );
+    }
+    // v14: free mint post gets a QRT mission; all four close in 12 hours. Letter to everyone.
+    if (ver < 14) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('quote_post3', 'Quote the free mint post', 'Quote our \"NOTTIES GTD FREE MINT\" post with the ready-made line (or your own).', 150, 'once', 'link', $1, 5, true) on conflict (id) do nothing",
+        ["https://x.com/intent/post?text=Want+a+NOTTIES+GTD+FREE+MINT%3F+%F0%9F%9F%A2+Earning+%24NOTTIES%2C+opening+crates+and+forging+my+Nottie+on+nottiesraid.fun+with+%40thenottiesworld&url=https%3A%2F%2Fx.com%2Fthenottiesworld%2Fstatus%2F2124504031427166217"],
+      );
+      await q.query("update tasks set title = 'Comment on the free mint post' where id = 'comment_post3'");
+      await q.query("update tasks set starts_at = now(), ends_at = now() + interval '12 hours', active = true where id in ('like_post3', 'rt_post3', 'comment_post3', 'quote_post3')");
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', 'A new timed mission is live', 'Comment, like, retweet and quote our free mint post. 12 hours to grab them. Complete them quick to earn $NOTTIES.', now(), 'bc:post3b:' || id
+           from users where status = 'active' on conflict (idem_key) do nothing`,
+      );
+    }
+    // v15: retire the earlier tweet missions; wallet steps and referrals now use the free mint post.
+    if (ver < 15) {
+      await q.query("update tasks set active = false where id in ('like_post', 'rt_post', 'comment_post', 'like_post2', 'rt_post2', 'quote_post2', 'comment_post2')");
+      await q.query(`insert into settings (key, value) values ('wallet_tasks', '["follow_x","like_post3","rt_post3"]'::jsonb) on conflict (key) do update set value = excluded.value`);
+      await q.query(`insert into settings (key, value) values ('referral_task', '"like_post3"'::jsonb) on conflict (key) do update set value = excluded.value`);
     }
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
     if (ver < 7) {
