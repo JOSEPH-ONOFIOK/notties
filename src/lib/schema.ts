@@ -561,6 +561,31 @@ export async function SEED(q: Q) {
       );
     }
   }
+  // 20k $NOTTIES giveaway (2026-11-23): like / retweet / quote, 300 each, 24h timer, letter to everyone.
+  // Has its own one-time flag instead of an ECONOMY_VERSION bump, so admin economy edits are kept.
+  // The giveaway post link isn't out yet, so the missions point at the X profile for now.
+  const giveaway = (await q.query("select 1 from settings where key = 'giveaway_missions_v1'")).rows.length > 0;
+  if (!giveaway) {
+    const profile = "https://x.com/thenottiesworld";
+    const quoteText = "Entering the 20k $NOTTIES giveaway 🟢 Completing missions on nottiesraid.fun with @thenottiesworld";
+    const add = [
+      ["like_giveaway", "Like the giveaway post", "Like our \"20k $NOTTIES GIVEAWAY\" post on X.", profile],
+      ["rt_giveaway", "Retweet the giveaway post", "Retweet our \"20k $NOTTIES GIVEAWAY\" post on X.", profile],
+      ["quote_giveaway", "Quote the giveaway post", "Quote our \"20k $NOTTIES GIVEAWAY\" post with the ready-made line (or your own).", `https://x.com/intent/post?text=${encodeURIComponent(quoteText)}`],
+    ];
+    for (const [id, title, description, link] of add) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,300,'once','link',$4,4,true, now(), now() + interval '24 hours') on conflict (id) do nothing",
+        [id, title, description, link],
+      );
+    }
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', '20k $NOTTIES giveaway missions are live', 'Like, retweet and quote our giveaway post. 300 $NOTTIES each, and 24 hours to grab them.', now(), 'bc:giveaway1:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into settings (key, value) values ('giveaway_missions_v1', 'true'::jsonb) on conflict (key) do nothing");
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
