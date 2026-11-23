@@ -602,6 +602,23 @@ export async function SEED(q: Q) {
     );
     await q.query("insert into settings (key, value) values ('giveaway_missions_v2', 'true'::jsonb) on conflict (key) do nothing");
   }
+  // Giveaway comment mission: 300, closes at the same time as the other giveaway missions. Letter to everyone.
+  const giveaway3 = (await q.query("select 1 from settings where key = 'giveaway_missions_v3'")).rows.length > 0;
+  if (!giveaway3) {
+    await q.query(
+      `insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at)
+       select 'comment_giveaway', 'Comment on the giveaway post', 'Drop a comment on our "20k $NOTTIES GIVEAWAY" post on X.', 300, 'once', 'link', $1, 4, true,
+              now(), coalesce((select ends_at from tasks where id = 'like_giveaway'), now() + interval '24 hours')
+       on conflict (id) do nothing`,
+      ["https://x.com/thenottiesworld/status/2124871892448469289"],
+    );
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'New giveaway mission: comment on the post', 'Drop a comment on the 20k $NOTTIES giveaway post for another 300 $NOTTIES. It closes with the other giveaway missions, so be quick.', now(), 'bc:giveaway3:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into settings (key, value) values ('giveaway_missions_v3', 'true'::jsonb) on conflict (key) do nothing");
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
