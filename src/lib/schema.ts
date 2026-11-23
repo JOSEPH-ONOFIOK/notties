@@ -586,6 +586,22 @@ export async function SEED(q: Q) {
     );
     await q.query("insert into settings (key, value) values ('giveaway_missions_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
+  // The giveaway post is out: point the missions at it (timers untouched) and send everyone a second letter.
+  const giveaway2 = (await q.query("select 1 from settings where key = 'giveaway_missions_v2'")).rows.length > 0;
+  if (!giveaway2) {
+    const post = "https://x.com/thenottiesworld/status/2124871892448469289";
+    const quoteText = "Entering the 20k $NOTTIES giveaway 🟢 Completing missions on nottiesraid.fun with @thenottiesworld";
+    await q.query("update tasks set link = $1 where id in ('like_giveaway', 'rt_giveaway')", [post]);
+    await q.query("update tasks set link = $1 where id = 'quote_giveaway'", [
+      `https://x.com/intent/post?text=${encodeURIComponent(quoteText)}&url=${encodeURIComponent(post)}`,
+    ]);
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'The 20k $NOTTIES giveaway post is live: missions updated', 'Like, retweet and quote the giveaway post. 300 $NOTTIES each. Complete the missions before the timer runs out.', now(), 'bc:giveaway2:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into settings (key, value) values ('giveaway_missions_v2', 'true'::jsonb) on conflict (key) do nothing");
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
