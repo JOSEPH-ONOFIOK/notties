@@ -472,7 +472,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 18;
+const ECONOMY_VERSION = 19;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task", "runner_goo_value", "runner_daily_cap", "runner_share_reward"] as const;
 
 export async function SEED(q: Q) {
@@ -635,6 +635,21 @@ export async function SEED(q: Q) {
       await q.query(
         `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
          select id, 'system', 'A new timed mission is live', 'Follow, like, retweet and comment on our new teaser post. 12 hours to grab them. Complete them quick to earn $NOTTIES.', now(), 'bc:post4:' || id
+           from users where status = 'active' on conflict (idem_key) do nothing`,
+      );
+    }
+    // v19: quote-retweet mission for the teaser post, same timer as the others + letter.
+    if (ver < 19) {
+      await q.query(
+        `insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at)
+         select 'quote_post4', 'Quote the teaser post', 'Quote retweet our "Something is breaking out of Vlad''s Lab" post with the ready-made line (or your own).', 150, 'once', 'link', $1, 5, true,
+                coalesce((select starts_at from tasks where id = 'like_post4'), now()), coalesce((select ends_at from tasks where id = 'like_post4'), now() + interval '12 hours')
+         on conflict (id) do nothing`,
+        ["https://x.com/intent/post?text=Something+is+breaking+out+of+Vlad%27s+Lab+%F0%9F%91%80%F0%9F%A7%AA+Run.+Dodge.+Collect.+Earn+%24NOTTIES+with+%40thenottiesworld&url=https%3A%2F%2Fx.com%2Fthenottiesworld%2Fstatus%2F2125322019269161118"],
+      );
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', 'New timed mission: quote the teaser post', 'Quote retweet our new teaser post to earn 150 $NOTTIES. Complete it quick before the timer runs out.', now(), 'bc:post4q:' || id
            from users where status = 'active' on conflict (idem_key) do nothing`,
       );
     }
