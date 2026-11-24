@@ -520,6 +520,13 @@ export async function SEED(q: Q) {
     await q.query("insert into settings (key, value) values ('game_public_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
 
+  // One-time (2026-11-24): pause Lab Escape. Switch it back on in Admin → Lab Escape (game).
+  const paused = (await q.query("select 1 from settings where key = 'game_paused_v1'")).rows.length > 0;
+  if (!paused) {
+    await q.query(`insert into settings (key, value) values ('runner_enabled', 'false'::jsonb) on conflict (key) do update set value = excluded.value`);
+    await q.query("insert into settings (key, value) values ('game_paused_v1', 'true'::jsonb) on conflict (key) do nothing");
+  }
+
   // v2 economy ($NOTTIES): bigger rewards, crates bought hourly, rarer Body and Hand & Head.
   // Applied once to existing databases; admin edits after that are kept.
   const ver = Number((await q.query<{ value: unknown }>("select value from settings where key = 'economy_version'")).rows[0]?.value ?? 1);

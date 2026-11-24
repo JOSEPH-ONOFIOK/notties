@@ -123,6 +123,8 @@ export const DEFAULT_SETTINGS = {
   // Lab Escape: $NOTTIES per goo drop, and the most a player can earn from it per UTC day.
   // Who can see Lab Escape and the Gang Wars card while they're being tested. Empty = everyone.
   game_testers: [] as string[],
+  // Master switch for Lab Escape (off = hidden for everyone, runs refused).
+  runner_enabled: true,
   runner_goo_value: 10,
   runner_daily_cap: 10000,
   // Posting your Lab Escape score on X: once per UTC day.

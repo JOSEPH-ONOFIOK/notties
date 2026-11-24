@@ -334,4 +334,4 @@ export const newIdem = () => randomBytes(12).toString("hex");
 export { FRAGMENT_BY_TYPE };
 
 /** Lab Escape / Gang Wars visibility while testing: only listed testers, or everyone if the list is empty. */
-export const canPlayGame = (username: string, settings: Settings) => !settings.game_testers.length || settings.game_testers.includes(username.toLowerCase());
+export const canPlayGame = (username: string, settings: Settings) => settings.runner_enabled !== false && (!settings.game_testers.length || settings.game_testers.includes(username.toLowerCase()));

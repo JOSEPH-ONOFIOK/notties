@@ -42,6 +42,7 @@ export default async function AdminHome() {
             <Toggle k="forge_enabled" label="Forge (assembly)" value={s.forge_enabled} />
             <Toggle k="shop_enabled" label="Crate shop (buy with $NOTTIES)" value={s.shop_enabled} />
             <Toggle k="market_enabled" label="Marketplace" value={s.market_enabled} />
+            <Toggle k="runner_enabled" label="Lab Escape (game)" value={s.runner_enabled} />
             <Toggle k="timer_crates" label="Free crate every 2 hours" value={s.timer_crates} />
           </div>
         </div>
