@@ -499,6 +499,27 @@ export async function SEED(q: Q) {
     await q.query("insert into settings (key, value) values ('reset_users_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
 
+  // One-time (2026-11-24): Lab Escape goes public. Clear the testers list and reset the tester's
+  // (@xmartsol) game data so he starts fresh: runs, score share, the Play Lab Escape mission, and
+  // the $NOTTIES earned while testing.
+  const gamePublic = (await q.query("select 1 from settings where key = 'game_public_v1'")).rows.length > 0;
+  if (!gamePublic) {
+    await q.query(`insert into settings (key, value) values ('game_testers', '[]'::jsonb) on conflict (key) do update set value = excluded.value`);
+    const t = (await q.query<{ id: string }>("select id from users where lower(x_username) = 'xmartsol'")).rows[0];
+    if (t) {
+      const earned = Number((await q.query<{ n: string }>("select coalesce(sum(delta),0)::text as n from point_transactions where user_id = $1 and reason in ('runner', 'runner_share', 'mail:task:play_runner')", [t.id])).rows[0].n);
+      if (earned > 0) {
+        await q.query("insert into point_transactions (user_id, delta, reason, idem_key) values ($1, $2, 'game_test_reset', $3) on conflict (idem_key) do nothing", [t.id, -earned, `gametest:${t.id}`]);
+        await q.query("update users set points = greatest(0, points - $2), lifetime_points = greatest(0, lifetime_points - $2) where id = $1", [t.id, earned]);
+      }
+      await q.query("delete from runner_runs where user_id = $1", [t.id]);
+      await q.query("delete from runner_shares where user_id = $1", [t.id]);
+      await q.query("delete from task_completions where user_id = $1 and task_id = 'play_runner'", [t.id]);
+      await q.query("delete from mail where user_id = $1 and idem_key like $2", [t.id, `task:${t.id}:play_runner:%`]);
+    }
+    await q.query("insert into settings (key, value) values ('game_public_v1', 'true'::jsonb) on conflict (key) do nothing");
+  }
+
   // v2 economy ($NOTTIES): bigger rewards, crates bought hourly, rarer Body and Hand & Head.
   // Applied once to existing databases; admin edits after that are kept.
   const ver = Number((await q.query<{ value: unknown }>("select value from settings where key = 'economy_version'")).rows[0]?.value ?? 1);

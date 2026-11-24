@@ -122,7 +122,7 @@ export const DEFAULT_SETTINGS = {
   wallet_tasks: ["follow_x", "like_post3", "rt_post3"] as string[],
   // Lab Escape: $NOTTIES per goo drop, and the most a player can earn from it per UTC day.
   // Who can see Lab Escape and the Gang Wars card while they're being tested. Empty = everyone.
-  game_testers: ["xmartsol"] as string[],
+  game_testers: [] as string[],
   runner_goo_value: 10,
   runner_daily_cap: 10000,
   // Posting your Lab Escape score on X: once per UTC day.
