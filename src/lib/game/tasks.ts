@@ -1,7 +1,7 @@
 import "server-only";
 import { GameError, query, withTx, type Q } from "../db";
 import type { Settings } from "./config";
-import { getSettings, logRisk, requireActive, streakView, utcDay } from "./core";
+import { canPlayGame, getSettings, logRisk, requireActive, streakView, utcDay } from "./core";
 import { awardBookIfEarned } from "./book";
 import { pushFeed } from "./feed";
 import { cached } from "../cache";
@@ -13,7 +13,7 @@ export interface TaskRow {
   description: string;
   points: number;
   kind: "once" | "daily";
-  verify: "auto" | "link" | "wallet" | "trade" | "gift_today" | "manual";
+  verify: "auto" | "link" | "wallet" | "trade" | "gift_today" | "runner" | "manual";
   link: string | null;
   sort: number;
   active: boolean;
@@ -36,7 +36,7 @@ export const latePoints = (points: number, settings: Settings) => Math.round((Nu
 const OPEN = (p: string) => `and (starts_at is null or starts_at <= now()) and ${p}::int >= 0`;
 const todayUtc = () => new Date().toISOString().slice(0, 10);
 
-export async function listTasks(userId: string) {
+export async function listTasks(userId: string, username = "") {
   const settings = await getSettings();
   // Built-in missions are paid from Economy settings, so show that amount, not the table's.
   const all = await cached("tasks", 30_000, async () => (await query<TaskRow>("select * from tasks where active order by sort, id")).rows);
@@ -49,6 +49,8 @@ export async function listTasks(userId: string) {
   const today = todayUtc();
   return tasks
     .filter((t) => forged || t.verify !== "wallet")
+    // Lab Escape missions only show to players who can see the game (testers while it's in testing).
+    .filter((t) => t.verify !== "runner" || canPlayGame(username, settings))
     .filter((t) => !t.starts_at || new Date(t.starts_at) <= new Date())
     .map((t) => {
       // When a timed mission's timer runs out it simply becomes a normal mission (full reward).
@@ -128,6 +130,9 @@ export async function claimTask(userId: string, taskId: string) {
     } else if (t.verify === "trade") {
       const tr = await q.query("select 1 from trades where sender_id = $1 union all select 1 from trade_offers where status = 'filled' and (maker_id = $1 or taker_id = $1) limit 1", [userId]);
       if (!tr.rows.length) throw new GameError("Send or swap a card with someone first");
+    } else if (t.verify === "runner") {
+      const r = await q.query("select 1 from runner_runs where user_id = $1 and ended_at is not null and score > 0 limit 1", [userId]);
+      if (!r.rows.length) throw new GameError("Play a Lab Escape run first, then claim");
     } else if (t.verify === "gift_today") {
       const g = await q.query("select 1 from trades where sender_id = $1 and created_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC' limit 1", [userId]);
       if (!g.rows.length) throw new GameError("Gift a card to someone today first (Trade → Gift a card)");

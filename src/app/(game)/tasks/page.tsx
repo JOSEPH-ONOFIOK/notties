@@ -10,7 +10,7 @@ export const metadata = { title: "Missions" };
 
 export default async function Tasks() {
   const p = await currentPlayer();
-  const [tasks, settings] = await Promise.all([listTasks(p.id) as unknown as Promise<TaskItem[]>, getSettings()]);
+  const [tasks, settings] = await Promise.all([listTasks(p.id, p.username) as unknown as Promise<TaskItem[]>, getSettings()]);
   return (
     <>
       <PageTitle kicker="Earn" title={`Earn ${POINTS_NAME}`} sub={`Missions, check-ins, gifts and friends all pay ${POINTS_NAME}. Rewards go to your mailbox. Spend them on crates.`} right={<Points n={p.points} size="lg" />} />

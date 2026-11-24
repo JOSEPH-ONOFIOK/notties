@@ -259,6 +259,7 @@ export function TaskEditor({ initial, latePct, lateHours }: { initial?: TaskDraf
             <option value="wallet">wallet linked</option>
             <option value="trade">has sent a trade</option>
             <option value="gift_today">gifted a card today (daily)</option>
+            <option value="runner">played a Lab Escape run</option>
             <option value="manual">manual review (player submits proof)</option>
           </select>
         </label>

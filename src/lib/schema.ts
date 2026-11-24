@@ -472,7 +472,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 16;
+const ECONOMY_VERSION = 17;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task", "runner_goo_value", "runner_daily_cap", "runner_share_reward"] as const;
 
 export async function SEED(q: Q) {
@@ -584,6 +584,12 @@ export async function SEED(q: Q) {
       await q.query("update tasks set active = false where id in ('like_post', 'rt_post', 'comment_post', 'like_post2', 'rt_post2', 'quote_post2', 'comment_post2')");
       await q.query(`insert into settings (key, value) values ('wallet_tasks', '["follow_x","like_post3","rt_post3"]'::jsonb) on conflict (key) do update set value = excluded.value`);
       await q.query(`insert into settings (key, value) values ('referral_task', '"like_post3"'::jsonb) on conflict (key) do update set value = excluded.value`);
+    }
+    // v17: a mission to play Lab Escape (only shown to players who can see the game).
+    if (ver < 17) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('play_runner', 'Play Lab Escape', 'Run from Vlad''s lab: finish one run in Lab Escape, then claim.', 150, 'once', 'runner', '/play', 3, true) on conflict (id) do nothing",
+      );
     }
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
     if (ver < 7) {

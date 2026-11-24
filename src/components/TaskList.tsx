@@ -16,7 +16,7 @@ export type TaskItem = {
   description: string;
   points: number;
   kind: "once" | "daily";
-  verify: "auto" | "link" | "wallet" | "trade" | "gift_today" | "manual";
+  verify: "auto" | "link" | "wallet" | "trade" | "gift_today" | "runner" | "manual";
   link: string | null;
   completed: boolean;
   clicked: string | null;
@@ -165,7 +165,7 @@ export function TaskList({ tasks, suspended, streak, latePct }: { tasks: TaskIte
               )}
               {internal && !needsLink && (
                 <Link href={t.link!} onClick={() => sfx.click()} className="btn btn-ghost !min-h-[38px] !px-3 text-sm">
-                  Go <TbArrowRight size={14} strokeWidth={2.8} />
+                  {t.link === "/play" ? "🏃 Run" : "Go"} <TbArrowRight size={14} strokeWidth={2.8} />
                 </Link>
               )}
               <button ref={(el) => void (btns.current[t.id] = el)} onClick={() => claim(t)} disabled={suspended || busy === t.id || (needsLink && !clicked[t.id])} className="btn btn-accent !min-h-[38px] !px-4 text-sm">

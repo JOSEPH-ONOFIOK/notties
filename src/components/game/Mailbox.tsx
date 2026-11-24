@@ -25,6 +25,7 @@ function ago(iso: string) {
 
 /** Where a letter's button takes you (letters with no reward to claim). */
 function goTo(m: Mail): { href: string; label: string } | null {
+  if (/lab escape|run\b|runner/i.test(`${m.title} ${m.body ?? ""}`)) return { href: "/play", label: "🏃 Run" };
   if (/mission|task/i.test(m.title)) return { href: "/tasks#round", label: "Go to missions" };
   if (m.kind === "referral") return { href: "/profile#referrals", label: "See referrals" };
   if (m.kind === "gift" && m.part) return { href: "/inventory", label: "Open stash" };

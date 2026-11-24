@@ -24,7 +24,7 @@ type Objective = { title: string; body: string; href: string; cta: string; icons
 
 export default async function City({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
-  const [tasks, settings] = await Promise.all([listTasks(p.id), getSettings()]);
+  const [tasks, settings] = await Promise.all([listTasks(p.id, p.username), getSettings()]);
   // Gang Wars: settle a finished war on the first visit after it ends, then show the board.
   let war = await latestWar();
   const now = nowMs();

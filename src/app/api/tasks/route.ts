@@ -2,7 +2,7 @@ import { handler, json } from "@/lib/api";
 import { claimTask, clickTask, listTasks, submitTask } from "@/lib/game/tasks";
 import { GameError } from "@/lib/db";
 
-export const GET = handler({ name: "tasks" }, async (user) => ({ tasks: await listTasks(user.id) }));
+export const GET = handler({ name: "tasks" }, async (user) => ({ tasks: await listTasks(user.id, user.x_username) }));
 
 export const POST = handler({ name: "tasks", limit: [30, 60_000] }, async (user, req) => {
   const b = await json<{ action?: "click" | "claim" | "submit"; taskId?: string; proof?: string }>(req);
