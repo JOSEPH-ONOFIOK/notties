@@ -472,7 +472,7 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 17;
+const ECONOMY_VERSION = 18;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task", "runner_goo_value", "runner_daily_cap", "runner_share_reward"] as const;
 
 export async function SEED(q: Q) {
@@ -610,6 +610,25 @@ export async function SEED(q: Q) {
     if (ver < 17) {
       await q.query(
         "insert into tasks (id, title, description, points, kind, verify, link, sort, active) values ('play_runner', 'Play Lab Escape', 'Run from Vlad''s lab: finish one run in Lab Escape, then claim.', 150, 'once', 'runner', '/play', 3, true) on conflict (id) do nothing",
+      );
+    }
+    // v18: the "breaking out of Vlad's Lab tomorrow" teaser post: like, retweet, comment (12h) + letter.
+    if (ver < 18) {
+      const add = [
+        ["like_post4", "Like the teaser post", "Like our \"Something is breaking out of Vlad's Lab\" post on X."],
+        ["rt_post4", "Retweet the teaser post", "Retweet our \"Something is breaking out of Vlad's Lab\" post on X."],
+        ["comment_post4", "Comment on the teaser post", "Drop your wallet in the replies of our \"Something is breaking out of Vlad's Lab\" post."],
+      ];
+      for (const [id, title, description] of add) {
+        await q.query(
+          "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,150,'once','link',$4,5,true, now(), now() + interval '12 hours') on conflict (id) do nothing",
+          [id, title, description, "https://x.com/thenottiesworld/status/2125322019269161118"],
+        );
+      }
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', 'A new timed mission is live', 'Follow, like, retweet and comment on our new teaser post. 12 hours to grab them. Complete them quick to earn $NOTTIES.', now(), 'bc:post4:' || id
+           from users where status = 'active' on conflict (idem_key) do nothing`,
       );
     }
     // v7: the launch tweet is out. Point the missions at it and bring back the comment mission.
