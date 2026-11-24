@@ -8,7 +8,8 @@ import { FACTIONS } from "@/lib/game/config";
 import { fx } from "@/lib/fx";
 import { sfx } from "@/lib/sfx";
 
-export function FactionPicker() {
+/** `compact` = narrow side column (2×2 grid, no bottom margin). */
+export function FactionPicker({ compact = false }: { compact?: boolean } = {}) {
   const router = useRouter();
   const [pick, setPick] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,15 +32,15 @@ export function FactionPicker() {
   }
 
   return (
-    <div className="card mb-6 p-5 sm:p-6">
+    <div className={`card p-5 sm:p-6 ${compact ? "" : "mb-6"}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="display inline-block -rotate-2 rounded-md border-[3px] border-black bg-accent px-2 py-0.5 text-xs tracking-[0.2em] text-black shadow-[0_3px_0_#000]">Pick a gang</div>
-          <h2 className="display ink-text mt-2 text-3xl text-white">Who are you rolling with?</h2>
+          <h2 className={`display ink-text mt-2 text-white ${compact ? "text-2xl" : "text-3xl"}`}>Who are you rolling with?</h2>
           <p className="text-sm text-muted">Your gang&apos;s $NOTTIES adds up on the Most Wanted board. You pick once, so choose wisely.</p>
         </div>
       </div>
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <ul className={`mt-4 grid grid-cols-2 gap-3 ${compact ? "" : "sm:grid-cols-4"}`}>
         {FACTIONS.map((f) => {
           const on = pick === f.id;
           return (
@@ -53,8 +54,8 @@ export function FactionPicker() {
                 style={{ background: on ? f.color : "var(--surface)" }}
                 aria-pressed={on}
               >
-                <div className="relative aspect-square bg-raised">
-                  <Image src={f.img} alt="" fill sizes="200px" className="object-cover" />
+                <div className={`relative bg-raised ${compact ? "aspect-[16/10]" : "aspect-square"}`}>
+                  <Image src={f.img} alt="" fill sizes="200px" className={`object-cover ${compact ? "object-[center_25%]" : ""}`} />
                 </div>
                 <div className={`p-2.5 ${on ? "text-black" : ""}`}>
                   <div className="display">{f.name}</div>

@@ -5,9 +5,12 @@ import { FRAGMENTS, POINTS_NAME } from "@/lib/game/config";
 import { overview } from "@/lib/game/admin";
 import { getSettings } from "@/lib/game/core";
 import { Toggle } from "@/components/admin/Controls";
+import { GangWarAdmin } from "@/components/admin/More";
+import { latestWar } from "@/lib/game/gangwar";
+import { FACTIONS } from "@/lib/game/config";
 
 export default async function AdminHome() {
-  const [o, s] = await Promise.all([overview(), getSettings()]);
+  const [o, s, war] = await Promise.all([overview(), getSettings(), latestWar()]);
   return (
     <>
       <PageTitle kicker="Admin" title="Overview" />
@@ -23,6 +26,10 @@ export default async function AdminHome() {
           <div className="text-[11px] font-semibold uppercase tracking-widest text-muted">Export</div>
           <div className="display text-2xl text-accent">GTD CSV ↓</div>
         </Link>
+      </div>
+
+      <div className="mt-6">
+        <GangWarAdmin live={war?.status === "live"} endsAt={war?.ends_at ?? null} airdrop={war?.airdrop ?? 0} winner={war?.winner ? (FACTIONS.find((f) => f.id === war.winner)?.name ?? war.winner) : null} />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">

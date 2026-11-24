@@ -384,3 +384,47 @@ export function MintSetting({ value }: { value: { date: string; chain: string; p
     </div>
   );
 }
+
+export function GangWarAdmin({ live, endsAt, airdrop, winner }: { live: boolean; endsAt: string | null; airdrop: number; winner: string | null }) {
+  const { act, busy, Msg } = useAct();
+  const [days, setDays] = useState("3");
+  const [drop, setDrop] = useState("500000");
+  return (
+    <div className="rounded-xl border-[3px] border-black bg-raised/40 p-4">
+      <label className="block text-sm font-bold">⚔️ Gang Wars</label>
+      {live ? (
+        <>
+          <div className="mt-1 text-xs text-muted">
+            Live now, ends {endsAt ? new Date(endsAt).toLocaleString() : ""}. Prize: {airdrop.toLocaleString()} $NOTTIES split evenly between the winning gang&apos;s active members, + all parts each. It ends and pays out by itself.
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <button className="btn btn-ghost text-sm" disabled={busy} onClick={() => confirm("End the war now and pay the winning gang?") && act({ action: "war_end" }, "Ended and paid out")}>
+              End now &amp; pay out
+            </button>
+            <Msg />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="mt-1 text-xs text-muted">
+            {winner ? `Last war winner: ${winner}. ` : ""}Start a war: gangs score the $NOTTIES their members earn plus their Lab Escape points. Announced in chat and mailed to everyone.
+          </div>
+          <div className="mt-2 grid gap-2 sm:grid-cols-[120px_160px_auto]">
+            <label className="text-xs">
+              <span className="text-muted">days</span>
+              <input value={days} onChange={(e) => setDays(e.target.value)} inputMode="decimal" />
+            </label>
+            <label className="text-xs">
+              <span className="text-muted">prize pool ($NOTTIES, split evenly)</span>
+              <input value={drop} onChange={(e) => setDrop(e.target.value.replace(/\D/g, ""))} inputMode="numeric" />
+            </label>
+            <button className="btn btn-accent self-end text-sm" disabled={busy} onClick={() => act({ action: "war_start", days: Number(days), airdrop: Number(drop) }, "War started")}>
+              Start Gang Wars
+            </button>
+          </div>
+          <Msg />
+        </>
+      )}
+    </div>
+  );
+}

@@ -35,6 +35,7 @@ async function loadSettings(q?: Q): Promise<Settings> {
   s.market_prices = known(DEFAULT_SETTINGS.market_prices, s.market_prices);
   s.market_prices = { ...(s.market_prices as object), book: 0, shadow: 0 };
   s.drop_weights = { ...(s.drop_weights as object), shadow: 0 };
+  s.game_testers = (Array.isArray(s.game_testers) ? (s.game_testers as unknown[]) : []).map((x) => String(x).trim().toLowerCase().replace(/^@/, "")).filter(Boolean);
   s.wallet_tasks = (Array.isArray(s.wallet_tasks) ? (s.wallet_tasks as unknown[]) : []).map(String).map((x) => x.trim()).filter(Boolean);
   s.late_reward_pct = Math.max(0, Math.min(100, Number(s.late_reward_pct ?? 50)));
   s.late_window_hours = Math.max(0, Number(s.late_window_hours ?? 24));
@@ -246,6 +247,8 @@ export interface PlayerView {
   referred: boolean;
   /** Id of the newest announcement (for the "new" dot on the chat icon). */
   latestAnnouncement: number;
+  /** Can see Lab Escape / Gang Wars (testers only while they're in testing). */
+  canPlay: boolean;
 }
 
 export async function getPlayer(xId: string): Promise<PlayerView | null> {
@@ -311,6 +314,7 @@ export async function getPlayer(xId: string): Promise<PlayerView | null> {
     mail: Number(mail?.n ?? 0),
     crateAt,
     referred: !!u.referred_by,
+    canPlay: canPlayGame(u.x_username, settings),
     latestAnnouncement: await (await import("./chat")).readChat("announce").then((m) => m.at(-1)?.id ?? 0).catch(() => 0),
   };
 }
@@ -328,3 +332,6 @@ export function streakView(streak: number, last: string | Date | null) {
 
 export const newIdem = () => randomBytes(12).toString("hex");
 export { FRAGMENT_BY_TYPE };
+
+/** Lab Escape / Gang Wars visibility while testing: only listed testers, or everyone if the list is empty. */
+export const canPlayGame = (username: string, settings: Settings) => !settings.game_testers.length || settings.game_testers.includes(username.toLowerCase());

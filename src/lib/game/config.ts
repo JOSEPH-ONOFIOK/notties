@@ -120,6 +120,13 @@ export const DEFAULT_SETTINGS = {
   // late_window_hours more, then disappear.
   // Missions a player must finish (after building their Nottie) before they can submit a wallet.
   wallet_tasks: ["follow_x", "like_post3", "rt_post3"] as string[],
+  // Lab Escape: $NOTTIES per goo drop, and the most a player can earn from it per UTC day.
+  // Who can see Lab Escape and the Gang Wars card while they're being tested. Empty = everyone.
+  game_testers: ["xmartsol"] as string[],
+  runner_goo_value: 10,
+  runner_daily_cap: 10000,
+  // Posting your Lab Escape score on X: once per UTC day.
+  runner_share_reward: 700,
   late_reward_pct: 50,
   late_window_hours: 24,
   // Marketplace: buy parts directly with $NOTTIES. Rare parts cost a lot on purpose.

@@ -13,14 +13,28 @@ import { getSettings } from "@/lib/game/core";
 import { FactionPicker } from "@/components/game/FactionPicker";
 import { currentPlayer } from "@/lib/player";
 import { EarnStrip } from "@/components/game/EarnStrip";
+import { GangWarCard } from "@/components/game/GangWarCard";
+import { latestWar, myWarPoints, settleWar, standings } from "@/lib/game/gangwar";
 
 export const metadata = { title: "Robinhood City" };
+
+const nowMs = () => Date.now();
 
 type Objective = { title: string; body: string; href: string; cta: string; icons?: FragmentType[] };
 
 export default async function City({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const [p, sp] = await Promise.all([currentPlayer(), searchParams]);
   const [tasks, settings] = await Promise.all([listTasks(p.id), getSettings()]);
+  // Gang Wars: settle a finished war on the first visit after it ends, then show the board.
+  let war = await latestWar();
+  const now = nowMs();
+  if (war?.status === "live" && Date.parse(war.ends_at) <= now) {
+    await settleWar().catch(() => null);
+    war = await latestWar();
+  }
+  const showWar = p.canPlay && war && (war.status === "live" || now - Date.parse(war.ends_at) < 2 * 86400_000);
+  const [warBoard, warMine] = showWar && war ? await Promise.all([standings(war), p.faction ? myWarPoints(war, p.id) : Promise.resolve(0)]) : [[], 0];
+  const refLink = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://nottiesraid.fun"}/?ref=${p.refCode}`;
   const mintAt = settings.mint?.date && !Number.isNaN(Date.parse(settings.mint.date)) && new Date(settings.mint.date) > new Date() ? settings.mint.date : null;
   const openMissions = tasks.filter((t) => !t.completed).length;
   const lv = levelInfo(p.lifetimePoints);
@@ -78,7 +92,23 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         </div>
       )}
 
-      {!p.faction && p.claims > 0 && <FactionPicker />}
+      {/* Gang Wars with Lab Escape (and, for players without a gang, the gang picker) beside it. */}
+      <div className={`mb-6 grid items-start gap-4 ${showWar ? "lg:grid-cols-[1.5fr_1fr]" : ""}`}>
+        {showWar && war && <GangWarCard war={war} board={warBoard} myGang={p.faction} myPoints={warMine} refLink={refLink} />}
+        <div className="space-y-4">
+          {p.canPlay && (
+          <Link href="/play" className="card card-lime flex items-center gap-4 p-4 text-black transition hover:-translate-y-0.5 sm:p-5">
+            <span className="display grid h-14 w-14 shrink-0 place-items-center rounded-2xl border-[3px] border-black bg-black text-2xl">🎮</span>
+            <div className="min-w-0 flex-1">
+              <div className="display text-2xl leading-tight">Play Lab Escape</div>
+              <div className="text-sm font-semibold text-black/70">Run from Vlad, grab goo: up to {settings.runner_daily_cap.toLocaleString()} $NOTTIES a day + {settings.runner_share_reward} for posting your score.</div>
+            </div>
+            <span className="btn shrink-0 border-black bg-black !min-h-[40px] !px-4 text-sm text-accent">Play</span>
+          </Link>
+          )}
+          {!p.faction && <FactionPicker compact={!!showWar} />}
+        </div>
+      </div>
 
       {/* ── hero row: objective + your nottie ── */}
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">

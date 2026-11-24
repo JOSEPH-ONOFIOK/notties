@@ -47,6 +47,8 @@ type Body =
   | { action: "resolve"; riskId: string }
   | { action: "task"; task: { id: string; title: string; description: string; points: number; kind: string; verify: string; link: string | null; sort: number; active: boolean; starts_at?: string | null; ends_at?: string | null; proof_hint?: string | null; gives_book?: boolean; crates?: number } }
   | { action: "archive_expired" }
+  | { action: "war_start"; days: number; airdrop: number }
+  | { action: "war_end" }
   | { action: "review"; id: string; approve: boolean }
   | { action: "adjust"; userId: string; points?: number; type?: string; qty?: number; reason: string }
   | { action: "event"; name: string; kind: string; effects: EventEffects; starts_at: string; ends_at: string }
@@ -62,6 +64,8 @@ const NEED: Record<Body["action"], Role> = {
   resolve: "moderator",
   task: "owner",
   archive_expired: "owner",
+  war_start: "owner",
+  war_end: "owner",
   review: "moderator",
   adjust: "moderator",
   event: "owner",
@@ -103,6 +107,18 @@ export async function POST(req: Request) {
         if (!/^[a-z0-9_]{1,64}$/.test(b.task.id)) throw new Error("Task id: lowercase letters, digits, underscores");
         result = await upsertTask(by, b.task);
         break;
+      case "war_start": {
+        const { startWar } = await import("@/lib/game/gangwar");
+        result = await startWar(by, Number(b.days), Number(b.airdrop));
+        await audit(by, "war_start", undefined, { days: b.days, airdrop: b.airdrop });
+        break;
+      }
+      case "war_end": {
+        const { settleWar } = await import("@/lib/game/gangwar");
+        result = await settleWar(true);
+        await audit(by, "war_end", undefined, result ?? {});
+        break;
+      }
       case "archive_expired":
         result = await archiveExpiredTasks(by);
         break;

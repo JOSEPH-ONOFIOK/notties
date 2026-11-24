@@ -107,4 +107,32 @@ export const sfx = {
     noise(0.15, 0.3, 0, 200);
     tone(90, 0.2, { type: "sine", vol: 0.2, slide: 0.5 });
   },
+  // ── Lab Escape ──
+  jump: () => tone(330, 0.16, { type: "square", vol: 0.05, slide: 2.2 }),
+  doubleJump: () => {
+    tone(520, 0.12, { type: "square", vol: 0.05, slide: 2 });
+    tone(780, 0.1, { type: "sine", vol: 0.04, slide: 1.5, delay: 0.05 });
+  },
+  slide: () => {
+    noise(0.28, 0.1, 0, 300);
+    tone(220, 0.22, { type: "triangle", vol: 0.05, slide: 0.6 });
+  },
+  land: () => {
+    noise(0.06, 0.12, 0, 150);
+    tone(110, 0.08, { type: "sine", vol: 0.08, slide: 0.7 });
+  },
+  step: () => tone(180 + Math.random() * 40, 0.03, { type: "triangle", vol: 0.018 }),
+  goo: (combo = 1) => {
+    const f = 660 * Math.pow(1.06, Math.min(combo - 1, 12)); // climbs with a streak of goo
+    tone(f, 0.08, { type: "sine", vol: 0.07 });
+    tone(f * 1.5, 0.14, { type: "sine", vol: 0.05, delay: 0.05 });
+  },
+  crash: () => {
+    noise(0.35, 0.3, 0, 120);
+    tone(300, 0.5, { type: "sawtooth", vol: 0.06, slide: 0.2 });
+    tone(90, 0.35, { type: "sine", vol: 0.14, slide: 0.5, delay: 0.05 });
+  },
+  milestone: () => {
+    [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.1, { type: "square", vol: 0.045, delay: i * 0.06 }));
+  },
 };

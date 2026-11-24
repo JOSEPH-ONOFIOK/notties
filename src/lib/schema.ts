@@ -341,6 +341,40 @@ create table if not exists market_listings (
   closed_at timestamptz
 );
 create index if not exists market_open_idx on market_listings (status, kind, type, price);
+
+-- Lab Escape (the runner game): one row per run. Rewards are capped per player per UTC day.
+create table if not exists runner_runs (
+  id bigserial primary key,
+  user_id bigint not null references users(id),
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  score int not null default 0,
+  goo int not null default 0,
+  reward int not null default 0,
+  day date not null default (now() at time zone 'utc')::date
+);
+create index if not exists runner_day_idx on runner_runs (day, score desc);
+create index if not exists runner_user_idx on runner_runs (user_id, id desc);
+create table if not exists runner_shares (
+  user_id bigint not null references users(id),
+  day date not null,
+  clicked_at timestamptz not null default now(),
+  claimed_at timestamptz,
+  primary key (user_id, day)
+);
+
+-- Gang Wars: a timed race between the four gangs. The winning gang gets an airdrop + a full set of parts.
+create table if not exists gang_wars (
+  id bigserial primary key,
+  starts_at timestamptz not null,
+  ends_at timestamptz not null,
+  airdrop int not null default 500000,
+  status text not null default 'live',
+  winner text,
+  rewarded int not null default 0,
+  created_by text,
+  created_at timestamptz not null default now()
+);
 `;
 
 const TASKS = [
@@ -438,8 +472,8 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-const ECONOMY_VERSION = 15;
-const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task"] as const;
+const ECONOMY_VERSION = 16;
+const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task", "runner_goo_value", "runner_daily_cap", "runner_share_reward"] as const;
 
 export async function SEED(q: Q) {
   for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
@@ -456,6 +490,8 @@ export async function SEED(q: Q) {
       `delete from trade_offers where maker_id in ${gone} or taker_id in ${gone} or target_id in ${gone}`,
       `delete from trades where sender_id in ${gone} or recipient_id in ${gone}`,
       `delete from market_listings where user_id in ${gone} or taker_id in ${gone}`,
+      `delete from runner_runs where user_id in ${gone}`,
+      `delete from runner_shares where user_id in ${gone}`,
       ...["feed", "chat_messages", "mail", "task_submissions", "task_completions", "task_clicks", "forge_completions", "mint_eligibility", "pawn_sales", "risk_events", "point_transactions", "fragment_ledger", "crate_claims", "inventory", "wallets", "wallet_nonces"].map((t) => `delete from ${t} where user_id in ${gone}`),
       `delete from users where id in ${gone}`,
     ];

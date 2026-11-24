@@ -29,6 +29,7 @@ const MAIN: { href: string; label: string; icon: IconType }[] = [
   { href: "/profile", label: "Profile", icon: TbUserCircle },
 ];
 const MORE = [
+  { href: "/play", label: "🎮 Lab Escape (game)" },
   { href: "/trade", label: "Market" },
   { href: "/chat", label: "Announcements & chat" },
   { href: "/forge", label: "Vlad's Lab (Forge)" },
@@ -139,7 +140,7 @@ export function Nav({ player }: { player: PlayerView }) {
                     <div className="mx-2 mb-2 h-2.5 overflow-hidden rounded-full border-2 border-black bg-black/60">
                       <div className="h-full bg-accent" style={{ width: `${lv.pct}%` }} />
                     </div>
-                    {MORE.map((m) => (
+                    {MORE.filter((m) => m.href !== "/play" || player.canPlay).map((m) => (
                       <Link key={m.href} href={m.href} role="menuitem" onClick={() => setOpen(false)} className={`display block rounded-xl px-3 py-2.5 text-sm tracking-wide hover:bg-raised ${path === m.href ? "text-accent" : ""}`}>
                         {m.label}
                       </Link>
