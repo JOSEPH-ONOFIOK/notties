@@ -784,6 +784,28 @@ export async function SEED(q: Q) {
     ]);
     await q.query("insert into settings (key, value) values ('airdrop_5k_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
+  // 2026-11-25: Lab Escape back on and Gang Wars started (3 days, 500,000 $NOTTIES pool). One-time; skips the war
+  // (and its announcement + letter) if one is already live.
+  const warLive = await q.query("insert into settings (key, value) values ('game_war_live_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (warLive.rows.length) {
+    await q.query(`insert into settings (key, value) values ('runner_enabled', 'true'::jsonb) on conflict (key) do update set value = excluded.value`);
+    const war = (
+      await q.query<{ id: string }>(
+        "insert into gang_wars (starts_at, ends_at, airdrop, created_by) select now(), now() + interval '3 days', 500000, 'system' where not exists (select 1 from gang_wars where status = 'live') returning id",
+      )
+    ).rows[0];
+    if (war) {
+      await q.query("insert into chat_messages (channel, user_id, author, body) values ('announce', null, 'The Notties', $1)", [
+        "⚔️ LAB ESCAPE IS BACK AND GANG WARS HAVE STARTED!\n\nYou now run as your gang's character: Robin, Hood, Dild or Woody.\n\nFor the next 3 days, every $NOTTIES you earn and every Lab Escape point you score counts for your gang. The winning gang's players split 500,000 $NOTTIES evenly AND each get all 7 parts to assemble a Nottie.\n\nPick your gang, play and recruit your friends!",
+      ]);
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', '⚔️ Lab Escape is back and Gang Wars have started', 'You now run as your gang''s character. For 3 days, every $NOTTIES you earn and every Lab Escape point counts for your gang. The winning gang''s players split 500,000 $NOTTIES and each get all 7 parts to assemble.', now(), 'bc:war:' || $1::text || ':' || id
+           from users where status = 'active' on conflict (idem_key) do nothing`,
+        [String(war.id)],
+      );
+    }
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
