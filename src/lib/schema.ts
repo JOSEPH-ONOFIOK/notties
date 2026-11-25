@@ -531,7 +531,8 @@ export async function SEED(q: Q) {
   // Applied once to existing databases; admin edits after that are kept.
   const ver = Number((await q.query<{ value: unknown }>("select value from settings where key = 'economy_version'")).rows[0]?.value ?? 1);
   if (ver < ECONOMY_VERSION) {
-    for (const k of ECONOMY_KEYS) {
+    // Only for databases older than v19: later bumps must not overwrite admin-edited economy settings.
+    if (ver < 19) for (const k of ECONOMY_KEYS) {
       await q.query(`insert into settings (key, value, updated_at) values ($1, $2::jsonb, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [k, JSON.stringify(DEFAULT_SETTINGS[k])]);
     }
     await q.query(`insert into settings (key, value) values ('economy_version', $1::jsonb) on conflict (key) do update set value = excluded.value`, [JSON.stringify(ECONOMY_VERSION)]);
@@ -722,6 +723,37 @@ export async function SEED(q: Q) {
          from users where status = 'active' on conflict (idem_key) do nothing`,
     );
     await q.query("insert into settings (key, value) values ('giveaway_missions_v3', 'true'::jsonb) on conflict (key) do nothing");
+  }
+  // 2026-11-25: Lab Escape back on (one-time; the admin switch still works after this).
+  const resumed = (await q.query("select 1 from settings where key = 'game_resumed_v1'")).rows.length > 0;
+  if (!resumed) {
+    await q.query(`insert into settings (key, value) values ('runner_enabled', 'true'::jsonb) on conflict (key) do update set value = excluded.value`);
+    await q.query("insert into settings (key, value) values ('game_resumed_v1', 'true'::jsonb) on conflict (key) do nothing");
+  }
+  // 2026-11-25: today's timed missions (follow / like / retweet / quote / comment, 150 each, 12h) + letter to everyone.
+  const post5 = (await q.query("select 1 from settings where key = 'post5_missions_v1'")).rows.length > 0;
+  if (!post5) {
+    const post = "https://x.com/thenottiesworld/status/2125530445299208542";
+    const quoteText = "Playing Notties Raid and earning $NOTTIES with @thenottiesworld 🟢 nottiesraid.fun";
+    const add = [
+      ["follow_post5", "Follow @thenottiesworld", "Follow Notties on X so you don't miss a post.", "https://x.com/intent/follow?screen_name=thenottiesworld"],
+      ["like_post5", "Like today's post", "Like our newest post on X.", post],
+      ["rt_post5", "Retweet today's post", "Retweet our newest post on X.", post],
+      ["quote_post5", "Quote today's post", "Quote retweet our newest post with the ready-made line (or your own).", `https://x.com/intent/post?text=${encodeURIComponent(quoteText)}&url=${encodeURIComponent(post)}`],
+      ["comment_post5", "Comment on today's post", "Drop a comment on our newest post on X.", post],
+    ];
+    for (const [id, title, description, link] of add) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,150,'once','link',$4,5,true, now(), now() + interval '12 hours') on conflict (id) do nothing",
+        [id, title, description, link],
+      );
+    }
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'Today''s timed missions are live', 'Follow, like, retweet, quote and comment on our newest post. 150 $NOTTIES each. Complete them quick before the 12 hour timer is up.', now(), 'bc:post5:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into settings (key, value) values ('post5_missions_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
   for (const t of TASKS) {
     await q.query(
