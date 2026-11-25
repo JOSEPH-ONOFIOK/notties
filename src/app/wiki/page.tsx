@@ -319,7 +319,7 @@ export default async function Wiki() {
           </Chapter>
 
           <Chapter id="gangs" n={12} title="Gangs">
-            <p>After your first crate you pick a gang. It&apos;s a one-time choice. Your $NOTTIES adds to your gang&apos;s total on the Most Wanted board.</p>
+            <p>You&apos;re put in a gang automatically so the teams stay even. Your gang&apos;s character is your runner in Lab Escape. Your $NOTTIES adds to your gang&apos;s total on the Most Wanted board.</p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {FACTIONS.map((f) => (
                 <li key={f.id} className="overflow-hidden rounded-xl border-[3px] border-black" style={{ background: f.color }}>

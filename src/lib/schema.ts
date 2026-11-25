@@ -806,6 +806,29 @@ export async function SEED(q: Q) {
       );
     }
   }
+  // 2026-11-25: wipe Gang Wars and put every player in a gang, evenly (one-time, one atomic statement).
+  // Old gangs and wars are kept in gang_reset_backup. Past wars are removed; the live war restarts from zero
+  // with the same end time. Gangs are drafted snake-style by lifetime $NOTTIES so size and strength match.
+  await q.query("create table if not exists gang_reset_backup (kind text not null, ref text not null, data jsonb, saved_at timestamptz not null default now())");
+  await q.query(`
+    with f as (
+      insert into settings (key, value) values ('gang_reset_v1', 'true'::jsonb) on conflict (key) do nothing returning key
+    ), b1 as (
+      insert into gang_reset_backup (kind, ref, data) select 'user', id::text, to_jsonb(faction) from users where exists (select 1 from f)
+    ), b2 as (
+      insert into gang_reset_backup (kind, ref, data) select 'war', g.id::text, to_jsonb(g) from gang_wars g where exists (select 1 from f)
+    ), d1 as (
+      delete from gang_wars where status <> 'live' and exists (select 1 from f)
+    ), w1 as (
+      update gang_wars set starts_at = now() where status = 'live' and exists (select 1 from f)
+    ), d2 as (
+      delete from feed where kind = 'faction' and exists (select 1 from f)
+    ), r as (
+      select id, row_number() over (order by (status = 'active') desc, lifetime_points desc, id) - 1 as n from users
+    )
+    update users u
+       set faction = (array['robin','hood','dild','woody'])[1 + (case when (r.n / 4) % 2 = 0 then r.n % 4 else 3 - r.n % 4 end)::int]
+      from r where r.id = u.id and exists (select 1 from f)`);
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)

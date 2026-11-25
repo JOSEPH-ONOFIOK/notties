@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes, randomInt } from "node:crypto";
 import { bust, cached } from "../cache";
 import { GameError, one, query, withTx, type Q } from "../db";
-import { DEFAULT_SETTINGS, FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType, type PlayerStatus, type Settings } from "./config";
+import { FACTIONS, DEFAULT_SETTINGS, FRAGMENT_BY_TYPE, FRAGMENT_TYPES, type FragmentType, type PlayerStatus, type Settings } from "./config";
 import type { XUser } from "../session";
 
 /* ───────────────────────── settings ───────────────────────── */
@@ -98,8 +98,13 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
     }
     const user = (
       await q.query<UserRow>(
-        `insert into users (x_id, x_username, display_name, avatar_url, ref_code) values ($1,$2,$3,$4,$5) returning *`,
-        [x.id, x.username, x.name ?? null, x.avatar ?? null, code],
+        `insert into users (x_id, x_username, display_name, avatar_url, ref_code, faction)
+         values ($1,$2,$3,$4,$5, (
+           -- Gangs stay even: new players join the smallest one.
+           select g.id from unnest($6::text[]) as g(id) left join users m on m.faction = g.id and m.status = 'active'
+            group by g.id order by count(m.id), random() limit 1
+         )) returning *`,
+        [x.id, x.username, x.name ?? null, x.avatar ?? null, code, FACTIONS.map((g) => g.id)],
       )
     ).rows[0];
 
