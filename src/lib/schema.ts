@@ -829,6 +829,28 @@ export async function SEED(q: Q) {
     update users u
        set faction = (array['robin','hood','dild','woody'])[1 + (case when (r.n / 4) % 2 = 0 then r.n % 4 else 3 - r.n % 4 end)::int]
       from r where r.id = u.id and exists (select 1 from f)`);
+  // 2026-11-25: normal timed missions for the airdrop post (like / retweet / comment, 150 each, 12h) + letter;
+  // the teaser post's missions come down. (Quoting this post is the airdrop mission.)
+  const post6 = await q.query("insert into settings (key, value) values ('post6_missions_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (post6.rows.length) {
+    const post = "https://x.com/thenottiesworld/status/2125593252438986914";
+    await q.query("update tasks set active = false where id in ('like_post4', 'rt_post4', 'comment_post4', 'quote_post4')");
+    for (const [id, title, description] of [
+      ["like_post6", "Like the airdrop post", "Like our newest post on X."],
+      ["rt_post6", "Retweet the airdrop post", "Retweet our newest post on X."],
+      ["comment_post6", "Comment on the airdrop post", "Drop a comment on our newest post on X."],
+    ]) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,150,'once','link',$4,1,true, now(), now() + interval '12 hours') on conflict (id) do nothing",
+        [id, title, description, post],
+      );
+    }
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'New timed missions are live', 'Like, retweet and comment on our newest post. 150 $NOTTIES each. Complete them quick before the 12 hour timer is up.', now(), 'bc:post6:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
