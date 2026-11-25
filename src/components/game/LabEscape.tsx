@@ -7,10 +7,12 @@ import { FaXTwitter } from "react-icons/fa6";
 import { TbArrowBigDownFilled, TbArrowBigUpFilled, TbMaximize, TbMinimize, TbPlayerPauseFilled, TbPlayerPlayFilled } from "react-icons/tb";
 import { api } from "@/lib/client";
 import { sfx } from "@/lib/sfx";
+import { FACTIONS } from "@/lib/game/config";
 import { Coin } from "./Coin";
+import { RUNNER_SPRITES, type RunnerFrame, type RunnerId } from "./runnerSprites";
 
 /**
- * Lab Escape: an endless runner. Your Nottie runs through Vlad's lab; tap (or Space) to jump,
+ * Lab Escape: an endless runner. Robin, Hood, Dild or Woody runs through Vlad's lab; tap (or Space) to jump,
  * hold for a higher jump, tap again in the air to double jump. Dodge lasers, slime and drones,
  * grab goo. Speed builds smoothly toward a top speed, and obstacles are spaced by reaction time
  * so it stays fair. The browser runs the game; the server times each run and pays goo as $NOTTIES.
@@ -30,12 +32,15 @@ const REACTION_MS = 620; // minimum time between obstacles at any speed
 
 type Ob = { x: number; y: number; w: number; h: number; kind: "laser" | "slime" | "drone" | "pipe" };
 const SLIDE_MS = 650;
-const PIPE_GAP = 34; // a hanging pipe leaves this much room above the floor: slide under it
+const PIPE_GAP = 46; // a hanging pipe leaves this much room above the floor: slide under it
+const SPRITE = 0.42; // sprite art px to game px
+const isRunner = (v: unknown): v is RunnerId => typeof v === "string" && v in RUNNER_SPRITES;
+
 type Goo = { x: number; y: number; got: boolean };
 type Dust = { x: number; y: number; vx: number; vy: number; life: number };
 type Result = { score: number; goo: number; reward: number; earnedToday: number; cap: number; best: number };
 
-export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended, gooValue, shareReward, sharedToday, refCode }: { layers: string[]; earnedToday: number; cap: number; best: number; suspended: boolean; gooValue: number; shareReward: number; sharedToday: boolean; refCode: string }) {
+export function LabEscape({ gang, earnedToday, cap, best: bestToday, suspended, gooValue, shareReward, sharedToday, refCode }: { gang: string | null; earnedToday: number; cap: number; best: number; suspended: boolean; gooValue: number; shareReward: number; sharedToday: boolean; refCode: string }) {
   const router = useRouter();
   const canvas = useRef<HTMLCanvasElement>(null);
   const [phase, setPhase] = useState<"ready" | "running" | "over">("ready");
@@ -44,8 +49,16 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
   const [err, setErr] = useState<string | null>(null);
   const [earned, setEarned] = useState(earnedToday);
   const [best, setBest] = useState(bestToday);
-  const imgs = useRef<HTMLImageElement[]>([]);
-  const fresh = () => ({ y: GROUND - PS, vy: 0, jumps: 0, holding: false, speed: START_SPEED, dist: 0, goo: 0, obs: [] as Ob[], goos: [] as Goo[], dust: [] as Dust[], nextOb: 700, nextGoo: 420, t: 0, run: "", alive: false, shake: 0, wasAir: false, down: false, slideUntil: 0, paused: false, combo: 0, lastGoo: -9999, lastScore: 0, lastStep: 0 });
+  const sheets = useRef<Partial<Record<RunnerId, HTMLImageElement>>>({});
+  // You run as your gang's character. Without a gang, picking a runner joins that gang (for good).
+  const [joined, setJoined] = useState<RunnerId | null>(null);
+  const [choice, setChoice] = useState<RunnerId | null>(null);
+  const myGang: RunnerId | null = isRunner(gang) ? gang : joined;
+  const who: RunnerId = myGang ?? choice ?? "robin";
+  const whoRef = useRef(who);
+  const starting = useRef(false);
+  const team = FACTIONS.find((x) => x.id === (myGang ?? choice));
+  const fresh = () => ({ y: GROUND - PS, vy: 0, jumps: 0, holding: false, speed: START_SPEED, dist: 0, goo: 0, obs: [] as Ob[], goos: [] as Goo[], dust: [] as Dust[], nextOb: 700, nextGoo: 420, t: 0, run: "", alive: false, shake: 0, wasAir: false, down: false, slideUntil: 0, paused: false, combo: 0, lastGoo: -9999, lastScore: 0, lastStep: 0, anim: 0, jumpAt: -9999, landAt: -9999 });
   const game = useRef(fresh());
   const raf = useRef(0);
   const [vw, setVw] = useState(760);
@@ -114,18 +127,24 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
     }
   }
 
+  function loadSheet(id: RunnerId) {
+    if (sheets.current[id]) return;
+    const i = new Image();
+    i.onload = () => draw();
+    i.src = `/runner/${id}.webp`;
+    sheets.current[id] = i;
+  }
+
   useEffect(() => {
-    imgs.current = layers.map((src) => {
-      const i = new Image();
-      i.src = src;
-      return i;
-    });
-  }, [layers]);
+    whoRef.current = who;
+    loadSheet(who);
+    draw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the runner changes
+  }, [who]);
 
   useEffect(() => {
     const t = setTimeout(() => draw(), 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- redraw when the size changes
   }, [vw]);
 
   function press() {
@@ -135,6 +154,7 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
     if (g.jumps < 2) {
       g.vy = g.jumps === 0 ? JUMP : JUMP * 0.82;
       g.jumps++;
+      g.jumpAt = g.t;
       if (g.jumps === 1) sfx.jump();
       else sfx.doubleJump();
     }
@@ -147,16 +167,27 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
   }
 
   async function start() {
-    if (suspended) return;
+    if (suspended || starting.current) return;
+    starting.current = true;
     setErr(null);
     setResult(null);
     let run = "";
     try {
+      if (!myGang) {
+        if (!choice) return;
+        await api("/api/faction", { faction: choice });
+        sfx.levelUp();
+        setJoined(choice);
+        router.refresh();
+      }
       const { result: r } = await api<{ result: { id: string } }>("/api/runner", { action: "start" });
       run = r.id;
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't start");
+      router.refresh(); // e.g. already joined a gang in another tab
       return;
+    } finally {
+      starting.current = false;
     }
     game.current = { ...fresh(), run, alive: true };
     setPaused(false);
@@ -216,7 +247,10 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
     const air = g.y < GROUND - PS - 0.5;
     if (g.y >= GROUND - PS) {
       g.y = GROUND - PS;
-      if (g.wasAir) sfx.land();
+      if (g.wasAir) {
+        sfx.land();
+        g.landAt = g.t;
+      }
       if (g.wasAir) for (let i = 0; i < 6; i++) g.dust.push({ x: PX + 20 + Math.random() * 24, y: GROUND - 2, vx: -Math.random() * 0.25 - g.speed * 0.4, vy: -Math.random() * 0.18, life: 380 });
       g.vy = 0;
       g.jumps = 0;
@@ -279,10 +313,11 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
     const sc = Math.floor(g.dist / 12);
     if (Math.floor(sc / 500) > Math.floor(g.lastScore / 500)) sfx.milestone(); // every 500 points
     g.lastScore = sc;
-    // Footsteps on each stride while running.
-    const stridePhase = Math.floor(g.t / (Math.PI * (62 - g.speed * 22)));
-    if (!air && !sliding && stridePhase !== g.lastStep) sfx.step();
-    g.lastStep = stridePhase;
+    // Run cycle: 6 frames, faster feet at higher speed. A footstep sounds every 3 frames.
+    if (!air && !sliding) g.anim += dt / (96 - g.speed * 46);
+    const footfall = Math.floor(g.anim / 3);
+    if (!air && !sliding && footfall !== g.lastStep) sfx.step();
+    g.lastStep = footfall;
     if (Math.floor(g.t / 100) !== Math.floor((g.t - dt) / 100)) setHud({ score: sc, goo: g.goo });
   }
 
@@ -420,52 +455,37 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
       ctx.fillStyle = `rgba(205,255,0,${Math.max(0, d.life / 600) * 0.6})`;
       ctx.fillRect(d.x, d.y, 3, 3);
     }
-    // the Nottie: running bob on the ground, lean when jumping
+    // the runner
     const onGround = hgt < 0.5;
     const isSliding = onGround && g.alive && (g.down || g.t < g.slideUntil);
-    const bobY = onGround && g.alive && !isSliding ? Math.abs(Math.sin(g.t / (90 - g.speed * 30))) * -4 : 0;
-    const tilt = isSliding ? -0.35 : !onGround ? (g.vy < 0 ? -0.14 : 0.12) : Math.sin(g.t / 70) * 0.05;
-    ctx.save();
-    ctx.translate(PX + PS / 2, g.y + PS / 2 + bobY + (isSliding ? 18 : 0));
-    ctx.rotate(tilt);
-    if (isSliding) {
-      ctx.scale(1.12, 0.6);
-      if (Math.random() < 0.6) g.dust.push({ x: PX + 6, y: GROUND - 3, vx: -0.2 - g.speed * 0.3, vy: -Math.random() * 0.1, life: 260 });
-    }
-    const ready = imgs.current.length && imgs.current.every((i) => i.complete && i.naturalWidth);
-    if (ready) {
-      // Bigger sprite; anchored so the feet (about 85% down the art) sit on the ground line.
-      const S = fullRef.current ? 140 : 172;
-      const dx = -S / 2;
-      const dy = PS / 2 + 4 - S * 0.85;
-      // Stride: -1..1. Feet alternate on the ground, tuck in the air, stay flat while sliding.
-      const running = onGround && g.alive && !isSliding;
-      const stride = running ? Math.sin(g.t / (62 - g.speed * 22)) : 0;
-      const sq = running ? 1 + Math.abs(stride) * 0.045 : !onGround ? 0.96 : 1; // squash on each footfall, stretch in the air
-      ctx.scale(sq, 1 / sq); // wider + shorter on a footfall, taller + thinner in the air
-      if (running) ctx.rotate(-0.06); // lean into the run
-      for (let n = 0; n < imgs.current.length; n++) {
-        const i = imgs.current[n];
-        if (!/\/traits\/shoes\//.test(layers[n] ?? "")) {
-          ctx.drawImage(i, dx, dy, S, S);
-          continue;
-        }
-        const iw = i.naturalWidth;
-        const ih = i.naturalHeight;
-        const lift = 7;
-        const offL = running ? -Math.max(0, stride) * lift : !onGround ? -5 : 0;
-        const offR = running ? -Math.max(0, -stride) * lift : !onGround ? -3 : 0;
-        ctx.drawImage(i, 0, 0, iw / 2, ih, dx, dy + offL, S / 2, S);
-        ctx.drawImage(i, iw / 2, 0, iw / 2, ih, dx + S / 2, dy + offR, S / 2, S);
-      }
-    }
-    else {
+    if (isSliding && Math.random() < 0.6) g.dust.push({ x: PX + 6, y: GROUND - 3, vx: -0.2 - g.speed * 0.3, vy: -Math.random() * 0.1, life: 260 });
+    const frames = RUNNER_SPRITES[whoRef.current];
+    const sheet = sheets.current[whoRef.current];
+    let f: RunnerFrame;
+    if (!g.alive) f = g.run ? "land" : "idle";
+    else if (isSliding) f = "slide";
+    else if (!onGround) f = g.down ? "dive" : g.vy < 0 && g.t - g.jumpAt < 130 ? "launch" : g.vy < -0.25 ? "rise" : g.vy < 0.3 ? "apex" : "fall";
+    else if (g.t - g.landAt < 60) f = "recover";
+    else f = `run${Math.floor(g.anim) % 6}` as RunnerFrame;
+    if (sheet?.complete && sheet.naturalWidth) {
+      const [sx, sy, sw, sh2] = frames[f];
+      const w = sw * SPRITE;
+      const h = sh2 * SPRITE;
+      const feet = g.y + PS + 3;
+      // Feet on the ground line, except the launch pose: its smoke trail hangs below the feet.
+      const top = f === "launch" ? feet - frames.rise[3] * SPRITE : feet - h;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-20, -60, W + 40, GROUND + 64); // smoke never shows below the floor
+      ctx.clip();
+      ctx.drawImage(sheet, sx, sy, sw, sh2, PX + PS / 2 - w / 2, top, w, h);
+      ctx.restore();
+    } else {
       ctx.fillStyle = "#cdff00";
       ctx.beginPath();
-      ctx.ellipse(0, 0, PS / 2.6, PS / 2, 0, 0, Math.PI * 2);
+      ctx.ellipse(PX + PS / 2, g.y + PS / 2, PS / 2.6, PS / 2, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.restore();
     // speed lines at high speed
     if (g.speed > 0.7 && g.alive) {
       ctx.strokeStyle = `rgba(255,255,255,${(g.speed - 0.7) * 0.5})`;
@@ -591,8 +611,35 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
                     <p className="mt-1 max-w-sm text-sm text-white/80">Jump over lasers and slime, slide under hanging pipes, grab goo. Each goo is {gooValue} $NOTTIES.</p>
                   </>
                 )}
-                <button id="lab-escape-start" onClick={start} disabled={suspended || (phase === "over" && !result)} className="btn btn-accent mt-4">
-                  {phase === "over" ? "Run again" : "Start run"}
+                {myGang && phase === "ready" && (
+                  <div className="display mx-auto mt-3 flex w-fit items-center gap-2 rounded-xl border-[3px] border-black bg-black/60 py-1 pl-1 pr-3 text-xs" style={{ color: team?.color }}>
+                    <RunnerFace id={myGang} /> Running for {team?.name}
+                  </div>
+                )}
+                {!myGang && (
+                  <>
+                    <div className="mt-3 flex justify-center gap-2" role="group" aria-label="Pick your runner and gang">
+                      {FACTIONS.map((x) => (
+                        <button
+                          key={x.id}
+                          onClick={() => {
+                            sfx.click();
+                            setChoice(x.id);
+                          }}
+                          aria-pressed={choice === x.id}
+                          aria-label={x.name}
+                          className={`overflow-hidden rounded-xl border-[3px] p-1 pb-0.5 ${choice === x.id ? "border-accent bg-accent/25" : "border-black bg-black/60 opacity-75 hover:opacity-100"}`}
+                        >
+                          <RunnerFace id={x.id} />
+                          <span className="display block text-[10px] uppercase tracking-wider text-white">{x.id}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-1 text-xs text-white/70">Your runner is your gang in Gang Wars. You pick once.</div>
+                  </>
+                )}
+                <button id="lab-escape-start" onClick={start} disabled={suspended || (!myGang && !choice) || (phase === "over" && !result)} className="btn btn-accent mt-3">
+                  {!myGang ? (team ? `Join ${team.name} & run` : "Pick your runner") : phase === "over" ? "Run again" : "Start run"}
                 </button>
                 {capped && phase === "ready" && <div className="mt-2 text-xs text-white/70">Daily $NOTTIES limit reached. You can still play for the leaderboard.</div>}
                 {err && <div className="mt-2 text-sm font-bold text-error">{err}</div>}
@@ -642,6 +689,17 @@ export function LabEscape({ layers, earnedToday, cap, best: bestToday, suspended
       </div>
       <ShareScore best={best} reward={shareReward} shared={sharedToday} refCode={refCode} />
     </div>
+  );
+}
+
+/** A character's standing pose, cut from its sprite sheet. */
+function RunnerFace({ id }: { id: RunnerId }) {
+  const [x, y, w, h] = RUNNER_SPRITES[id].idle;
+  const k = 46 / 240;
+  return (
+    <span className="flex h-12 w-12 items-end justify-center">
+      <span style={{ width: w * k, height: h * k, backgroundImage: `url(/runner/${id}.webp)`, backgroundPosition: `${-x * k}px ${-y * k}px`, backgroundSize: `${1024 * k}px auto` }} />
+    </span>
   );
 }
 

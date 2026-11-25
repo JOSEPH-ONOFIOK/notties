@@ -106,7 +106,7 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
     const settings = await getSettings(q);
     if (settings.welcome_crates > 0) {
       const { sendMail } = await import("./mail");
-      await sendMail(q, user.id, { kind: "welcome", title: "Welcome to Robinhood City", body: "Vlad's lab is leaking parts. Here's a free crate to get you started. Collect all 7 parts and build your Nottie.", crates: settings.welcome_crates, idem: `welcome:${user.id}` });
+      await sendMail(q, user.id, { kind: "welcome", title: "Welcome to Robinhood City", body: "Vlad's lab is leaking parts. Quote one of our posts in Missions to earn your first crate. Collect all 7 parts and build your Nottie.", idem: `welcome:${user.id}` });
     }
 
     if (refCode) {

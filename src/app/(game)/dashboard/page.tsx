@@ -50,7 +50,7 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
         : p.points >= settings.crate_price && !p.forgedAt && !p.progress.complete
           ? { title: "Buy a crate", body: `You've got ${p.points.toLocaleString()} $NOTTIES. A crate costs ${settings.crate_price}. Grab some in the Market.`, href: "/trade", cta: "To the Market" }
         : p.claims === 0
-      ? { title: "Crack your first crate", body: "A Portal Crate just washed up. Tap it open and see what falls out.", href: "/hunt", cta: "Go hunt" }
+      ? { title: "Earn your first crate", body: "Quote one of our posts on X to earn your first crate and $NOTTIES.", href: "/tasks", cta: "Open missions" }
       : !p.onboarded
         ? { title: "Report for trouble", body: "Claim your onboarding bounty on the Mission Board. Easy $NOTTIES.", href: "/tasks", cta: "Open missions" }
         : p.forgedAt && !p.wallet

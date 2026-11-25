@@ -472,6 +472,8 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
+/** Link of the post players quote for the 5k airdrop. Empty = the airdrop is not live yet. */
+const AIRDROP_POST: string = "";
 const ECONOMY_VERSION = 19;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task", "runner_goo_value", "runner_daily_cap", "runner_share_reward"] as const;
 
@@ -761,6 +763,26 @@ export async function SEED(q: Q) {
     await q.query(`insert into settings (key, value) values ('runner_enabled', 'false'::jsonb) on conflict (key) do update set value = excluded.value`);
     await q.query("update tasks set active = false where id in ('follow_post5', 'like_post5', 'rt_post5', 'quote_post5', 'comment_post5')");
     await q.query("insert into settings (key, value) values ('game_paused_v2', 'true'::jsonb) on conflict (key) do nothing");
+  }
+  // 5k airdrop: quote our post with the ready-made line, then claim 5,000 $NOTTIES once. Goes out with
+  // an announcement and a letter to everyone. Does nothing until AIRDROP_POST holds the post's link.
+  const airdrop = (await q.query("select 1 from settings where key = 'airdrop_5k_v1'")).rows.length > 0;
+  if (AIRDROP_POST && !airdrop) {
+    const quoteText = "i just claimed 5k notties for my @thenottiesworld gtd free mint";
+    await q.query(
+      `insert into tasks (id, title, description, points, kind, verify, link, sort, active)
+       values ('airdrop_5k', 'Claim the 5k $NOTTIES airdrop', 'Quote our post on X with the ready-made line, then come back and claim 5,000 $NOTTIES.', 5000, 'once', 'link', $1, 0, true) on conflict (id) do nothing`,
+      [`https://x.com/intent/post?text=${encodeURIComponent(quoteText)}&url=${encodeURIComponent(AIRDROP_POST)}`],
+    );
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'New mission: claim your 5k $NOTTIES airdrop', 'Everyone gets 5,000 $NOTTIES. Open the airdrop mission, quote our post with the ready-made line, then come back and claim.', now(), 'bc:airdrop5k:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into chat_messages (channel, user_id, author, body) values ('announce', null, 'The Notties', $1)", [
+      "🪂 5K $NOTTIES AIRDROP IS LIVE\n\nEveryone can claim 5,000 $NOTTIES.\n\n1. Go to Missions and open \"Claim the 5k $NOTTIES airdrop\"\n2. Quote our post with the ready-made line\n3. Come back and tap Claim. Your $NOTTIES land in your Mailbox.",
+    ]);
+    await q.query("insert into settings (key, value) values ('airdrop_5k_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
   for (const t of TASKS) {
     await q.query(

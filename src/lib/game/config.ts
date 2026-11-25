@@ -134,7 +134,7 @@ export const DEFAULT_SETTINGS = {
   // Marketplace: buy parts directly with $NOTTIES. Rare parts cost a lot on purpose.
   market_enabled: true,
   market_prices: { background: 1500, shadow: 0, shoes: 2000, mouth: 2500, outfit: 3000, eyes: 5000, gear: 12000, body: 25000, book: 0 } as Record<FragmentType, number>,
-  // Free crates sent to the mailbox: on sign-up, and to the recruiter when a recruit plays.
+  // Free crates sent to the mailbox: for a new player's first quote-post mission, and to the recruiter when a recruit plays.
   welcome_crates: 1,
   referral_crates: 0,
   // Optional: a mission a recruit must also finish (e.g. "engage the launch post") before the

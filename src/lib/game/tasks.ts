@@ -99,6 +99,14 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
     reason: `task:${taskId}`,
     idem: `task:${userId}:${taskId}:${day}`,
   });
+  // New players earn their first crate by finishing their first quote-post mission (once). Their welcome
+  // letter has no crate; players from before this change already got theirs with it.
+  if (t.verify === "link" && t.link?.startsWith("https://x.com/intent/post") && settings.welcome_crates > 0) {
+    const owed = await q.query("select 1 from mail where user_id = $1 and idem_key = $2 and crates = 0", [userId, `welcome:${userId}`]);
+    if (owed.rows.length) {
+      await sendMail(q, userId, { kind: "reward", title: "Your first crate", body: "You posted, so here's your crate. Claim it and open it on the Hunt page.", crates: settings.welcome_crates, idem: `postcrate:${userId}` });
+    }
+  }
   if (taskId === "onboarding") await q.query("update users set onboarded = true where id = $1", [userId]);
   if (settings.referral_task && taskId === settings.referral_task) {
     const { checkReferralProgress } = await import("./referrals");

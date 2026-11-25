@@ -2,7 +2,6 @@ import { Avatar } from "@/components/Nav";
 import { LabEscape } from "@/components/game/LabEscape";
 import { PageTitle } from "@/components/ui";
 import { getSettings } from "@/lib/game/core";
-import { DEFAULT_LOOK, LAYER_ORDER, lookFromSeed } from "@/lib/game/look";
 import { myRunnerToday, runnerBoard, sharedToday } from "@/lib/game/runner";
 import { currentPlayer } from "@/lib/player";
 import Link from "next/link";
@@ -30,12 +29,10 @@ export default async function Play() {
     );
   }
   const [board, mine, shared] = await Promise.all([runnerBoard(), myRunnerToday(p.id), sharedToday(p.id)]);
-  const look = p.nottieSeed ? lookFromSeed(p.nottieSeed) : DEFAULT_LOOK;
-  const layers = LAYER_ORDER.filter((l) => l !== "background").map((l) => look[l].src);
   return (
     <>
       <PageTitle kicker="Play" title="Lab Escape" sub={`Run from Vlad's lab. Every goo drop is ${s.runner_goo_value} $NOTTIES, up to ${s.runner_daily_cap.toLocaleString()} a day. Post your score for +${s.runner_share_reward} more. Beat today's high score, and during Gang Wars every point you score counts for your gang.`} />
-      <LabEscape layers={layers} earnedToday={mine.earned} cap={s.runner_daily_cap} best={mine.best} suspended={p.accountStatus !== "active"} gooValue={s.runner_goo_value} shareReward={s.runner_share_reward} sharedToday={shared} refCode={p.refCode} />
+      <LabEscape gang={p.faction} earnedToday={mine.earned} cap={s.runner_daily_cap} best={mine.best} suspended={p.accountStatus !== "active"} gooValue={s.runner_goo_value} shareReward={s.runner_share_reward} sharedToday={shared} refCode={p.refCode} />
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
         <section>
           <h2 className="display mb-2 text-xl">Today&apos;s top runners</h2>

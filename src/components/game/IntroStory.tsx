@@ -164,7 +164,7 @@ export function IntroStory({ playerId, username, cooldownMinutes, cratePrice, ti
                     </>
                   ) : (
                     <>
-                      Your first crate is <b>free</b> (check your mailbox). After that, crates cost <b>{cratePrice} $NOTTIES</b>. Tap one <b>three times</b> and it cracks open with one part inside.
+                      Quote one of our posts in <b>Missions</b> to earn your first crate. After that, crates cost <b>{cratePrice} $NOTTIES</b>. Tap one <b>three times</b> and it cracks open with one part inside.
                     </>
                   )}{" "}
                   Some parts are common. Some are very, very not.
@@ -248,7 +248,7 @@ export function IntroStory({ playerId, username, cooldownMinutes, cratePrice, ti
                   Field guide
                 </Link>
                 <Link
-                  href="/hunt"
+                  href="/tasks"
                   onClick={() => {
                     sfx.levelUp();
                     fx.burst({ count: 140, power: 15 });
@@ -256,7 +256,7 @@ export function IntroStory({ playerId, username, cooldownMinutes, cratePrice, ti
                   }}
                   className="btn btn-accent anim-glow !min-h-[44px] text-sm"
                 >
-                  Crack my first crate!
+                  Earn my first crate!
                 </Link>
               </>
             )}

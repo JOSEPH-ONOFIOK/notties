@@ -126,7 +126,7 @@ export default async function Wiki() {
             <ol className="grid gap-3 sm:grid-cols-5">
               {[
                 ["1", "Earn", `Do missions, check in, gift cards, recruit friends. All pay ${POINTS_NAME}.`],
-                ["2", "Open crates", s.timer_crates ? `Spend ${POINTS_NAME} on crates, plus a free one ${every}.` : `Your first crate is free. After that, crates cost ${s.crate_price} ${POINTS_NAME}.`],
+                ["2", "Open crates", s.timer_crates ? `Spend ${POINTS_NAME} on crates, plus a free one ${every}.` : `Quote one of our posts to earn your first crate. After that, crates cost ${s.crate_price} ${POINTS_NAME}.`],
                 ["3", "Trade", "Swap your doubles for the parts you're missing."],
                 ["4", "Assemble", "All 7 parts? Build your Nottie."],
                 ["5", "Add wallet", "Your guaranteed free mint spot is locked."],
@@ -143,7 +143,7 @@ export default async function Wiki() {
 
           <Chapter id="crates" n={3} title="Crates">
             <p>
-              Every new player gets <b>one free crate</b> in their mailbox. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, any time{s.crate_buy_cooldown_minutes ? ` (one every ${s.crate_buy_cooldown_minutes} min)` : ""}. Need a specific part? Buy it from another player in the <b>Market</b>, or post an offer like &quot;2,000 $NOTTIES for a Body&quot;.{s.timer_crates ? <> There&apos;s also a <b>free one {every}</b>.</> : null} <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
+              New players earn their <b>first crate</b> by finishing a <b>quote-post mission</b>. After that, <b>buy crates for {s.crate_price} {POINTS_NAME}</b> on the <b>Hunt</b> page, any time{s.crate_buy_cooldown_minutes ? ` (one every ${s.crate_buy_cooldown_minutes} min)` : ""}. Need a specific part? Buy it from another player in the <b>Market</b>, or post an offer like &quot;2,000 $NOTTIES for a Body&quot;.{s.timer_crates ? <> There&apos;s also a <b>free one {every}</b>.</> : null} <b>Tap a crate three times</b> to crack it open. Inside: exactly one part.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
               <li>The timer runs on my clock, not yours. Changing your phone&apos;s time won&apos;t help. I checked.</li>
@@ -371,7 +371,7 @@ export default async function Wiki() {
             <div className="space-y-2">
               {[
                 ["When is the mint?", `The mint is free. Date and chain get announced on X first: ${BRAND.xHandle}. Assembling now books your spot either way.`],
-                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES. Your welcome crate waits on the Hunt page and have no timer."],
+                ["Where do my mission rewards go?", "To your mailbox (the envelope at the top of the screen). Open it and tap Claim to get your $NOTTIES. Crates you claim wait on the Hunt page and have no timer."],
                 ["What if I miss a mission's timer?", "No problem. When the timer ends, the mission moves down to the regular missions and still pays the full reward."],
                 ["Do I need a wallet to play?", "No. Play first. Your wallet is the last step: once your Nottie is built, follow, like and comment on our launch post, then submit your wallet to lock your free mint."],
                 ["Can I build more than one Nottie?", "Not right now: one assembly and one guaranteed spot per account."],
