@@ -851,6 +851,21 @@ export async function SEED(q: Q) {
          from users where status = 'active' on conflict (idem_key) do nothing`,
     );
   }
+  // 2026-11-25: tell everyone about the new even gangs (letter names the player's own team) and reword the airdrop.
+  const teamsTold = await q.query("insert into settings (key, value) values ('gang_reset_told_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (teamsTold.rows.length) {
+    await q.query("update tasks set description = 'Post on X and tag @thenottiesworld: quote our post with the ready-made line, then come back and claim 5,000 $NOTTIES.' where id = 'airdrop_5k'");
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', '⚔️ You''re on Team ' || initcap(faction) || ' now',
+              'We reset Gang Wars and made all four teams even. Scores start from zero, and you''re ' || initcap(faction) || ' in Lab Escape. Every $NOTTIES you earn counts, including the 5k airdrop: just post and tag @thenottiesworld to claim it.',
+              now(), 'bc:gangreset:' || id
+         from users where status = 'active' and faction is not null on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into chat_messages (channel, user_id, author, body) values ('announce', null, 'The Notties', $1)", [
+      "⚔️ GANG WARS RESET: NEW EVEN TEAMS\n\nEveryone has been put in a team automatically so all four are even, and scores start from zero. You may have switched teams: check your mailbox to see yours. Your team's character is your runner in Lab Escape.\n\nThe war ends Nov 28 at 14:04 UTC. Every $NOTTIES you earn counts for your team, including the 5k airdrop. To claim it, just post and tag @thenottiesworld.",
+    ]);
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
