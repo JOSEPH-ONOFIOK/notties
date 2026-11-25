@@ -472,8 +472,8 @@ const TASKS = [
 ];
 
 /** Bump when the default economy changes enough that live settings should be reset to it, once. */
-/** Link of the post players quote for the 5k airdrop. Empty = the airdrop is not live yet. */
-const AIRDROP_POST: string = "";
+/** Link of the post players quote for the 5k airdrop. */
+const AIRDROP_POST: string = "https://x.com/thenottiesworld/status/2125593252438986914";
 const ECONOMY_VERSION = 19;
 const ECONOMY_KEYS = ["drop_weights", "points", "streak_bonus", "crate_price", "crate_buys_per_day", "crate_buy_cooldown_minutes", "timer_crates", "referral_crates", "market_prices", "wallet_tasks", "referral_qualify_claims", "referral_task", "runner_goo_value", "runner_daily_cap", "runner_share_reward"] as const;
 
