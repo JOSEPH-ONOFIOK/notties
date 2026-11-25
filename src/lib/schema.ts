@@ -755,6 +755,13 @@ export async function SEED(q: Q) {
     );
     await q.query("insert into settings (key, value) values ('post5_missions_v1', 'true'::jsonb) on conflict (key) do nothing");
   }
+  // 2026-11-25: pause Lab Escape again and take down today's post missions (both can be switched back on in Admin).
+  const paused2 = (await q.query("select 1 from settings where key = 'game_paused_v2'")).rows.length > 0;
+  if (!paused2) {
+    await q.query(`insert into settings (key, value) values ('runner_enabled', 'false'::jsonb) on conflict (key) do update set value = excluded.value`);
+    await q.query("update tasks set active = false where id in ('follow_post5', 'like_post5', 'rt_post5', 'quote_post5', 'comment_post5')");
+    await q.query("insert into settings (key, value) values ('game_paused_v2', 'true'::jsonb) on conflict (key) do nothing");
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)

@@ -5,14 +5,31 @@ import { getSettings } from "@/lib/game/core";
 import { DEFAULT_LOOK, LAYER_ORDER, lookFromSeed } from "@/lib/game/look";
 import { myRunnerToday, runnerBoard, sharedToday } from "@/lib/game/runner";
 import { currentPlayer } from "@/lib/player";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Lab Escape" };
 
 export default async function Play() {
   const p = await currentPlayer();
-  if (!p.canPlay) redirect("/dashboard");
-  const [s, board, mine, shared] = await Promise.all([getSettings(), runnerBoard(), myRunnerToday(p.id), sharedToday(p.id)]);
+  const s = await getSettings();
+  if (!p.canPlay) {
+    if (s.runner_enabled !== false) redirect("/dashboard"); // testers-only mode
+    return (
+      <>
+        <PageTitle kicker="Play" title="Lab Escape" />
+        <div className="card p-8 text-center sm:p-12">
+          <div className="text-5xl">🎮</div>
+          <div className="display mt-3 text-3xl">Coming back soon</div>
+          <p className="mx-auto mt-2 max-w-md text-muted">The lab is sealed for now. Your $NOTTIES are safe. Hunt and trade while you wait.</p>
+          <Link href="/hunt" className="btn btn-accent mt-5">
+            Go hunt
+          </Link>
+        </div>
+      </>
+    );
+  }
+  const [board, mine, shared] = await Promise.all([runnerBoard(), myRunnerToday(p.id), sharedToday(p.id)]);
   const look = p.nottieSeed ? lookFromSeed(p.nottieSeed) : DEFAULT_LOOK;
   const layers = LAYER_ORDER.filter((l) => l !== "background").map((l) => look[l].src);
   return (

@@ -106,6 +106,16 @@ export default async function City({ searchParams }: { searchParams: Promise<{ w
             <span className="btn shrink-0 border-black bg-black !min-h-[40px] !px-4 text-sm text-accent">Play</span>
           </Link>
           )}
+          {!p.canPlay && settings.runner_enabled === false && (
+            <div className="card flex items-center gap-4 p-4 sm:p-5">
+              <span className="display grid h-14 w-14 shrink-0 place-items-center rounded-2xl border-[3px] border-black bg-black text-2xl">🎮</span>
+              <div className="min-w-0 flex-1">
+                <div className="display text-2xl leading-tight">Lab Escape</div>
+                <div className="text-sm text-muted">The lab is sealed for now.</div>
+              </div>
+              <span className="display shrink-0 rounded-full border-2 border-black bg-warn px-3 py-1 text-xs tracking-wider text-black">Coming back soon</span>
+            </div>
+          )}
           {!p.faction && <FactionPicker compact={!!showWar} />}
         </div>
       </div>
