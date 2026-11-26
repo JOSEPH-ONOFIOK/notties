@@ -866,6 +866,25 @@ export async function SEED(q: Q) {
       "⚔️ GANG WARS RESET: NEW EVEN TEAMS\n\nEveryone has been put in a team automatically so all four are even, and scores start from zero. You may have switched teams: check your mailbox to see yours. Your team's character is your runner in Lab Escape.\n\nThe war ends Nov 28 at 14:04 UTC. Every $NOTTIES you earn counts for your team, including the 5k airdrop. To claim it, just post and tag @thenottiesworld.",
     ]);
   }
+  // 2026-11-26: like + comment missions for the new post (150 each, 12h timer) + letter to everyone.
+  const post7 = await q.query("insert into settings (key, value) values ('post7_missions_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (post7.rows.length) {
+    const post = "https://x.com/thenottiesworld/status/2125900265933123970";
+    for (const [id, title, description] of [
+      ["like_post7", "Like today's post", "Like our newest post on X."],
+      ["comment_post7", "Comment on today's post", "Drop a comment on our newest post on X."],
+    ]) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,150,'once','link',$4,1,true, now(), now() + interval '12 hours') on conflict (id) do nothing",
+        [id, title, description, post],
+      );
+    }
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'New timed missions are live', 'Like and comment on our newest post. 150 $NOTTIES each. Complete them quick before the 12 hour timer is up.', now(), 'bc:post7:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+  }
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
