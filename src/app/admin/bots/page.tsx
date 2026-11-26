@@ -3,7 +3,9 @@ import { PageTitle, fmtDate } from "@/components/ui";
 import { botScores, BOT_SIGNALS, BOT_THRESHOLD } from "@/lib/game/admin";
 
 export default async function Bots() {
-  const rows = await botScores();
+  const all = await botScores();
+  const removed = all.filter((r) => r.bot).length;
+  const rows = all.filter((r) => !r.bot);
   const bots = rows.filter((r) => r.score >= BOT_THRESHOLD);
   const real = rows.length - bots.length;
   const counts = Object.fromEntries(Object.keys(BOT_SIGNALS).map((k) => [k, rows.filter((r) => r.signals.includes(k)).length]));
@@ -12,11 +14,11 @@ export default async function Bots() {
       <PageTitle
         kicker="Admin"
         title="Bot check"
-        sub={`${rows.length.toLocaleString()} players: ${real.toLocaleString()} look real, ${bots.length.toLocaleString()} look like bots (score ${BOT_THRESHOLD}+). Signals, not proof.`}
+        sub={`${rows.length.toLocaleString()} players: ${real.toLocaleString()} look real, ${bots.length.toLocaleString()} might be bots (score ${BOT_THRESHOLD}+). ${removed.toLocaleString()} bot-farm accounts already removed (suspended, hidden from admin). Signals, not proof.`}
         right={
           <div className="flex flex-wrap gap-2">
             <a href="/api/admin?export=real" className="btn text-sm">Real players (CSV)</a>
-            <a href="/api/admin?export=bots" className="btn btn-ghost text-sm">Likely bots (CSV)</a>
+            <a href="/api/admin?export=bots" className="btn btn-ghost text-sm">Bots + suspects (CSV)</a>
           </div>
         }
       />
@@ -32,7 +34,7 @@ export default async function Bots() {
           ))}
         </ul>
       </div>
-      <div className="display mb-2 text-xl">Likely bots ({bots.length.toLocaleString()})</div>
+      <div className="display mb-2 text-xl">Possible bots still active ({bots.length.toLocaleString()})</div>
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-muted">

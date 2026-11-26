@@ -37,7 +37,7 @@ export function stats() {
 
 async function loadStats() {
   const [players, forged, claims, trades] = await Promise.all([
-    query<{ n: string }>("select count(*)::text as n from users"),
+    query<{ n: string }>("select count(*)::text as n from users where status = 'active'"),
     query<{ n: string }>("select count(*)::text as n from forge_completions"),
     query<{ n: string }>("select count(*)::text as n from crate_claims"),
     query<{ n: string }>("select count(*)::text as n from trades"),

@@ -29,7 +29,7 @@ export async function GET(req: Request) {
   if (what === "real" || what === "bots") {
     // Players split by the bot check (see botScores in admin.ts).
     const { botScores, BOT_THRESHOLD } = await import("@/lib/game/admin");
-    const rows = (await botScores()).filter((r) => (what === "bots" ? r.score >= BOT_THRESHOLD : r.score < BOT_THRESHOLD));
+    const rows = (await botScores()).filter((r) => (what === "bots" ? r.bot || r.score >= BOT_THRESHOLD : !r.bot && r.score < BOT_THRESHOLD));
     await audit(admin.name, `export_${what}`, undefined, { rows: rows.length });
     return csv(`notties-${what === "bots" ? "likely-bots" : "real-players"}-${new Date().toISOString().slice(0, 10)}.csv`, ["x_username,status,notties,wallet,bot_score,signals,joined,last_seen", ...rows.map((r) => [r.x_username, r.status, r.points, r.wallet ?? "", r.score, r.signals.join(" "), new Date(r.created_at).toISOString(), new Date(r.last_seen_at).toISOString()].join(","))].join("\n"));
   }
@@ -40,6 +40,7 @@ export async function GET(req: Request) {
               (select count(*)::int from referrals r where r.referrer_id = u.id and r.status = 'verified') as recruits,
               (select x_username from users ru where ru.id = u.referred_by) as referrer, u.created_at
          from users u left join wallets w on w.user_id = u.id and w.is_primary left join forge_completions f on f.user_id = u.id
+        where not u.bot
         order by u.id`,
     );
     await audit(admin.name, "export_players", undefined, { rows: rows.length });

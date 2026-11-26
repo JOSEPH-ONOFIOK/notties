@@ -15,7 +15,7 @@ export default async function AdminHome() {
     <>
       <PageTitle kicker="Admin" title="Overview" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Players" value={o.players} hint={`${o.suspended} suspended`} />
+        <Stat label="Players" value={o.players} hint={`${o.suspended} suspended${o.bots ? ` · ${o.bots.toLocaleString()} bots removed` : ""}`} />
         <Stat label="Assembled" value={o.forged} accent hint={`${o.gtd} GTD approved`} />
         <Stat label="Wallets linked" value={o.walletsLinked} />
         <Stat label={`${POINTS_NAME} issued`} value={o.points.toLocaleString()} />

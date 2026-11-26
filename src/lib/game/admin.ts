@@ -192,7 +192,7 @@ export async function searchPlayers(qstr: string, limit = 30, offset = 0) {
               (select x_username from users ru where ru.id = u.referred_by) as referrer
          from users u left join forge_completions f on f.user_id = u.id
          left join wallets w on w.user_id = u.id and w.is_primary
-        where $1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2
+        where not u.bot and ($1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2)
         order by u.id desc limit $3 offset $4`,
       [like, qstr.trim(), limit, offset],
     )
@@ -202,7 +202,7 @@ export async function searchPlayers(qstr: string, limit = 30, offset = 0) {
 /** How many players match a search (for paging the admin list). */
 export async function countPlayers(qstr: string) {
   const like = `%${qstr.trim().replace(/^@/, "").toLowerCase()}%`;
-  const { rows } = await query<{ n: number }>("select count(*)::int as n from users u where $1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2", [like, qstr.trim()]);
+  const { rows } = await query<{ n: number }>("select count(*)::int as n from users u where not u.bot and ($1 = '%%' or lower(u.x_username) like $1 or u.ref_code like upper($1) or u.x_id = $2)", [like, qstr.trim()]);
   return rows[0]?.n ?? 0;
 }
 
@@ -246,7 +246,7 @@ export async function riskQueue(limit = 100) {
     await query<{ id: string; user_id: string; username: string; kind: string; detail: unknown; severity: number; created_at: string; n: number }>(
       `select r.id, r.user_id, u.x_username as username, r.kind, r.detail, r.severity, r.created_at,
               (select count(*)::int from risk_events x where x.user_id = r.user_id and not x.resolved) as n
-         from risk_events r left join users u on u.id = r.user_id where not r.resolved order by r.severity desc, r.id desc limit $1`,
+         from risk_events r left join users u on u.id = r.user_id where not r.resolved and not coalesce(u.bot, false) order by r.severity desc, r.id desc limit $1`,
       [limit],
     )
   ).rows;
@@ -254,19 +254,20 @@ export async function riskQueue(limit = 100) {
 
 export async function overview() {
   const g = async (sql: string) => Number((await query<{ n: string }>(sql)).rows[0].n);
-  const [players, suspended, forged, gtd, claims24, trades24, points, risk, walletsLinked] = await Promise.all([
-    g("select count(*)::text as n from users"),
-    g("select count(*)::text as n from users where status = 'suspended'"),
+  const [players, suspended, bots, forged, gtd, claims24, trades24, points, risk, walletsLinked] = await Promise.all([
+    g("select count(*)::text as n from users where not bot"),
+    g("select count(*)::text as n from users where status = 'suspended' and not bot"),
+    g("select count(*)::text as n from users where bot"),
     g("select count(*)::text as n from forge_completions"),
     g("select count(*)::text as n from mint_eligibility where status = 'approved'"),
-    g("select count(*)::text as n from crate_claims where created_at > now() - interval '24 hours'"),
+    g("select count(*)::text as n from crate_claims c join users u on u.id = c.user_id where not u.bot and c.created_at > now() - interval '24 hours'"),
     g("select count(*)::text as n from trades where created_at > now() - interval '24 hours'"),
-    g("select coalesce(sum(lifetime_points),0)::text as n from users"),
-    g("select count(*)::text as n from risk_events where not resolved"),
+    g("select coalesce(sum(lifetime_points),0)::text as n from users where not bot"),
+    g("select count(*)::text as n from risk_events r join users u on u.id = r.user_id where not r.resolved and not u.bot"),
     g("select count(distinct user_id)::text as n from wallets"),
   ]);
-  const supply = (await query<{ type: string; n: string }>("select type, sum(qty)::text as n from inventory group by type")).rows;
-  return { players, suspended, forged, gtd, claims24, trades24, points, risk, walletsLinked, supply: Object.fromEntries(supply.map((s) => [s.type, Number(s.n)])) };
+  const supply = (await query<{ type: string; n: string }>("select i.type, sum(i.qty)::text as n from inventory i join users u on u.id = i.user_id where not u.bot group by i.type")).rows;
+  return { players, suspended, bots, forged, gtd, claims24, trades24, points, risk, walletsLinked, supply: Object.fromEntries(supply.map((s) => [s.type, Number(s.n)])) };
 }
 
 export async function exportEligibility() {
@@ -333,7 +334,7 @@ export const BOT_SIGNALS: Record<string, { pts: number; label: string }> = {
 };
 export const BOT_THRESHOLD = 3;
 
-export type BotRow = { id: number; x_username: string; status: string; points: string; wallet: string | null; created_at: string; last_seen_at: string; signals: string[]; score: number };
+export type BotRow = { id: number; x_username: string; status: string; bot: boolean; points: string; wallet: string | null; created_at: string; last_seen_at: string; signals: string[]; score: number };
 
 /** Every player with a bot score and the reasons behind it. */
 export async function botScores(): Promise<BotRow[]> {
@@ -348,7 +349,7 @@ export async function botScores(): Promise<BotRow[]> {
        select u.referred_by as rid, count(*) as n, count(*) filter (where not a.played or u.last_seen_at < u.created_at + interval '10 minutes') as dead
          from users u join act a on a.id = u.id where u.referred_by is not null group by u.referred_by
      )
-     select u.id, u.x_username, u.status, u.points::text, w.address as wallet, u.created_at, u.last_seen_at,
+     select u.id, u.x_username, u.status, u.bot, u.points::text, w.address as wallet, u.created_at, u.last_seen_at,
             array_remove(array[
               case when u.status <> 'active' then 'suspended' end,
               case when exists (select 1 from risk_events r where r.user_id = u.id and r.kind in ('early_claim','fast_task','swap_pair','trade_burst','wallet_reuse','farm_invite')) then 'script_flag' end,

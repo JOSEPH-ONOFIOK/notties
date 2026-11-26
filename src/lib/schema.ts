@@ -191,6 +191,8 @@ alter table users add column if not exists pity int not null default 0;
 alter table users add column if not exists faction text;
 -- When the player's X account was made (from X at sign-in). Fresh accounts can't take the big starter rewards.
 alter table users add column if not exists x_created_at timestamptz;
+-- Bot-farm accounts: suspended and hidden from admin lists, counts and exports.
+alter table users add column if not exists bot boolean not null default false;
 
 alter table crate_claims add column if not exists source text not null default 'timer';
 alter table crate_claims add column if not exists event text;
@@ -919,6 +921,20 @@ export async function SEED(q: Q) {
     await q.query("insert into chat_messages (channel, user_id, author, body) values ('announce', null, 'The Notties', $1)", [
       `🧹 BOT CLEANUP\nA bot farm signed up ${n} fake accounts today. All of them are now suspended: no rewards, no GTD, and they no longer count in Gang Wars or the leaderboard.\nGang Wars is real players only now. Invite rewards are capped at 20 per day, and the 5k airdrop needs an X account at least 30 days old.\nReal player caught by mistake? Message @thenottiesworld on X.`,
     ]);
+  }
+
+  // Admin cleanup after the bot purge: flag the farm accounts as bots so admin lists, counts and exports skip them,
+  // clear their review-queue flags and drop their public feed items.
+  const botFlag = await q.query("insert into settings (key, value) values ('bot_flag_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (botFlag.rows.length) {
+    await q.query(
+      `update users set bot = true where status = 'suspended' and (
+         x_username in ('TaDinhNhat1', 'BomHoang4943')
+         or referred_by in (select id from users where x_username in ('TaDinhNhat1', 'BomHoang4943'))
+         or exists (select 1 from risk_events r where r.user_id = users.id and r.kind = 'farm_invite'))`,
+    );
+    await q.query("update risk_events set resolved = true where not resolved and user_id in (select id from users where bot)");
+    await q.query("delete from feed where user_id in (select id from users where bot)");
   }
 
   for (const t of TASKS) {

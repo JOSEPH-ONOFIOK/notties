@@ -100,13 +100,13 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
     const farmRef = refCode ? (await q.query("select 1 from users where ref_code = $1 and status = 'suspended'", [refCode.toUpperCase()])).rows.length > 0 : false;
     const user = (
       await q.query<UserRow>(
-        `insert into users (x_id, x_username, display_name, avatar_url, ref_code, x_created_at, status, faction)
-         values ($1,$2,$3,$4,$5,$7::timestamptz,$8, (
+        `insert into users (x_id, x_username, display_name, avatar_url, ref_code, x_created_at, status, bot, faction)
+         values ($1,$2,$3,$4,$5,$7::timestamptz,$8,$9, (
            -- Gangs stay even: new players join the smallest one.
            select g.id from unnest($6::text[]) as g(id) left join users m on m.faction = g.id and m.status = 'active'
             group by g.id order by count(m.id), random() limit 1
          )) returning *`,
-        [x.id, x.username, x.name ?? null, x.avatar ?? null, code, FACTIONS.map((g) => g.id), x.createdAt ?? null, farmRef ? "suspended" : "active"],
+        [x.id, x.username, x.name ?? null, x.avatar ?? null, code, FACTIONS.map((g) => g.id), x.createdAt ?? null, farmRef ? "suspended" : "active", farmRef],
       )
     ).rows[0];
 
