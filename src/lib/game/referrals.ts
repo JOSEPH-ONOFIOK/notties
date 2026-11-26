@@ -4,6 +4,9 @@ import type { Settings } from "./config";
 import { sendMail } from "./mail";
 import { addPoints } from "./core";
 
+/** Paid recruits per recruiter per day. Stops one account farming thousands of invite bonuses. */
+export const REFERRAL_DAILY_CAP = 20;
+
 /**
  * A referral pays out only after the new player has actually played: opened `referral_qualify_claims`
  * crates. Opening a link, or signing up and leaving, earns the referrer nothing.
@@ -25,6 +28,9 @@ export async function checkReferralProgress(q: Q, refereeId: string, claimsNow: 
     await q.query("update referrals set status = 'held' where id = $1", [ref.id]);
     return;
   }
+  // At most REFERRAL_DAILY_CAP paid recruits per recruiter per UTC day; the rest wait (pending) and pay on a later day.
+  const today = await q.query<{ n: number }>("select count(*)::int as n from referrals where referrer_id = $1 and status = 'verified' and verified_at >= date_trunc('day', now() at time zone 'utc') at time zone 'utc'", [ref.referrer_id]);
+  if ((today.rows[0]?.n ?? 0) >= REFERRAL_DAILY_CAP) return;
   await q.query("update referrals set status = 'verified', verified_at = now() where id = $1", [ref.id]);
   // The recruiter's bonus ($NOTTIES + free crates) arrives in their mailbox.
   const who = (await q.query<{ x_username: string }>("select x_username from users where id = $1", [refereeId])).rows[0]?.x_username ?? "a recruit";

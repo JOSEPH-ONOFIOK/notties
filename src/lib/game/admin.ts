@@ -351,7 +351,7 @@ export async function botScores(): Promise<BotRow[]> {
      select u.id, u.x_username, u.status, u.points::text, w.address as wallet, u.created_at, u.last_seen_at,
             array_remove(array[
               case when u.status <> 'active' then 'suspended' end,
-              case when exists (select 1 from risk_events r where r.user_id = u.id and r.kind in ('early_claim','fast_task','swap_pair','trade_burst','wallet_reuse')) then 'script_flag' end,
+              case when exists (select 1 from risk_events r where r.user_id = u.id and r.kind in ('early_claim','fast_task','swap_pair','trade_burst','wallet_reuse','farm_invite')) then 'script_flag' end,
               case when exists (select 1 from risk_events r where r.user_id = u.id and r.kind = 'new_x_account') then 'new_x' end,
               case when u.referred_by is not null and (select count(*) from users o where o.referred_by = u.referred_by and o.id <> u.id
                      and o.created_at between u.created_at - interval '5 minutes' and u.created_at + interval '5 minutes') >= 4 then 'invite_burst' end,

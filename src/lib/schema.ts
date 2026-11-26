@@ -189,6 +189,8 @@ alter table users add column if not exists best_streak int not null default 0;
 alter table users add column if not exists last_checkin date;
 alter table users add column if not exists pity int not null default 0;
 alter table users add column if not exists faction text;
+-- When the player's X account was made (from X at sign-in). Fresh accounts can't take the big starter rewards.
+alter table users add column if not exists x_created_at timestamptz;
 
 alter table crate_claims add column if not exists source text not null default 'timer';
 alter table crate_claims add column if not exists event text;
@@ -885,6 +887,40 @@ export async function SEED(q: Q) {
          from users where status = 'active' on conflict (idem_key) do nothing`,
     );
   }
+  // Bot farm cleanup (2026-11-26): @TaDinhNhat1 and @BomHoang4943 signed up 4,300+ scripted accounts through their
+  // invite links. Suspend them all (rewards paused, GTD revoked, out of Gang Wars and the leaderboard), then tell everyone.
+  const purge = await q.query("insert into settings (key, value) values ('bot_purge_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (purge.rows.length) {
+    const sus = await q.query<{ id: string }>(
+      `with farm as (
+         select id from users where x_username in ('TaDinhNhat1', 'BomHoang4943')
+         union select id from users where referred_by in (select id from users where x_username in ('TaDinhNhat1', 'BomHoang4943'))
+       ) update users set status = 'suspended' where id in (select id from farm) and status = 'active' returning id`,
+    );
+    const ids = sus.rows.map((r) => r.id);
+    if (ids.length) {
+      await q.query("update mint_eligibility set status = 'revoked' where user_id = any($1::bigint[])", [ids]);
+      await q.query("update referrals set status = 'held' where referrer_id = any($1::bigint[]) and status = 'pending'", [ids]);
+      await q.query("insert into admin_actions (admin, action, target, detail) values ('system', 'bot_purge', 'TaDinhNhat1,BomHoang4943', $1)", [JSON.stringify({ suspended: ids.length, ids })]);
+      await q.query(
+        `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+         select id, 'system', 'Your account is suspended', 'This account joined through a bot farm, so rewards are paused and it no longer counts in Gang Wars or the leaderboard. If you are a real player, message @thenottiesworld on X and we will review it.', now(), 'bc:botpurge:sus:' || id
+           from users where id = any($1::bigint[]) on conflict (idem_key) do nothing`,
+        [ids],
+      );
+    }
+    const n = ids.length.toLocaleString("en-US");
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', '🧹 We removed ' || $1 || ' bot accounts', 'A bot farm signed up ' || $1 || ' fake accounts today. They are all suspended: their $NOTTIES, Gang Wars points and leaderboard spots no longer count, and they get no GTD. Gang Wars and the leaderboard are now real players only. Keep playing!', now(), 'bc:botpurge:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+      [n],
+    );
+    await q.query("insert into chat_messages (channel, user_id, author, body) values ('announce', null, 'The Notties', $1)", [
+      `🧹 BOT CLEANUP\nA bot farm signed up ${n} fake accounts today. All of them are now suspended: no rewards, no GTD, and they no longer count in Gang Wars or the leaderboard.\nGang Wars is real players only now. Invite rewards are capped at 20 per day, and the 5k airdrop needs an X account at least 30 days old.\nReal player caught by mistake? Message @thenottiesworld on X.`,
+    ]);
+  }
+
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)

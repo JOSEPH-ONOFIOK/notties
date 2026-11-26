@@ -12,6 +12,7 @@ const EXPLAIN: Record<string, string> = {
   fast_task: "Claimed a link task within seconds of opening it.",
   wallet_reuse: "Tried to link a wallet already owned by another player.",
   new_x_account: "X account younger than 14 days at sign-up. Informational.",
+  farm_invite: "Signed up through a suspended player's invite link, so it started suspended. Restore it if it's a real player.",
   swap_pair: "The same two accounts keep swapping with each other (5+ in a day).",
 };
 

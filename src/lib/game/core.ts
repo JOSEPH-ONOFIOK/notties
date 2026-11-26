@@ -86,7 +86,7 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
   return withTx(async (q) => {
     const existing = (await q.query<UserRow>("select * from users where x_id = $1", [x.id])).rows[0];
     if (existing) {
-      await q.query(`update users set x_username = $2, display_name = $3, avatar_url = coalesce($4, avatar_url), last_seen_at = now() where id = $1`, [existing.id, x.username, x.name ?? null, x.avatar ?? null]);
+      await q.query(`update users set x_username = $2, display_name = $3, avatar_url = coalesce($4, avatar_url), x_created_at = coalesce($5::timestamptz, x_created_at), last_seen_at = now() where id = $1`, [existing.id, x.username, x.name ?? null, x.avatar ?? null, x.createdAt ?? null]);
       return { user: existing, created: false };
     }
 
@@ -96,15 +96,17 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
       if (!clash.rows.length) break;
       code = makeRefCode(x.username);
     }
+    // Sign-ups through a suspended player's invite link (a bot farm) start suspended, for review.
+    const farmRef = refCode ? (await q.query("select 1 from users where ref_code = $1 and status = 'suspended'", [refCode.toUpperCase()])).rows.length > 0 : false;
     const user = (
       await q.query<UserRow>(
-        `insert into users (x_id, x_username, display_name, avatar_url, ref_code, faction)
-         values ($1,$2,$3,$4,$5, (
+        `insert into users (x_id, x_username, display_name, avatar_url, ref_code, x_created_at, status, faction)
+         values ($1,$2,$3,$4,$5,$7::timestamptz,$8, (
            -- Gangs stay even: new players join the smallest one.
            select g.id from unnest($6::text[]) as g(id) left join users m on m.faction = g.id and m.status = 'active'
             group by g.id order by count(m.id), random() limit 1
          )) returning *`,
-        [x.id, x.username, x.name ?? null, x.avatar ?? null, code, FACTIONS.map((g) => g.id)],
+        [x.id, x.username, x.name ?? null, x.avatar ?? null, code, FACTIONS.map((g) => g.id), x.createdAt ?? null, farmRef ? "suspended" : "active"],
       )
     ).rows[0];
 
@@ -121,6 +123,7 @@ export async function upsertUser(x: XUser & { createdAt?: string }, refCode?: st
         await q.query("insert into referrals (referrer_id, referee_id) values ($1, $2) on conflict do nothing", [referrer.id, user.id]);
       }
     }
+    if (farmRef) await q.query("insert into risk_events (user_id, kind, detail, severity) values ($1,'farm_invite',$2,2)", [user.id, JSON.stringify({ ref_code: refCode })]);
     // Brand-new X accounts are a sybil signal, not a verdict. Log it for review.
     if (x.createdAt && Date.now() - new Date(x.createdAt).getTime() < 14 * 86400_000) {
       await q.query("insert into risk_events (user_id, kind, detail, severity) values ($1,'new_x_account',$2,1)", [user.id, JSON.stringify({ x_created_at: x.createdAt })]);

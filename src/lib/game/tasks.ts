@@ -66,10 +66,16 @@ export async function clickTask(userId: string, taskId: string) {
   await query("insert into task_clicks (user_id, task_id) values ($1,$2) on conflict (user_id, task_id) do update set clicked_at = least(task_clicks.clicked_at, now())", [userId, taskId]);
 }
 
+/** Fresh X accounts can't take the airdrop or the first free crate. */
+export const MIN_X_AGE_DAYS = 30;
+
 /** Internal: award a task inside an existing transaction (used by wallet linking, trades, etc.). */
 export async function completeTask(q: Q, userId: string, taskId: string, settings: Settings, at = new Date()) {
   const t = (await q.query<TaskRow>("select * from tasks where id = $1 and active", [taskId])).rows[0];
   if (!t) throw new GameError("Task not available");
+  // The airdrop (any mission worth 1,000+) needs an X account at least MIN_X_AGE_DAYS old, so fresh bot accounts can't farm it.
+  const freshX = (await q.query("select 1 from users where id = $1 and x_created_at > now() - make_interval(days => $2)", [userId, MIN_X_AGE_DAYS])).rows.length > 0;
+  if (freshX && Number(t.points) >= 1000) throw new GameError(`This one needs an X account at least ${MIN_X_AGE_DAYS} days old.`, 403);
   const day = t.kind === "daily" ? todayUtc() : ONCE_DAY;
   const ins = await q.query("insert into task_completions (user_id, task_id, day) values ($1,$2,$3) on conflict do nothing returning id", [userId, taskId, day]);
   if (!ins.rows.length) throw new GameError(t.kind === "daily" ? "Already checked in today" : "Already completed");
@@ -101,7 +107,7 @@ export async function completeTask(q: Q, userId: string, taskId: string, setting
   });
   // New players earn their first crate by finishing their first quote-post mission (once). Their welcome
   // letter has no crate; players from before this change already got theirs with it.
-  if (t.verify === "link" && t.link?.startsWith("https://x.com/intent/post") && settings.welcome_crates > 0) {
+  if (!freshX && t.verify === "link" && t.link?.startsWith("https://x.com/intent/post") && settings.welcome_crates > 0) {
     const owed = await q.query("select 1 from mail where user_id = $1 and idem_key = $2 and crates = 0", [userId, `welcome:${userId}`]);
     if (owed.rows.length) {
       await sendMail(q, userId, { kind: "reward", title: "Your first crate", body: "You posted, so here's your crate. Claim it and open it on the Hunt page.", crates: settings.welcome_crates, idem: `postcrate:${userId}` });
