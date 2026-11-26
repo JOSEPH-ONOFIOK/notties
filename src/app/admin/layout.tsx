@@ -22,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const tabs = [
     ["/admin", "Overview"],
     ["/admin/players", "Players"],
+    ["/admin/bots", "Bots"],
     ["/admin/risk", "Review"],
     ["/admin/economy", "Economy"],
     ["/admin/tasks", "Tasks"],

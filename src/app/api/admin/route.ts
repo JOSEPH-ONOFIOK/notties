@@ -26,6 +26,13 @@ export async function GET(req: Request) {
     await audit(admin.name, "export_snapshot", id, { rows: rows.length });
     return csv(`notties-snapshot-${id}.csv`, ["wallet,phase,allocation,sources", ...rows.map((r) => `${r.address},${r.phase},${r.allocation},${r.sources}`)].join("\n"));
   }
+  if (what === "real" || what === "bots") {
+    // Players split by the bot check (see botScores in admin.ts).
+    const { botScores, BOT_THRESHOLD } = await import("@/lib/game/admin");
+    const rows = (await botScores()).filter((r) => (what === "bots" ? r.score >= BOT_THRESHOLD : r.score < BOT_THRESHOLD));
+    await audit(admin.name, `export_${what}`, undefined, { rows: rows.length });
+    return csv(`notties-${what === "bots" ? "likely-bots" : "real-players"}-${new Date().toISOString().slice(0, 10)}.csv`, ["x_username,status,notties,wallet,bot_score,signals,joined,last_seen", ...rows.map((r) => [r.x_username, r.status, r.points, r.wallet ?? "", r.score, r.signals.join(" "), new Date(r.created_at).toISOString(), new Date(r.last_seen_at).toISOString()].join(","))].join("\n"));
+  }
   if (what === "players") {
     // Every player with their wallet, balance, progress and referrals (handy for checking lists).
     const { rows } = await query<{ x_username: string; ref_code: string; status: string; points: string; claims: number; wallet: string | null; forged: boolean; recruits: number; referrer: string | null; created_at: string }>(

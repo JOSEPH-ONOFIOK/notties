@@ -318,3 +318,55 @@ export async function upsertTask(admin: string, t: { id: string; title: string; 
   }
   return { given: 0 };
 }
+
+/** Bot check signals. Each one adds to a player's score; 3 or more counts as a likely bot. */
+export const BOT_SIGNALS: Record<string, { pts: number; label: string }> = {
+  suspended: { pts: 9, label: "already suspended" },
+  script_flag: { pts: 3, label: "scripted behaviour flag (early claims, instant missions, swap rings, wallet reuse)" },
+  new_x: { pts: 2, label: "X account under 14 days old at sign-up" },
+  invite_burst: { pts: 2, label: "joined within 5 minutes of 4+ others from the same invite link" },
+  farm_referrer: { pts: 1, label: "invited by someone whose recruits are mostly inactive" },
+  default_handle: { pts: 1, label: "X-generated style handle (name + 6+ digits)" },
+  no_avatar: { pts: 1, label: "default X profile picture" },
+  never_back: { pts: 1, label: "never came back after the first 10 minutes" },
+  no_play: { pts: 1, label: "no missions, runs or crates" },
+};
+export const BOT_THRESHOLD = 3;
+
+export type BotRow = { id: number; x_username: string; status: string; points: string; wallet: string | null; created_at: string; last_seen_at: string; signals: string[]; score: number };
+
+/** Every player with a bot score and the reasons behind it. */
+export async function botScores(): Promise<BotRow[]> {
+  const { rows } = await query<Omit<BotRow, "score">>(
+    `with act as (
+       select u.id,
+              (exists (select 1 from task_completions t where t.user_id = u.id)
+               or exists (select 1 from runner_runs r where r.user_id = u.id and r.ended_at is not null)
+               or u.claims > 0) as played
+         from users u
+     ), refs as (
+       select u.referred_by as rid, count(*) as n, count(*) filter (where not a.played or u.last_seen_at < u.created_at + interval '10 minutes') as dead
+         from users u join act a on a.id = u.id where u.referred_by is not null group by u.referred_by
+     )
+     select u.id, u.x_username, u.status, u.points::text, w.address as wallet, u.created_at, u.last_seen_at,
+            array_remove(array[
+              case when u.status <> 'active' then 'suspended' end,
+              case when exists (select 1 from risk_events r where r.user_id = u.id and r.kind in ('early_claim','fast_task','swap_pair','trade_burst','wallet_reuse')) then 'script_flag' end,
+              case when exists (select 1 from risk_events r where r.user_id = u.id and r.kind = 'new_x_account') then 'new_x' end,
+              case when u.referred_by is not null and (select count(*) from users o where o.referred_by = u.referred_by and o.id <> u.id
+                     and o.created_at between u.created_at - interval '5 minutes' and u.created_at + interval '5 minutes') >= 4 then 'invite_burst' end,
+              case when rf.n >= 5 and rf.dead::float / rf.n >= 0.7 then 'farm_referrer' end,
+              case when u.x_username ~ '^[A-Za-z_]+[0-9]{6,}$' then 'default_handle' end,
+              case when u.avatar_url is null or u.avatar_url like '%default_profile%' then 'no_avatar' end,
+              case when not a.played and u.last_seen_at < u.created_at + interval '10 minutes' then 'never_back' end,
+              case when not a.played then 'no_play' end
+            ], null) as signals
+       from users u join act a on a.id = u.id
+       left join wallets w on w.user_id = u.id and w.is_primary
+       left join refs rf on rf.rid = u.referred_by
+      order by u.id`,
+  );
+  return rows
+    .map((r) => ({ ...r, score: r.signals.reduce((s, k) => s + (BOT_SIGNALS[k]?.pts ?? 0), 0) }))
+    .sort((a, b) => b.score - a.score || a.id - b.id);
+}
