@@ -937,6 +937,31 @@ export async function SEED(q: Q) {
     await q.query("delete from feed where user_id in (select id from users where bot)");
   }
 
+  // 2026-11-27: follow + like + retweet + comment missions for the airdrop/forge post (12h timer), with a letter.
+  const post8 = await q.query("insert into settings (key, value) values ('post8_missions_v1', 'true'::jsonb) on conflict (key) do nothing returning key");
+  if (post8.rows.length) {
+    const post = "https://x.com/thenottiesworld/status/2126343006206726194";
+    for (const [id, title, description, link] of [
+      ["follow_post8", "Follow @thenottiesworld", "Follow Notties on X so you don't miss a post.", "https://x.com/intent/follow?screen_name=thenottiesworld"],
+      ["like_post8", "Like today's post", "Like our newest post on X.", post],
+      ["rt_post8", "Retweet today's post", "Retweet our newest post on X.", post],
+      ["comment_post8", "Comment on today's post", "Drop a comment on our newest post on X.", post],
+    ]) {
+      await q.query(
+        "insert into tasks (id, title, description, points, kind, verify, link, sort, active, starts_at, ends_at) values ($1,$2,$3,150,'once','link',$4,1,true, now(), now() + interval '12 hours') on conflict (id) do nothing",
+        [id, title, description, link],
+      );
+    }
+    await q.query(
+      `insert into mail (user_id, kind, title, body, claimed_at, idem_key)
+       select id, 'system', 'New timed missions are live', '$NOTTIES will be airdropped to everyone registered on nottiesraid.fun. Go ahead and forge your Notties 🫡 Follow, like, retweet and comment on our newest post: 150 $NOTTIES each. Complete them quick before the 12 hour timer is up.', now(), 'bc:post8:' || id
+         from users where status = 'active' on conflict (idem_key) do nothing`,
+    );
+    await q.query("insert into chat_messages (channel, user_id, author, body) values ('announce', null, 'The Notties', $1)", [
+      `🪂 $NOTTIES will be airdropped to everyone registered on nottiesraid.fun\nGo ahead and forge your Notties 🫡\nNew timed missions: follow, like, retweet and comment on our newest post. 150 $NOTTIES each, 12 hours only.\n${post}`,
+    ]);
+  }
+
   for (const t of TASKS) {
     await q.query(
       `insert into tasks (id, title, description, points, kind, verify, link, sort)
